@@ -5,7 +5,7 @@ const styles = StyleSheet.create({
     header: {
         flexDirection: 'row',
         height: 50,
-        backgroundColor: theme.colors.primary,
+        // backgroundColor: theme.colors.primary,
         alignItems: 'center',
     },
     backButton: {
@@ -33,14 +33,18 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         marginTop: 10,
         marginHorizontal: 15,
+        borderWidth: 1,
+        borderColor: theme.colors.surfaceVariant,
+        borderRadius: 15,
+        height: 52,
     },
     pickerWrapper: {
         padding: 10,
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
-        borderBottomWidth: 2,
-        borderBottomColor: theme.colors.surfaceVariant,
+        borderRightWidth: 1,
+        borderRightColor: theme.colors.surfaceVariant,
         width: 80,
         marginRight: 15,
 
@@ -51,9 +55,9 @@ const styles = StyleSheet.create({
     },
     phoneInput: {
         flex: 1,
-        padding: 10,
-        borderBottomWidth: 2,
-        borderBottomColor: theme.colors.surfaceVariant,
+        // padding: 10,
+        // borderBottomWidth: 2,
+        // borderBottomColor: theme.colors.surfaceVariant,
         fontSize: 16,
     },
     modalOverlay: {

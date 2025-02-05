@@ -5,13 +5,13 @@ const styles = StyleSheet.create({
     header: {
         flexDirection: 'row',
         height: 50,
-        backgroundColor: theme.colors.primary,
+        // backgroundColor: theme.colors.primary,
         alignItems: 'center',
     },
     backButton: {
         marginLeft: 10,
     },
-    headerTitile: {
+    headerTitle: {
         color: theme.colors.onPrimary,
         fontSize: theme.fonts.titleMedium.fontSize,
         marginLeft: 15,
@@ -83,3 +83,4 @@ const styles = StyleSheet.create({
 
 
 export default styles;
+

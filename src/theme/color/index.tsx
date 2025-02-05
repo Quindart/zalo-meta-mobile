@@ -1,8 +1,8 @@
 import { MD3Colors } from 'react-native-paper/lib/typescript/types';
 
 const colors: MD3Colors = {
-    primary: '#0078FF', // Xanh dương chủ đạo của Zalo
-    primaryContainer: '#E6F3FF', // Nền nhẹ hơn màu xanh chủ đạo
+    primary: '#1F80F7', // Xanh dương chủ đạo của Zalo
+    primaryContainer: '#02BBFC', // Nền nhẹ hơn màu xanh chủ đạo
     onPrimary: '#FFFFFF', // Màu chữ trên nền xanh
     onPrimaryContainer: '#0078FF', // Màu xanh trên nền container sáng
     secondary: '#F5A623', // Màu phụ (cam vàng nhẹ)

@@ -5,11 +5,15 @@ import styles from './css';
 import RootLayout from '@/layout/RootLayout';
 import { NavigationProp, ParamListBase, useNavigation } from '@react-navigation/native';
 import { ROUTING } from '@/utils/constant';
+import { LinearGradient } from 'expo-linear-gradient';
+import theme from '@/theme';
 
 const Register = () => {
   const navigation = useNavigation<NavigationProp<ParamListBase>>();
   const [selectedCode, setSelectedCode] = useState('+84'); // Mặc định là mã vùng Việt Nam
   const [modalVisible, setModalVisible] = useState(false); // Trạng thái hiển thị modal
+  const [phoneFocused, setPhoneFocused] = useState(false); // Trạng thái focus của ô số điện thoại
+
 
   // Danh sách mã vùng
   const countryCodes = [
@@ -22,16 +26,21 @@ const Register = () => {
 
   return (
     <RootLayout>
-      <View style={styles.header}>
+      <LinearGradient
+        colors={[theme.colors.primary, theme.colors.primaryContainer]}
+        start={{ x: 0, y: 0 }} // Bắt đầu từ bên trái
+        end={{ x: 1, y: 0 }}   // Kết thúc bên phải
+        style={styles.header}
+      >
         <TouchableOpacity onPress={() => navigation.navigate(ROUTING.HOME)} style={styles.backButton}>
           <AntDesign name="left" size={24} color="white" />
         </TouchableOpacity>
         <Text style={styles.headerTitile}>Tạo tài khoản</Text>
-      </View>
+      </LinearGradient>
 
       <View style={styles.container}>
         <Text style={styles.title}>Nhập số điện thoại</Text>
-        <View style={styles.phoneInputWrapper}>
+        <View style={[styles.phoneInputWrapper, { borderColor: phoneFocused ? theme.colors.primaryContainer : '#ccc' },]}>
           {/* Button to open the country code modal */}
           <TouchableOpacity onPress={() => setModalVisible(true)} style={styles.pickerWrapper}>
             <Text style={styles.selectedCode}>{selectedCode}</Text>
@@ -71,6 +80,8 @@ const Register = () => {
             style={styles.phoneInput}
             placeholder="Số điện thoại"
             keyboardType="phone-pad"
+            onFocus={() => setPhoneFocused(true)}
+            onBlur={() => setPhoneFocused(false)}
           />
         </View>
         <TouchableOpacity style={styles.button}>

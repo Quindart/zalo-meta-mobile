@@ -69,7 +69,7 @@ export const fontConfig: Record<string, MD3Type> = {
     },
     titleLarge: {
         ...baseFont,
-        fontSize: 40,
+        fontSize: 24,
         fontWeight: '700', // Trọng lượng cao nhất cho tiêu đề chính
         lineHeight: 28,
     },
