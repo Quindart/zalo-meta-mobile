@@ -9,12 +9,12 @@ const styles = StyleSheet.create({
     //     backgroundColor: theme.colors.background,
     // },
     text: {
-        fontSize: theme.fonts.titleLarge.fontSize,
+        fontSize: theme.fonts.displaySmall.fontSize,
         color: theme.colors.primary,
         fontWeight: theme.fonts.titleLarge.fontWeight,
     },
     wrapper: {
-        height: 650,
+        height: 600,
 
     },
     slide: {
@@ -26,8 +26,8 @@ const styles = StyleSheet.create({
     image: {
         width: 190,
         height: 190,
-        marginBottom: 50,
-        marginTop: 70,
+        marginBottom: 40,
+        marginTop: 60,
     },
     title: {
         fontSize: theme.fonts.titleMedium.fontSize,
@@ -53,7 +53,7 @@ const styles = StyleSheet.create({
         backgroundColor: theme.colors.primary,
         padding: 10,
         borderRadius: 20,
-        width: 180,
+        width: '90%',
         height: 50,
         justifyContent: 'center',
         alignItems: 'center',
@@ -67,7 +67,7 @@ const styles = StyleSheet.create({
         backgroundColor: theme.colors.surfaceVariant,
         padding: 10,
         borderRadius: 20,
-        width: 180,
+        width: '90%',
         height: 50,
         justifyContent: 'center',
         alignItems: 'center',

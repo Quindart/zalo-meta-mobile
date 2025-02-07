@@ -18,8 +18,8 @@ const styles = StyleSheet.create({
         backgroundColor: '#fff',
     },
     container: {
-        paddingHorizontal: 20,
-        paddingTop: 10,
+        // paddingHorizontal: 10,
+        paddingTop: 35,
     },
 });
 

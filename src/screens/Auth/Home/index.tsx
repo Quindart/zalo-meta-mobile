@@ -3,6 +3,8 @@ import { View, Text, StyleSheet, Image, TouchableOpacity } from 'react-native';
 import Swiper from 'react-native-swiper';
 import styles from './css'
 import RootLayout from '@/layout/RootLayout';
+import { NavigationProp, ParamListBase, useNavigation } from '@react-navigation/native';
+import { ROUTING } from '@/utils/constant';
 
 interface SlideData {
   title: string;
@@ -36,6 +38,8 @@ const slideDatas: SlideData[] = [
 
 
 const Home = () => {
+  const navigation = useNavigation<NavigationProp<ParamListBase>>();
+
   return (
     <RootLayout>
       <Swiper style={styles.wrapper} showsButtons={false}>
@@ -49,10 +53,10 @@ const Home = () => {
         ))}
       </Swiper>
       <View style={styles.viewButton}>
-        <TouchableOpacity style={styles.buttonLogin} onPress={() => { }}>
+        <TouchableOpacity style={styles.buttonLogin} onPress={() => { navigation.navigate(ROUTING.LOGIN) }}>
           <Text style={styles.textLogin}>Đăng nhập</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.buttonRegister} onPress={() => { }}>
+        <TouchableOpacity style={styles.buttonRegister} onPress={() => { navigation.navigate(ROUTING.REGISTER) }}>
           <Text style={styles.textRegister}>Tạo tài khoản</Text>
         </TouchableOpacity>
       </View>
