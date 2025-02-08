@@ -26,7 +26,7 @@ const Register = () => {
 
   return (
     <RootLayout>
-      <LinearGradient
+      {/* <LinearGradient
         colors={[theme.colors.primary, theme.colors.primaryContainer]}
         start={{ x: 0, y: 0 }} // Bắt đầu từ bên trái
         end={{ x: 1, y: 0 }}   // Kết thúc bên phải
@@ -36,7 +36,7 @@ const Register = () => {
           <AntDesign name="left" size={24} color="white" />
         </TouchableOpacity>
         <Text style={styles.headerTitile}>Tạo tài khoản</Text>
-      </LinearGradient>
+      </LinearGradient> */}
 
       <View style={styles.container}>
         <Text style={styles.title}>Nhập số điện thoại</Text>

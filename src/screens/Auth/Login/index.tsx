@@ -85,7 +85,7 @@ const Login = () => {
 
   return (
     <RootLayout>
-      <LinearGradient
+      {/* <LinearGradient
         colors={[theme.colors.primary, theme.colors.primaryContainer]}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 0 }}
@@ -95,7 +95,7 @@ const Login = () => {
           <AntDesign name="left" size={24} color="white" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Đăng nhập</Text>
-      </LinearGradient>
+      </LinearGradient> */}
 
       <View style={styles.containerText}>
         <Text style={styles.text}>Vui lòng nhập số điện thoại và mật khẩu để đăng nhập</Text>

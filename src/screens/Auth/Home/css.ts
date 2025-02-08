@@ -14,7 +14,7 @@ const styles = StyleSheet.create({
         fontWeight: theme.fonts.titleLarge.fontWeight,
     },
     wrapper: {
-        height: 600,
+        height: 600, // kích thước của slide show 
 
     },
     slide: {

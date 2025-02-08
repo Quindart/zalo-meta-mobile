@@ -1,7 +1,7 @@
 export const ROUTING = {
     HOME: 'home',
-    LOGIN: 'login',
-    REGISTER: 'register',
+    LOGIN: 'Đăng nhập',
+    REGISTER: 'Tạo tài khoản',
     SEARCH: 'search',
     MESSAGES_SCREEN: 'Tin nhắn',
     DIARY_SCREEN: 'Nhật ký',

@@ -1,3 +1,5 @@
+
+import { StatusBar } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import React from 'react';
@@ -17,53 +19,78 @@ import TabWithHeaderNavigator from '@/components/shared/TabWithHeaderNavigator';
 
 import { LinearGradient } from 'expo-linear-gradient';
 import theme from '@/theme';
+import { TouchableOpacity } from 'react-native';
+import { AntDesign } from '@expo/vector-icons';
+import { useNavigation } from '@react-navigation/native';
 
 const Stack = createNativeStackNavigator();
-
 
 function NavigationApp() {
   return (
     <NavigationContainer>
+      <StatusBar barStyle="light-content" backgroundColor='#0D7DC9' />
+
       <Stack.Navigator
         initialRouteName={ROUTING.TAB_WITH_HEADER_NAVIGATION}
         screenOptions={{
-          // headerBackground: () => (
-          //   <LinearGradient
-          //     colors={[theme.colors.primary, theme.colors.primaryContainer]}
-          //     start={{ x: 0, y: 0 }}
-          //     end={{ x: 1, y: 0 }}
-          //     style={{
-          //       position: 'absolute',
-          //       top: 0,
-          //       left: 0,
-          //       right: 0,
-          //       height: 40,
-          //     }}
-          //   />
-          // ),
-          headerStyle: {
-          },
-          headerTintColor: '#000',
-          headerTitleStyle: {
-            fontWeight: 'bold',
-          },
           headerShadowVisible: false,
         }}
       >
         <Stack.Screen
           name={ROUTING.HOME}
           component={HomeScreen}
-          options={{ headerShown: false }}
+          options={{
+            headerShown: false,
+          }}
         />
         <Stack.Screen
           name={ROUTING.LOGIN}
           component={LoginScreen}
-          options={{ headerShown: false }}
+          options={({ navigation }) => ({
+            headerShown: true,
+            headerBackground: () => (
+              <LinearGradient
+                colors={[theme.colors.primary, theme.colors.primaryContainer]}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
+                style={{
+                  flex: 1,
+                }}
+              />
+            ),
+            headerTintColor: "white", // Đổi màu của nút back và tiêu đề
+            headerTitleStyle: {
+              // fontWeight: "bold",
+            },
+            headerLeft: () => (
+              <TouchableOpacity onPress={() => navigation.goBack()} style={{ marginRight: 10 }}>
+                <AntDesign name="left" size={24} color="white" />
+              </TouchableOpacity>
+            ),
+          })}
         />
         <Stack.Screen
           name={ROUTING.REGISTER}
           component={RegisterScreen}
-          options={{ headerShown: false }}
+          options={({ navigation }) => ({
+            headerShown: true,
+            headerBackground: () => (
+              <LinearGradient
+                colors={[theme.colors.primary, theme.colors.primaryContainer]}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
+                style={{
+                  flex: 1,
+                }}
+              />
+            ),
+            headerTintColor: "white",
+            headerLeft: () => (
+              <TouchableOpacity onPress={() => navigation.goBack()} style={{ marginRight: 10 }}>
+                <AntDesign name="left" size={24} color="white" />
+              </TouchableOpacity>
+            ),
+          })}
         />
         <Stack.Screen
           name={ROUTING.TAB_WITH_HEADER_NAVIGATION}
@@ -95,10 +122,9 @@ function NavigationApp() {
           component={MessagesScreen}
           options={{ headerShown: false }}
         />
-
       </Stack.Navigator>
     </NavigationContainer>
   );
 }
 
-export default NavigationApp
+export default NavigationApp;

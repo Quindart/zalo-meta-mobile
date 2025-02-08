@@ -7,6 +7,7 @@ const styles = StyleSheet.create({
         height: 50,
         // backgroundColor: theme.colors.primary,
         alignItems: 'center',
+        // marginTop: 20,
     },
     backButton: {
         marginLeft: 10,
@@ -33,7 +34,7 @@ const styles = StyleSheet.create({
         backgroundColor: theme.colors.surface,
         marginHorizontal: 15,
         marginVertical: 10,
-        borderRadius: 5,
+        // borderRadius: 5,
         borderBottomWidth: 2,
         borderBottomColor: theme.colors.surfaceVariant,
         flexDirection: 'row',
