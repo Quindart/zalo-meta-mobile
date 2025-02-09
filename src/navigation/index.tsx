@@ -14,6 +14,7 @@ import DiscoveryScreen from '@/screens/DiscoveryScreen';
 import ProfileScreen from '@/screens/ProfileScreen';
 import DiaryScreen from '@/screens/DiaryScreen';
 import MessagesScreen from '@/screens/MessagesScreen';
+import SearchScreen from '@/screens/SearchScreen';
 
 import TabWithHeaderNavigator from '@/components/shared/TabWithHeaderNavigator';
 
@@ -120,6 +121,11 @@ function NavigationApp() {
         <Stack.Screen
           name={ROUTING.MESSAGES_SCREEN}
           component={MessagesScreen}
+          options={{ headerShown: false }}
+        />
+        <Stack.Screen
+          name={ROUTING.SEARCH_SCREEN}
+          component={SearchScreen}
           options={{ headerShown: false }}
         />
       </Stack.Navigator>

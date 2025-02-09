@@ -8,6 +8,7 @@ export const ROUTING = {
     PROFILE_SCREEN: 'Cá nhân',
     CONTACTS_SCREEN: 'Danh bạ',
     DISCOVERY_SCREEN: 'Khám phá',
+    SEARCH_SCREEN: 'Tìm kiếm',
 
     TAB_WITH_HEADER_NAVIGATION: 'TabWithHeaderNavigator',
 

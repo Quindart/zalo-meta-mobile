@@ -178,6 +178,8 @@ function TabWithHeaderNavigator() {
         }}
       />
     </Tab.Navigator>
+
+
   );
 }
 

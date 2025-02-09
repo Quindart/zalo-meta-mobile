@@ -1,47 +1,32 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { View, TextInput, TouchableOpacity } from 'react-native';
 import { AntDesign } from '@expo/vector-icons';
+import { useNavigation, NavigationProp, ParamListBase } from '@react-navigation/native';
+import { ROUTING } from '@/utils/constant';
 
-const SearchBar = ({ placeholder = 'Tìm kiếm...', onSearch }: { placeholder?: string, onSearch?: (text: string) => void }) => {
-  const [searchText, setSearchText] = useState('');
-
-  const handleClear = () => {
-    setSearchText('');
-    onSearch?.('');
-  };
+const SearchBar = ({ placeholder = 'Tìm kiếm...' }) => {
+  const navigation = useNavigation<NavigationProp<ParamListBase>>();
 
   return (
-    <View style={{
-      flexDirection: 'row',
-      alignItems: 'center',
-      // backgroundColor: 'yellow',
-      paddingHorizontal: 15,
-      height: 40,
-      width: '85%',
-    }}>
-      {/* Icon Kính Lúp */}
+    <TouchableOpacity
+      onPress={() => navigation.navigate(ROUTING.SEARCH_SCREEN)}
+      activeOpacity={1}
+      style={{
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingHorizontal: 15,
+        height: 40,
+        width: '85%',
+      }}
+    >
       <AntDesign name="search1" size={20} color="white" style={{ marginRight: 15 }} />
-
-      {/* Ô Nhập Tìm Kiếm */}
       <TextInput
         style={{ fontSize: 16, color: 'white', flex: 1 }}
         placeholder={placeholder}
-        // placeholder="Tìm kiếm"
         placeholderTextColor="white"
-        value={searchText}
-        onChangeText={(text) => {
-          setSearchText(text);
-          onSearch?.(text);
-        }}
+        editable={false} // Chặn nhập liệu, chỉ dùng để mở màn hình tìm kiếm
       />
-
-      {/* Nút Xóa (×) */}
-      {searchText.length > 0 && (
-        <TouchableOpacity onPress={handleClear}>
-          <AntDesign name="close" size={18} color="white" />
-        </TouchableOpacity>
-      )}
-    </View>
+    </TouchableOpacity>
   );
 };
 
