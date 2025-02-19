@@ -1,7 +1,7 @@
 import ContactsScreen from '@/screens/ContactsScreen';
 import DiaryScreen from '@/screens/DiaryScreen';
 import DiscoveryScreen from '@/screens/DiscoveryScreen';
-import MessagesScreen from '@/screens/MessagesScreen';
+import MessagesScreen from '@/screens/ChatListScreen';
 import ProfileScreen from '@/screens/ProfileScreen';
 
 import theme from '@/theme';
@@ -56,7 +56,7 @@ function TabWithHeaderNavigator() {
     >
       {/* ----------Tin nhắn----------- */}
       <Tab.Screen
-        name={ROUTING.MESSAGES_SCREEN}
+        name={ROUTING.CHAT_LIST_SCREEN}
         component={MessagesScreen}
         options={{
           headerLeft: () => (

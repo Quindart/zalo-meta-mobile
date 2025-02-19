@@ -3,12 +3,13 @@ export const ROUTING = {
     LOGIN: 'Đăng nhập',
     REGISTER: 'Tạo tài khoản',
     SEARCH: 'search',
-    MESSAGES_SCREEN: 'Tin nhắn',
+    CHAT_LIST_SCREEN: 'Tin nhắn',
     DIARY_SCREEN: 'Nhật ký',
     PROFILE_SCREEN: 'Cá nhân',
     CONTACTS_SCREEN: 'Danh bạ',
     DISCOVERY_SCREEN: 'Khám phá',
     SEARCH_SCREEN: 'Tìm kiếm',
+    CHAT_SCREEN: 'ChatScreen',
 
     TAB_WITH_HEADER_NAVIGATION: 'TabWithHeaderNavigator',
 

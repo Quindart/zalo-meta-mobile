@@ -13,8 +13,9 @@ import ContactsScreen from '@/screens/ContactsScreen';
 import DiscoveryScreen from '@/screens/DiscoveryScreen';
 import ProfileScreen from '@/screens/ProfileScreen';
 import DiaryScreen from '@/screens/DiaryScreen';
-import MessagesScreen from '@/screens/MessagesScreen';
-import SearchScreen from '@/screens/SearchScreen';
+import MessagesScreen from '@/screens/ChatListScreen';
+import SearchScreen from '@/screens/SearchScreen/HeaderSearch';
+import ChatScreen from '@/screens/ChatScreen';
 
 import TabWithHeaderNavigator from '@/components/shared/TabWithHeaderNavigator';
 
@@ -119,13 +120,18 @@ function NavigationApp() {
           options={{ headerShown: false }}
         />
         <Stack.Screen
-          name={ROUTING.MESSAGES_SCREEN}
+          name={ROUTING.CHAT_LIST_SCREEN}
           component={MessagesScreen}
           options={{ headerShown: false }}
         />
         <Stack.Screen
           name={ROUTING.SEARCH_SCREEN}
           component={SearchScreen}
+          options={{ headerShown: false }}
+        />
+        <Stack.Screen
+          name={ROUTING.CHAT_SCREEN}
+          component={ChatScreen}
           options={{ headerShown: false }}
         />
       </Stack.Navigator>

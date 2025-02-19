@@ -144,7 +144,7 @@ const Login = () => {
       </View>
 
       <View style={styles.container}>
-        <TouchableOpacity style={styles.button}>
+        <TouchableOpacity style={styles.button} onPress={() => navigation.navigate(ROUTING.TAB_WITH_HEADER_NAVIGATION)}>
           <Text style={styles.buttonText}>Đăng nhập</Text>
         </TouchableOpacity>
         <View style={styles.forgotPassword}>
