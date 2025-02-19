@@ -1,4 +1,5 @@
 import { StyleSheet } from 'react-native';
+import theme from '@/theme';
 
 export default StyleSheet.create({
     safeArea: {
@@ -9,22 +10,25 @@ export default StyleSheet.create({
         flex: 1,
     },
     header: {
-        backgroundColor: '#1E88E5',
-        paddingTop: 10,
-        paddingBottom: 10,
         flexDirection: 'row',
         alignItems: 'center',
         paddingHorizontal: 10,
+        height: 50,
     },
-    backButton: {
-        padding: 5,
+    iconButton: {
+        padding: 10,
     },
     headerTitle: {
         color: 'white',
-        fontSize: 18,
-        fontWeight: 'bold',
+        fontSize: 17,
+        fontWeight: '500',
         flex: 1,
-        marginLeft: 15,
+        marginLeft: 5,
+    },
+    headerIcons: {
+        flexDirection: 'row',
+        position: 'absolute',
+        right: 10,
     },
     messageList: {
         flex: 1,
@@ -47,7 +51,7 @@ export default StyleSheet.create({
         borderRadius: 10,
     },
     myMessageBubble: {
-        backgroundColor: '#DCF8C6',
+        backgroundColor: '#DBEBFF',
     },
     otherMessageBubble: {
         backgroundColor: '#FFF',

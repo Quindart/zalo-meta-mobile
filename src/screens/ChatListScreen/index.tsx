@@ -14,7 +14,6 @@ const ChatListScreen = ({ navigation }: { navigation: NavigationProp<ParamListBa
   const chatData = [
     {
       id: '1',
-      type: 'group',
       name: 'Nhóm 9 CNPM',
       avatar: 'https://haycafe.vn/wp-content/uploads/2021/11/Anh-avatar-dep-chat-lam-hinh-dai-dien.jpg',
       lastMessage: 'Nguyễn Tấn Minh: với mấy lượng đồ tôi thêm...',
@@ -22,11 +21,17 @@ const ChatListScreen = ({ navigation }: { navigation: NavigationProp<ParamListBa
     },
     {
       id: '2',
-      type: 'group',
-      name: 'Nhóm 9 CNPM',
+      name: 'DTH',
       avatar: 'https://haycafe.vn/wp-content/uploads/2021/11/Anh-avatar-dep-chat-lam-hinh-dai-dien.jpg',
       lastMessage: 'Nguyễn Tấn Minh: với mấy lượng đồ tôi thêm...',
-      time: '16 giờ',
+      time: '2 giờ',
+    },
+    {
+      id: '3',
+      name: 'Nguyễn Tấn Minh',
+      avatar: 'https://haycafe.vn/wp-content/uploads/2021/11/Anh-avatar-dep-chat-lam-hinh-dai-dien.jpg',
+      lastMessage: 'Nguyễn Tấn Minh: với mấy lượng đồ tôi thêm...',
+      time: '2 giờ',
     },
   ];
 

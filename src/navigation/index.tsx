@@ -134,6 +134,8 @@ function NavigationApp() {
           component={ChatScreen}
           options={{ headerShown: false }}
         />
+
+
       </Stack.Navigator>
     </NavigationContainer>
   );
