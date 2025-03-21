@@ -81,7 +81,7 @@ const Login = () => {
 
   const [passwordVisible, setPasswordVisible] = useState(false);
   const [phoneFocused, setPhoneFocused] = useState(false); // Trạng thái focus của ô số điện thoại
-  const [passwordFocused, setPasswordFocused] = useState(false); // Trạng thái focus của ô mật khẩu
+  const [passwordFocused, setPasswordFocused] = useState(false); // Trạng thái focus của ô mật khẩu ss
 
   return (
     <RootLayout>
