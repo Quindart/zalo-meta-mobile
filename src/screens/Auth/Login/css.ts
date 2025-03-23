@@ -42,6 +42,7 @@ const styles = StyleSheet.create({
     },
     input: {
         marginHorizontal: 10,
+        width: '90%',
     },
     passwordInput: {
         flex: 1,// chiếm hết không gian còn lại của cha
