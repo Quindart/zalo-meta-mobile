@@ -17,13 +17,13 @@ import MessagesScreen from '@/screens/ChatListScreen';
 import SearchScreen from '@/screens/SearchScreen/HeaderSearch';
 import ChatScreen from '@/screens/ChatScreen';
 
-import TabWithHeaderNavigator from '@/components/shared/TabWithHeaderNavigator';
 
 import { LinearGradient } from 'expo-linear-gradient';
 import theme from '@/theme';
 import { TouchableOpacity } from 'react-native';
 import { AntDesign } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
+import TabWithHeaderNavigator from '@/components/Shared/TabWithHeaderNavigator';
 
 const Stack = createNativeStackNavigator();
 
@@ -33,7 +33,7 @@ function NavigationApp() {
       <StatusBar barStyle="light-content" backgroundColor='#0D7DC9' />
 
       <Stack.Navigator
-        initialRouteName={ROUTING.REGISTER}
+        initialRouteName={ROUTING.HOME}
         screenOptions={{
           headerShadowVisible: false,
         }}
