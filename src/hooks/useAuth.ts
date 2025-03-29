@@ -18,21 +18,23 @@ const useAuth = () => {
         try {
 
             //Kiểm tra dữ liệu đầu vào 
-            if (!phone || !password) {
-                Alert.alert('Lỗi', 'Vui lòng nhập số điện thoại và mật khẩu. Không được để trống');
-                return;
-            }
-            if (phone.length !== 10) {
-                Alert.alert('Lỗi', 'Số điện thoại phải có 10 số');
-                return;
-            }
-            if (password.length < 8) {
-                Alert.alert('Lỗi', 'Mật khẩu phải có ít nhất 6 ký tự');
-                return;
-            }
+            // if (!phone || !password) {
+            //     Alert.alert('Lỗi', 'Vui lòng nhập số điện thoại và mật khẩu. Không được để trống');
+            //     return;
+            // }
+            // if (phone.length !== 10) {
+            //     Alert.alert('Lỗi', 'Số điện thoại phải có 10 số');
+            //     return;
+            // }
+            // if (password.length < 8) {
+            //     Alert.alert('Lỗi', 'Mật khẩu phải có ít nhất 6 ký tự');
+            //     return;
+            // }
 
             const loginResponse = await axiosConfig.post('/api/v1/auth/login', { phone, password });
             const jsonLoginResponse = toJSON(loginResponse);
+
+
 
             if (jsonLoginResponse.success) {
                 console.log('Đăng nhập thành công', loginResponse);
@@ -66,14 +68,36 @@ const useAuth = () => {
     };
 
     const logout = () => {
-        // Xóa token khỏi biến toàn cục
         clearTokens();
         dispatch(clearUser());
         navigation.navigate(ROUTING.HOME);
         Alert.alert('Đăng xuất', 'Bạn đã đăng xuất thành công');
     };
 
-    return { login, logout };
+
+
+    const register = async (userData: { phone: string; password: string; email: string; avatar: string; firstName: string; lastName: string; dateOfBirth: string }) => {
+        try {
+            const registerResponse = await axiosConfig.post('/api/v1/auth/register', userData);
+            const jsonRegisterResponse = toJSON(registerResponse);
+
+            console.log(userData);
+            if (jsonRegisterResponse.success) {
+                console.log('Đăng ký thành công', registerResponse);
+                navigation.navigate(ROUTING.HOME);
+                Alert.alert('Đăng ký thành công');
+            } else {
+                console.error('Đăng ký thất bại');
+                Alert.alert('Lỗi', 'Đăng ký thất bại');
+            }
+        } catch (error) {
+            console.error('Đăng ký thất bại', error);
+            Alert.alert('Lỗi', 'Có lỗi xảy ra khi đăng ký');
+        }
+    };
+
+
+    return { login, logout, register };
 };
 
 export default useAuth;

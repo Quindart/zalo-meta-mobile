@@ -89,8 +89,9 @@ const Login = () => {
   const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
 
-  const handleLogin = () => {
-    login(phone, password);
+  const handleLogin = async () => {
+    alert('Đăng nhập thành công');
+    await login(phone, password);
   }
 
   return (
@@ -156,7 +157,7 @@ const Login = () => {
       </View>
 
       <View style={styles.container}>
-        <TouchableOpacity style={styles.button} onPress={() => handleLogin()}>
+        <TouchableOpacity style={styles.button} onPress={handleLogin}>
           <Text style={styles.buttonText}>Đăng nhập</Text>
         </TouchableOpacity>
         <View style={styles.forgotPassword}>

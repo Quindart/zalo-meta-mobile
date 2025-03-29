@@ -52,6 +52,7 @@ const Login = () => {
     );
   }
 
+
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Thông tin người dùng</Text>
@@ -64,7 +65,7 @@ const Login = () => {
       <Text style={styles.info}>Email đã xác minh: {user.isVerifiedMail ? 'Có' : 'Không'}</Text>
       <Text style={styles.info}>Ngày tạo: {new Date(user.createdAt).toLocaleString()}</Text>
       <Text style={styles.info}>Cập nhật lần cuối: {new Date(user.updatedAt).toLocaleString()}</Text>
-      <Button title="Đăng xuất" onPress={logout} />
+      <Button title="Đăng xuất" onPress={() => logout()} />
     </View>
   );
 };

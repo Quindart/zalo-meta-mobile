@@ -1,7 +1,7 @@
 import axios, { AxiosInstance } from 'axios';
 import { getAccessToken, getRefreshToken, setTokens } from '@/utils/tokenManager';
 
-const API_URL = 'http://172.28.51.102:5000'; // Có thể thay bằng biến môi trường
+const API_URL = 'http://192.168.178.50:5000'; // Có thể thay bằng biến môi trường
 
 const axiosConfig: AxiosInstance = axios.create({
     baseURL: API_URL,

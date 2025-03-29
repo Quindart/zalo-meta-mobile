@@ -1,5 +1,6 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
 import { User } from '@/models/user';
+import { act } from 'react';
 
 // Đảm bảo type User khớp với dữ liệu từ API
 const initialState: { user: User | null } = {
@@ -17,6 +18,7 @@ const userSlice = createSlice({
         },
         clearUser(state) {
             state.user = null;
+            console.log('clearUser thành công', state.user);
         },
     },
 });
