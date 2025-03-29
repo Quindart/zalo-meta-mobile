@@ -3,12 +3,17 @@ import { StyleSheet, Text, View } from 'react-native';
 import { PaperProvider } from 'react-native-paper';
 import theme from '@/theme';
 
+import { store } from '@/redux/store';
+import { Provider } from 'react-redux';
+
 import NavigationApp from '@/navigation';
 export default function App() {
   return (
-    <PaperProvider theme={theme}>
-      <NavigationApp />
-    </PaperProvider>
+    <Provider store={store}>
+      <PaperProvider theme={theme}>
+        <NavigationApp />
+      </PaperProvider>
+    </Provider>
   );
 }
 

@@ -33,7 +33,7 @@ function NavigationApp() {
       <StatusBar barStyle="light-content" backgroundColor='#0D7DC9' />
 
       <Stack.Navigator
-        initialRouteName={ROUTING.TAB_WITH_HEADER_NAVIGATION}
+        initialRouteName={ROUTING.REGISTER}
         screenOptions={{
           headerShadowVisible: false,
         }}
@@ -57,13 +57,12 @@ function NavigationApp() {
                 end={{ x: 1, y: 0 }}
                 style={{
                   flex: 1,
+                  // width: '100%',
+                  // height: '80%',
                 }}
               />
             ),
-            headerTintColor: "white", // Đổi màu của nút back và tiêu đề
-            headerTitleStyle: {
-              // fontWeight: "bold",
-            },
+            headerTintColor: "white",
             headerLeft: () => (
               <TouchableOpacity onPress={() => navigation.goBack()} style={{ marginRight: 10 }}>
                 <AntDesign name="left" size={24} color="white" />
@@ -83,6 +82,7 @@ function NavigationApp() {
                 end={{ x: 1, y: 0 }}
                 style={{
                   flex: 1,
+
                 }}
               />
             ),
