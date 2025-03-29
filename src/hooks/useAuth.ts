@@ -5,6 +5,7 @@ import { setMe, clearUser } from '@/redux/userSlice';
 import { NavigationProp, ParamListBase, useNavigation } from '@react-navigation/native';
 import { ROUTING } from '@/utils/constant';
 import { setTokens, clearTokens } from '@/utils/tokenManager'; // Import từ tokenManager
+import { login, register } from '@/services/auth.service';
 
 const useAuth = () => {
     const navigation = useNavigation<NavigationProp<ParamListBase>>();
@@ -14,9 +15,8 @@ const useAuth = () => {
         return JSON.parse(JSON.stringify(response));
     };
 
-    const login = async (phone: string, password: string) => {
+    const handleLogin = async (phone: string, password: string) => {
         try {
-
             //Kiểm tra dữ liệu đầu vào 
             // if (!phone || !password) {
             //     Alert.alert('Lỗi', 'Vui lòng nhập số điện thoại và mật khẩu. Không được để trống');
@@ -30,16 +30,10 @@ const useAuth = () => {
             //     Alert.alert('Lỗi', 'Mật khẩu phải có ít nhất 6 ký tự');
             //     return;
             // }
-
-            const loginResponse = await axiosConfig.post('/api/v1/auth/login', { phone, password });
+            const loginResponse = await login({ phone, password });
             const jsonLoginResponse = toJSON(loginResponse);
-
-
-
             if (jsonLoginResponse.success) {
                 console.log('Đăng nhập thành công', loginResponse);
-
-                // Lưu token vào biến toàn cục thay vì AsyncStorage
                 setTokens(
                     loginResponse.data.tokens.accessToken,
                     loginResponse.data.tokens.refreshToken
@@ -54,34 +48,28 @@ const useAuth = () => {
                     navigation.navigate(ROUTING.TAB_WITH_HEADER_NAVIGATION);
                     Alert.alert('Đăng nhập thành công');
                 } else {
-                    console.error('Lấy thông tin user vào Redux thất bại');
                     Alert.alert('Lỗi', 'Không thể lấy thông tin người dùng');
                 }
             } else {
-                console.error('Đăng nhập thất bại');
                 Alert.alert('Lỗi', 'Đăng nhập thất bại');
             }
         } catch (error) {
-            console.error('Đăng nhập thất bại', error);
             Alert.alert('Lỗi', 'Có lỗi xảy ra khi đăng nhập');
         }
     };
 
-    const logout = () => {
+    const handleLogout = () => {
         clearTokens();
         dispatch(clearUser());
         navigation.navigate(ROUTING.HOME);
         Alert.alert('Đăng xuất', 'Bạn đã đăng xuất thành công');
     };
 
-
-
-    const register = async (userData: { phone: string; password: string; email: string; avatar: string; firstName: string; lastName: string; dateOfBirth: string }) => {
+    const handleRegister = async (userData: { phone: string; password: string; email: string; avatar: string; firstName: string; lastName: string; dateOfBirth: string }) => {
         try {
-            const registerResponse = await axiosConfig.post('/api/v1/auth/register', userData);
+            const registerResponse = await register(userData)
             const jsonRegisterResponse = toJSON(registerResponse);
 
-            console.log(userData);
             if (jsonRegisterResponse.success) {
                 console.log('Đăng ký thành công', registerResponse);
                 navigation.navigate(ROUTING.HOME);
@@ -97,7 +85,7 @@ const useAuth = () => {
     };
 
 
-    return { login, logout, register };
+    return { handleLogin, handleLogout, handleRegister };
 };
 
 export default useAuth;

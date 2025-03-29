@@ -6,18 +6,18 @@ const baseFont: Required<
 > = {
     fontFamily: Platform.select({
         web: 'Roboto, "Helvetica Neue", Helvetica, Arial, sans-serif',
-        ios: 'San Francisco', // Font hệ thống trên iOS
-        default: 'Roboto',    // Font mặc định trên Android
+        ios: 'San Francisco', 
+        default: 'Roboto',   
     }),
-    fontWeight: '400', // Trọng lượng trung bình
-    letterSpacing: 0.2, // Khoảng cách ký tự
-    lineHeight: 14,     // Chiều cao dòng cơ bản
+    fontWeight: '400', 
+    letterSpacing: 0.2, 
+    lineHeight: 14,     
 };
 
 export const fontConfig: Record<string, MD3Type> = {
     default: {
         ...baseFont,
-        fontSize: 12, // Dùng cho văn bản chung
+        fontSize: 12, 
     },
     bodySmall: {
         ...baseFont,
@@ -40,7 +40,7 @@ export const fontConfig: Record<string, MD3Type> = {
     labelSmall: {
         ...baseFont,
         fontSize: 12,
-        fontWeight: '500', // Nhấn mạnh hơn cho nhãn
+        fontWeight: '500', 
         lineHeight: 16,
     },
     labelMedium: {
@@ -58,7 +58,7 @@ export const fontConfig: Record<string, MD3Type> = {
     titleSmall: {
         ...baseFont,
         fontSize: 14,
-        fontWeight: '600', // Tiêu đề cần nổi bật hơn
+        fontWeight: '600', 
         lineHeight: 20,
     },
     titleMedium: {
@@ -70,7 +70,7 @@ export const fontConfig: Record<string, MD3Type> = {
     titleLarge: {
         ...baseFont,
         fontSize: 24,
-        fontWeight: '700', // Trọng lượng cao nhất cho tiêu đề chính
+        fontWeight: '700', 
         lineHeight: 28,
     },
     caption: {
@@ -83,7 +83,7 @@ export const fontConfig: Record<string, MD3Type> = {
         ...baseFont,
         fontSize: 14,
         fontWeight: '500',
-        letterSpacing: 0.5, // Nổi bật hơn cho văn bản nút
+        letterSpacing: 0.5, 
         lineHeight: 20,
     },
 };

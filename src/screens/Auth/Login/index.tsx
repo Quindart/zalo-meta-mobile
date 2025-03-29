@@ -1,113 +1,28 @@
-// import React, { useState } from 'react';
-// import { View, Text, StyleSheet, Image, TouchableOpacity, TextInput } from 'react-native';
-// import AntDesign from '@expo/vector-icons/AntDesign';
-// import styles from './css';
-// import RootLayout from '@/layout/RootLayout';
-// import { NavigationProp, ParamListBase, useNavigation } from '@react-navigation/native';
-// import { ROUTING } from '@/utils/constant';
-// import { LinearGradient } from 'expo-linear-gradient';
-// import theme from '@/theme';
-
-// const Login = () => {
-//   const navigation = useNavigation<NavigationProp<ParamListBase>>();
-//   const [passwordVisible, setPasswordVisible] = useState(false); // Trạng thái hiển thị mật khẩu
-
-//   return (
-//     <RootLayout>
-//       <LinearGradient
-//         colors={[theme.colors.primary, theme.colors.primaryContainer]}
-//         start={{ x: 0, y: 0 }} // Bắt đầu từ bên trái
-//         end={{ x: 1, y: 0 }}   // Kết thúc bên phải
-//         style={styles.header}
-//       >
-//         <TouchableOpacity onPress={() => navigation.navigate(ROUTING.HOME)} style={styles.backButton}>
-//           <AntDesign name="left" size={24} color="white" />
-//         </TouchableOpacity>
-//         <Text style={styles.headerTitle}>Đăng nhập</Text>
-//       </LinearGradient>
-
-//       <View style={styles.containerText}>
-//         <Text style={styles.text}>Vui lòng nhập số điện thoại và mật khẩu để đăng nhập</Text>
-//       </View>
-
-//       <View style={styles.inputContainer}>
-//         <TextInput style={styles.input} placeholder="Số điện thoại" keyboardType="phone-pad" />
-//       </View>
-//       <View style={styles.inputContainer}>
-//         <TextInput
-//           style={[styles.input, styles.passwordInput]}
-//           placeholder="Mật khẩu"
-//           secureTextEntry={!passwordVisible} // Kiểm soát hiển thị mật khẩu
-//         />
-//         <TouchableOpacity
-//           onPress={() => setPasswordVisible(!passwordVisible)} // Đổi trạng thái hiển thị mật khẩu
-//           style={styles.eyeButton}
-//         >
-//           <AntDesign
-//             name={passwordVisible ? "eye" : "eyeo"} // Biểu tượng mắt
-//             size={24}
-//             color="gray"
-//           />
-//         </TouchableOpacity>
-//       </View>
-
-//       <View style={styles.container}>
-//         <TouchableOpacity style={styles.button}>
-//           <Text style={styles.buttonText}>Đăng nhập</Text>
-//         </TouchableOpacity>
-//         <View style={styles.forgotPassword}>
-//           <Text style={styles.forgotPasswordText}>Quên mật khẩu?</Text>
-//         </View>
-//       </View>
-//     </RootLayout>
-//   );
-// };
-
-// export default Login;
 
 
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TextInput, TouchableOpacity } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity } from 'react-native';
 import AntDesign from '@expo/vector-icons/AntDesign';
 import styles from './css';
 import RootLayout from '@/layout/RootLayout';
-import { NavigationProp, ParamListBase, useNavigation } from '@react-navigation/native';
-import { ROUTING } from '@/utils/constant';
-import { LinearGradient } from 'expo-linear-gradient';
 import theme from '@/theme';
 import useAuth from '@/hooks/useAuth';
 
 const Login = () => {
-  const navigation = useNavigation<NavigationProp<ParamListBase>>();
-
-  const { login } = useAuth();
+  const { handleLogin } = useAuth();
 
   const [passwordVisible, setPasswordVisible] = useState(false);
-  const [phoneFocused, setPhoneFocused] = useState(false); // Trạng thái focus của ô số điện thoại
-  const [passwordFocused, setPasswordFocused] = useState(false); // Trạng thái focus của ô mật khẩu ss
+  const [phoneFocused, setPhoneFocused] = useState(false); 
+  const [passwordFocused, setPasswordFocused] = useState(false); 
 
   const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
 
-  const handleLogin = async () => {
-    alert('Đăng nhập thành công');
-    await login(phone, password);
+  const onSubmit = async () => {
+    await handleLogin(phone, password);
   }
-
   return (
     <RootLayout>
-      {/* <LinearGradient
-        colors={[theme.colors.primary, theme.colors.primaryContainer]}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 0 }}
-        style={styles.header}
-      >
-        <TouchableOpacity onPress={() => navigation.navigate(ROUTING.HOME)} style={styles.backButton}>
-          <AntDesign name="left" size={24} color="white" />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Đăng nhập</Text>
-      </LinearGradient> */}
-
       <View style={styles.containerText}>
         <Text style={styles.text}>Vui lòng nhập số điện thoại và mật khẩu để đăng nhập</Text>
       </View>
@@ -116,7 +31,7 @@ const Login = () => {
       <View
         style={[
           styles.inputContainer,
-          { borderColor: phoneFocused ? theme.colors.primaryContainer : '#ccc' }, // Đổi màu viền khi focus
+          { borderColor: phoneFocused ? theme.colors.primaryContainer : '#ccc' }, 
         ]}
       >
         <TextInput
@@ -133,7 +48,7 @@ const Login = () => {
       <View
         style={[
           styles.inputContainer,
-          { borderColor: passwordFocused ? theme.colors.primaryContainer : '#ccc' }, // Đổi màu viền khi focus
+          { borderColor: passwordFocused ? theme.colors.primaryContainer : '#ccc' }, 
         ]}
       >
         <TextInput
@@ -157,7 +72,7 @@ const Login = () => {
       </View>
 
       <View style={styles.container}>
-        <TouchableOpacity style={styles.button} onPress={handleLogin}>
+        <TouchableOpacity style={styles.button} onPress={onSubmit}>
           <Text style={styles.buttonText}>Đăng nhập</Text>
         </TouchableOpacity>
         <View style={styles.forgotPassword}>

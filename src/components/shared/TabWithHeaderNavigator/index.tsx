@@ -13,6 +13,7 @@ import { AntDesign, FontAwesome, MaterialCommunityIcons, SimpleLineIcons, Feathe
 import { LinearGradient } from 'expo-linear-gradient';
 import SearchBar from '@/components/ui/SearchBar';
 import QR_Scan from '@/components/ui/QR_Scan';
+import React from 'react';
 
 const Tab = createBottomTabNavigator();
 
@@ -75,7 +76,7 @@ function TabWithHeaderNavigator() {
           tabBarIcon: ({ color }) => (
             <AntDesign name="message1" size={24} color={color} />
           ),
-          tabBarLabelStyle: ({ color }) => ({ color, }),
+          tabBarLabelStyle: ({ color }) => ({ color }),
         }}
       />
 
