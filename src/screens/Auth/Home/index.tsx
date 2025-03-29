@@ -42,6 +42,7 @@ const Home = () => {
 
   return (
     <RootLayout>
+
       <Swiper style={styles.wrapper} showsButtons={false}>
         {slideDatas.map((slide, index) => (
           <View key={index} style={styles.slide}>

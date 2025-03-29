@@ -75,13 +75,24 @@ import { NavigationProp, ParamListBase, useNavigation } from '@react-navigation/
 import { ROUTING } from '@/utils/constant';
 import { LinearGradient } from 'expo-linear-gradient';
 import theme from '@/theme';
+import useAuth from '@/hooks/useAuth';
 
 const Login = () => {
   const navigation = useNavigation<NavigationProp<ParamListBase>>();
 
+  const { login } = useAuth();
+
   const [passwordVisible, setPasswordVisible] = useState(false);
   const [phoneFocused, setPhoneFocused] = useState(false); // Trạng thái focus của ô số điện thoại
-  const [passwordFocused, setPasswordFocused] = useState(false); // Trạng thái focus của ô mật khẩu
+  const [passwordFocused, setPasswordFocused] = useState(false); // Trạng thái focus của ô mật khẩu ss
+
+  const [phone, setPhone] = useState('');
+  const [password, setPassword] = useState('');
+
+  const handleLogin = async () => {
+    alert('Đăng nhập thành công');
+    await login(phone, password);
+  }
 
   return (
     <RootLayout>
@@ -114,6 +125,7 @@ const Login = () => {
           keyboardType="phone-pad"
           onFocus={() => setPhoneFocused(true)}
           onBlur={() => setPhoneFocused(false)}
+          onChangeText={setPhone}
         />
       </View>
 
@@ -130,6 +142,7 @@ const Login = () => {
           secureTextEntry={!passwordVisible}
           onFocus={() => setPasswordFocused(true)}
           onBlur={() => setPasswordFocused(false)}
+          onChangeText={setPassword}
         />
         <TouchableOpacity
           onPress={() => setPasswordVisible(!passwordVisible)}
@@ -144,7 +157,7 @@ const Login = () => {
       </View>
 
       <View style={styles.container}>
-        <TouchableOpacity style={styles.button} onPress={() => navigation.navigate(ROUTING.TAB_WITH_HEADER_NAVIGATION)}>
+        <TouchableOpacity style={styles.button} onPress={handleLogin}>
           <Text style={styles.buttonText}>Đăng nhập</Text>
         </TouchableOpacity>
         <View style={styles.forgotPassword}>

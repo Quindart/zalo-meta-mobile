@@ -60,6 +60,17 @@ const styles = StyleSheet.create({
         // borderBottomColor: theme.colors.surfaceVariant,
         fontSize: 16,
     },
+    input: {
+        width: '90%',
+        height: 52,
+        borderRadius: 15,
+        // backgroundColor: theme.colors.surfaceVariant,
+        borderWidth: 1,
+        borderColor: theme.colors.surfaceVariant,
+        paddingHorizontal: 15,
+        marginTop: 10,
+
+    },
     modalOverlay: {
         flex: 1,
         justifyContent: 'center',
@@ -95,6 +106,35 @@ const styles = StyleSheet.create({
     buttonText: {
         color: theme.colors.onPrimary,
     },
+
+    datePickerContainer: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        width: '90%',
+        height: 52,
+    },
+    dateOfBirthText: {
+        fontSize: 16,
+        marginRight: 10,
+    },
+    buttonDate: {
+        borderWidth: 1,
+        borderColor: theme.colors.surfaceVariant,
+        padding: 10,
+        width: '90%',
+        height: 50,
+        borderRadius: 15,
+        justifyContent: 'center',
+        // alignItems: 'center',
+        marginTop: 10,
+
+    },
+    titleDate: {
+        fontSize: 16,
+        marginRight: 10,
+        color: theme.colors.onSurfaceVariant,
+    }
 });
 
 export default styles;
