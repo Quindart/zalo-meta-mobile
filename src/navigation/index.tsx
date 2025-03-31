@@ -23,9 +23,10 @@ import theme from '@/theme';
 import { TouchableOpacity } from 'react-native';
 import { AntDesign } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
-import TabWithHeaderNavigator from '@/components/Shared/TabWithHeaderNavigator';
+import TabWithHeaderNavigator from '@/components/shared/TabWithHeaderNavigator';
+import { RootStackParamList } from './type';
 
-const Stack = createNativeStackNavigator();
+const Stack = createNativeStackNavigator<RootStackParamList>();
 
 function NavigationApp() {
   return (

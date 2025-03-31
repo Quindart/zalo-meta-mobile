@@ -1,9 +1,12 @@
 import { getMessages } from "@/services/message.service";
 import SocketService from "@/services/Socket.service";
 import SOCKET_EVENTS from "@/types/socket.event.enum";
-import { useEffect, useState } from "react";
-
+import { useEffect, useState, useCallback } from "react";
+import { getChatList } from "@/services/chat.service"
+import { setChatList } from "@/redux/chatSlice";
+import { useDispatch } from 'react-redux';
 export const useChat = () => {
+    const dispatch = useDispatch();
     const [messages, setMessages] = useState<any[]>([]);
     const [loading, setLoading] = useState<boolean>(false);
     const loadMessages = async (receiverId: string, senderId: string) => {
@@ -55,5 +58,10 @@ export const useChat = () => {
         };
         SocketService.getSocket().emit(SOCKET_EVENTS.MESSAGE.SEND, messageData);
     };
-    return { messages, sendMessage, loadMessages, loading };
+
+    const getChatListService = useCallback(async () => {
+        const result: any = await getChatList();
+        dispatch(setChatList(result.chats));
+    }, [dispatch]);
+    return { messages, sendMessage, loadMessages, loading, getChatListService };
 };
