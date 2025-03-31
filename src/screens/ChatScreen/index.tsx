@@ -16,11 +16,15 @@ import styles from './css';
 import { RouteProp, useNavigation } from '@react-navigation/native';
 import { LinearGradient } from 'expo-linear-gradient';
 import theme from '@/theme';
+import { RootStackParamList } from '@/navigation/type';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { ROUTING } from '@/utils/constant';
 
-type ChatScreenRouteProp = RouteProp<{ ChatScreen: { item: any } }, 'ChatScreen'>;
+type ChatScreenRouteProp = RouteProp<RootStackParamList, typeof ROUTING.CHAT_SCREEN>;
+type ChatScreenNavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
 const ChatScreen = ({ route }: { route: ChatScreenRouteProp }) => {
-  const { item } = route.params;
+  const { item } = route.params || { item: {} };
   const navigation = useNavigation();
   const [message, setMessage] = useState('');
   const [messages, setMessages] = useState([
