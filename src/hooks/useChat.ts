@@ -15,7 +15,7 @@ export const useChat = () => {
         try {
             const response: any = await getMessages(receiverId, senderId);
             if (response) {
-                setMessages(response);
+                setMessages(response.messages);
             } else {
                 setMessages([]);
             }

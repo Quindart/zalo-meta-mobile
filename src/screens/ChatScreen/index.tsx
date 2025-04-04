@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import {
   View,
   Text,
@@ -19,6 +19,9 @@ import theme from '@/theme';
 import { RootStackParamList } from '@/navigation/type';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { ROUTING } from '@/utils/constant';
+import { useChat } from '@/hooks/useChat'
+import { useSelector } from 'react-redux';
+import { RootState } from '@/redux/store';
 
 type ChatScreenRouteProp = RouteProp<RootStackParamList, typeof ROUTING.CHAT_SCREEN>;
 type ChatScreenNavigationProp = NativeStackNavigationProp<RootStackParamList>;
@@ -26,118 +29,93 @@ type ChatScreenNavigationProp = NativeStackNavigationProp<RootStackParamList>;
 const ChatScreen = ({ route }: { route: ChatScreenRouteProp }) => {
   const { item } = route.params || { item: {} };
   const navigation = useNavigation();
+  const sender = useSelector((state: RootState) => state.user.user);
+  const receiver = route.params?.item.secondUser;
+  const { sendMessage, loadMessages, loading, messages } = useChat();
   const [message, setMessage] = useState('');
-  const [messages, setMessages] = useState([
-    {
-      id: '1',
-      sender: 'other',
-      text: 'Hello, how are you?',
-      time: '17:23',
-    },
-    {
-      id: '2',
-      sender: 'me',
-      text: 'I am good, thank you!',
-      time: '17:24',
-    },
-    {
-      id: '3',
-      sender: 'me',
-      text: 'What about you?',
-      time: '17:25',
-    },
-    {
-      id: '4',
-      sender: 'other',
-      text: 'I am doing well, just busy with work.',
-      time: '17:26',
-    },
-    {
-      id: '5',
-      sender: 'me',
-      text: 'That\'s good to hear.',
-      time: '17:27',
-    },
-    {
-      id: '6',
-      sender: 'other',
-      text: 'Yes, it is. Have you finished your project?',
-      time: '17:28',
-    },
-    {
-      id: '7',
-      sender: 'me',
-      text: 'Almost, just a few more things to wrap up.',
-      time: '17:29',
-    },
-    {
-      id: '8',
-      sender: 'other',
-      text: 'Great! Let me know if you need any help.',
-      time: '17:30',
-    },
-    {
-      id: '9',
-      sender: 'me',
-      text: 'Sure, thanks!',
-      time: '17:31',
-    },
-    {
-      id: '10',
-      sender: 'other',
-      text: 'No problem. Talk to you later.',
-      time: '17:32',
-    },
-    {
-      id: '11',
-      sender: 'me',
-      text: 'Bye!',
-      time: '17:33',
-    },
-  ]);
-
-  // useRef lưu trữ giá trị của một biến trong suốt quá trình render của component.
   const flatListRef = useRef<FlatList>(null);
+  console.log("check render");
 
+  // Load messages only when sender or receiver IDs change
+  useEffect(() => {
+    const fetchMessage = async () => {
+      if (sender?._id && receiver?._id) {
+        console.log("check fetch");
+        await loadMessages(receiver._id, sender._id);
+      }
+    };
+    fetchMessage();
+  }, [sender?._id, receiver?._id]);
 
-  const renderMessageItem = ({ item }: { item: any }) => {
-    const isMyMessage = item.sender === 'me';
-
-    return (
-      <View style={[
-        styles.messageRow,
-        isMyMessage ? styles.myMessageRow : styles.otherMessageRow
-      ]}>
-        {!isMyMessage && item.avatar && (
-          <Image source={{ uri: item.avatar }} style={styles.messageAvatar} />
-        )}
-
-        <View style={[
-          styles.messageBubble,
-          isMyMessage ? styles.myMessageBubble : styles.otherMessageBubble
-        ]}>
-          <Text style={styles.messageText}>{item.text}</Text>
-          <Text style={styles.messageTime}>{item.time}</Text>
-        </View>
-      </View>
-    );
-  };
-
-  const handleSendMessage = () => {
+  const handleSendMessage = useCallback(async () => {
     if (message.trim()) {
-      const newMessage = {
-        id: (messages.length + 1).toString(),
-        sender: 'me',
-        text: message,
-        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-      };
-      setMessages([...messages, newMessage]);
+      if (sender && receiver) {
+        await sendMessage(receiver._id, message, sender._id);
+      }
       setMessage('');
       setTimeout(() => {
         flatListRef.current?.scrollToEnd({ animated: true });
       }, 100);
     }
-  };
+  }, [message, sender, receiver, sendMessage]);
+
+  const MessageItem = React.memo(
+    ({ item }: { item: any }) => {
+      const isMyMessage = useMemo(() => {
+        // If senderId is an object with _id
+        if (item.senderId && typeof item.senderId === 'object' && item.senderId._id) {
+          return item.senderId._id === sender?._id;
+        }
+        // If senderId is a string
+        else if (typeof item.senderId === 'string') {
+          return item.senderId === sender?._id;
+        }
+        return false;
+      }, [item.senderId, sender?._id]);
+
+      const receiverPerson = item.receiverId;
+
+      return (
+        <View style={[
+          styles.messageRow,
+          isMyMessage ? styles.myMessageRow : styles.otherMessageRow
+        ]}>
+          {!isMyMessage && (
+            <Image
+              source={{ uri: receiver?.avatar || receiverPerson?.avatar || 'https://via.placeholder.com/40' }}
+              style={styles.messageAvatar}
+              defaultSource={require('../../../assets/user_default.jpg')}
+            />
+          )}
+
+          <View style={[
+            styles.messageBubble,
+            isMyMessage ? styles.myMessageBubble : styles.otherMessageBubble
+          ]}>
+            <Text style={styles.messageText}>{item.content}</Text>
+            <Text style={styles.messageTime}>
+              {new Date(item.timestamp).toLocaleTimeString()}
+            </Text>
+          </View>
+        </View>
+      );
+    },
+    // Thêm hàm so sánh để quyết định khi nào re-render
+    (prevProps, nextProps) => {
+      // Chỉ render lại khi nội dung hoặc trạng thái thay đổi
+      return (
+        prevProps.item._id === nextProps.item._id &&
+        prevProps.item.content === nextProps.item.content &&
+        prevProps.item.status === nextProps.item.status &&
+        prevProps.item.timestamp === nextProps.item.timestamp
+      );
+    }
+  );
+
+  // Memoize scroll to end callback
+  const scrollToEnd = useCallback(() => {
+    flatListRef.current?.scrollToEnd({ animated: true });
+  }, []);
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -170,10 +148,13 @@ const ChatScreen = ({ route }: { route: ChatScreenRouteProp }) => {
         <FlatList
           ref={flatListRef}
           data={messages}
-          renderItem={renderMessageItem}
-          keyExtractor={item => item.id}
-          style={styles.messageList}
-          onContentSizeChange={() => flatListRef.current?.scrollToEnd({ animated: true })}
+          renderItem={({ item }) => <MessageItem item={item} />}
+          keyExtractor={(item, index) => item._id ? item._id.toString() : `msg-${index}-${Date.now()}`} style={styles.messageList}
+          onContentSizeChange={scrollToEnd}
+          onLayout={scrollToEnd}
+          initialNumToRender={15}
+          maxToRenderPerBatch={10}
+          windowSize={10}
         />
 
         <View style={styles.inputContainer}>
@@ -193,4 +174,4 @@ const ChatScreen = ({ route }: { route: ChatScreenRouteProp }) => {
   );
 };
 
-export default ChatScreen;
+export default React.memo(ChatScreen);

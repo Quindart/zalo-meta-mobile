@@ -12,8 +12,8 @@ const Login = () => {
   const { handleLogin } = useAuth();
 
   const [passwordVisible, setPasswordVisible] = useState(false);
-  const [phoneFocused, setPhoneFocused] = useState(false); 
-  const [passwordFocused, setPasswordFocused] = useState(false); 
+  const [phoneFocused, setPhoneFocused] = useState(false);
+  const [passwordFocused, setPasswordFocused] = useState(false);
 
   const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
@@ -31,7 +31,7 @@ const Login = () => {
       <View
         style={[
           styles.inputContainer,
-          { borderColor: phoneFocused ? theme.colors.primaryContainer : '#ccc' }, 
+          { borderColor: phoneFocused ? theme.colors.primaryContainer : '#ccc' },
         ]}
       >
         <TextInput
@@ -48,7 +48,7 @@ const Login = () => {
       <View
         style={[
           styles.inputContainer,
-          { borderColor: passwordFocused ? theme.colors.primaryContainer : '#ccc' }, 
+          { borderColor: passwordFocused ? theme.colors.primaryContainer : '#ccc' },
         ]}
       >
         <TextInput
