@@ -25,7 +25,6 @@ const ChatListScreen = ({ navigation }: { navigation: NavigationProp<ParamListBa
       setChatData(chatFromRedux);
     }
   }, [chatFromRedux]);
-  console.log("check chat data: ", chatData);
 
   const renderChatItem = ({ item }: { item: any }) => (
     <TouchableOpacity
@@ -33,11 +32,18 @@ const ChatListScreen = ({ navigation }: { navigation: NavigationProp<ParamListBa
       onPress={() => navigation.navigate(ROUTING.CHAT_SCREEN, { item })}
     >
       <View style={styles.avatarContainer}>
-        <Image source={{ uri: item.secondUser.avatar }} style={styles.avatar} />
+        <Image
+          source={{
+            uri: item.secondUser?.avatar || 'https://via.placeholder.com/150'
+          }}
+          style={styles.avatar}
+        />
       </View>
       <View style={styles.chatInfo}>
         <View style={styles.chatHeader}>
-          <Text style={styles.chatName} numberOfLines={1}>{item.secondUser.firstName} {item.secondUser.lastName}</Text>
+          <Text style={styles.chatName} numberOfLines={1}>
+            {item.secondUser ? `${item.secondUser.firstName} ${item.secondUser.lastName}` : 'Unknown User'}
+          </Text>
           <Text style={styles.chatTime}>
             {(() => {
               const now = new Date();
