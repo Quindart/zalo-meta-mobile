@@ -16,6 +16,8 @@ import DiaryScreen from '@/screens/DiaryScreen';
 import MessagesScreen from '@/screens/ChatListScreen';
 import SearchScreen from '@/screens/SearchScreen/HeaderSearch';
 import ChatScreen from '@/screens/ChatScreen';
+import Profile from '@/screens/ProfileScreen/profile';
+
 
 
 import { LinearGradient } from 'expo-linear-gradient';
@@ -34,7 +36,7 @@ function NavigationApp() {
       <StatusBar barStyle="light-content" backgroundColor='#0D7DC9' />
 
       <Stack.Navigator
-        initialRouteName={ROUTING.HOME}
+        initialRouteName={ROUTING.TAB_WITH_HEADER_NAVIGATION}
         screenOptions={{
           headerShadowVisible: false,
         }}
@@ -133,6 +135,11 @@ function NavigationApp() {
         <Stack.Screen
           name={ROUTING.CHAT_SCREEN}
           component={ChatScreen}
+          options={{ headerShown: false }}
+        />
+        <Stack.Screen
+          name={ROUTING.PROFILE}
+          component={Profile}
           options={{ headerShown: false }}
         />
 

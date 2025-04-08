@@ -10,6 +10,7 @@ export const ROUTING = {
     DISCOVERY_SCREEN: 'Khám phá',
     SEARCH_SCREEN: 'Tìm kiếm',
     CHAT_SCREEN: 'ChatScreen',
+    PROFILE: 'Profile',
 
     TAB_WITH_HEADER_NAVIGATION: 'TabWithHeaderNavigator',
 
