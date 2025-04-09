@@ -1,6 +1,6 @@
 
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, TextInput, TouchableOpacity } from 'react-native';
 import AntDesign from '@expo/vector-icons/AntDesign';
 import styles from './css';
@@ -21,6 +21,13 @@ const Login = () => {
   const onSubmit = async () => {
     await handleLogin(phone, password);
   }
+
+  //Tự động chạy onSubmit khi mới khởi tạo
+  useEffect(() => {
+    setPhone('0123456789');
+    setPassword('12345678');
+  }, []);
+
   return (
     <RootLayout>
       <View style={styles.containerText}>

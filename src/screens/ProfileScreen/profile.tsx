@@ -1,10 +1,38 @@
 import React from 'react';
-import { View, Text, Image, StyleSheet, TouchableOpacity, SafeAreaView } from 'react-native';
+import { View, Text, Image, StyleSheet, TouchableOpacity, SafeAreaView, Button } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
+import { NavigationProp } from '@react-navigation/native';
+import { ParamListBase } from '@react-navigation/native';
 import { FontAwesome, AntDesign } from '@expo/vector-icons';
 
+import { ROUTING } from '@/utils/constant';
+import { RootState } from '@/redux/store';
+import { useSelector, useDispatch } from 'react-redux';
+
+
 const Profile = () => {
-    const navigation = useNavigation();
+    const navigation = useNavigation<NavigationProp<ParamListBase>>();
+    const user = useSelector((state: RootState) => state.user.user);
+
+    const formatDate = (isoDate: string) => {
+        const date = new Date(isoDate);
+        const day = String(date.getDate()).padStart(2, '0');
+        const month = String(date.getMonth() + 1).padStart(2, '0'); // Tháng bắt đầu từ 0
+        const year = date.getFullYear();
+        return `${day}/${month}/${year}`;
+    };
+
+    if (!user) {
+        return (
+            <View style={styles.container}>
+                <Text style={styles.error}>Bạn chưa đăng nhập!</Text>
+                <Button
+                    title="Đi đến màn hình đăng nhập"
+                    onPress={() => navigation.navigate(ROUTING.HOME)}
+                />
+            </View>
+        );
+    }
     return (
         <SafeAreaView style={styles.container}>
             {/* Phần ảnh nền và thông tin cá nhân */}
@@ -16,10 +44,10 @@ const Profile = () => {
                     />
                     <View style={styles.avatarContainer}>
                         <Image
-                            source={{ uri: 'https://cdnv2.tgdd.vn/mwg-static/common/News/1569295/tho-7-mau-1-2-0.jpg' }} // Placeholder cho avatar
+                            source={{ uri: user.avatar }}
                             style={styles.avatar}
                         />
-                        <Text style={styles.profileName}>Đào Tạo Hiệu</Text>
+                        <Text style={styles.profileName}>{user.firstName} {user.lastName}</Text>
                     </View>
                     <TouchableOpacity style={{ position: 'absolute', top: 10, left: 10 }} onPress={() => navigation.goBack()} >
                         <AntDesign name="arrowleft" size={26} color="white" />
@@ -30,26 +58,23 @@ const Profile = () => {
             {/* Phần thông tin chi tiết */}
             <View style={styles.infoSection}>
                 <Text style={styles.sectionTitle}>THÔNG TIN CÁ NHÂN</Text>
-
-                <View style={styles.infoRow}>
-                    <Text style={styles.infoLabel}>Giới tính</Text>
-                    <Text style={styles.infoValue}>Nam</Text>
-                </View>
-
                 <View style={styles.infoRow}>
                     <Text style={styles.infoLabel}>Ngày sinh</Text>
-                    <Text style={styles.infoValue}>11/12/2000</Text>
+                    <Text style={styles.infoValue}>{formatDate(user.dateOfBirth)}</Text>
                 </View>
-
+                <View style={styles.infoRow}>
+                    <Text style={styles.infoLabel}>Email</Text>
+                    <Text style={styles.infoValue}>{user.email}</Text>
+                </View>
                 <View style={styles.infoRow}>
                     <Text style={styles.infoLabel}>Điện thoại</Text>
                     <View>
-                        <Text style={styles.infoValue}>+84 961 074 946</Text>
+                        <Text style={styles.infoValue}>{user.phone}</Text>
                     </View>
                 </View>
 
                 {/* Nút Chỉnh sửa */}
-                <TouchableOpacity style={styles.editButton}>
+                <TouchableOpacity style={styles.editButton} onPress={() => navigation.navigate(ROUTING.UPDATE_PROFILE)}>
                     <FontAwesome name="pencil" size={16} color="#333" style={styles.editIcon} />
                     <Text style={styles.editButtonText}>Chỉnh sửa</Text>
                 </TouchableOpacity>
@@ -142,6 +167,12 @@ const styles = StyleSheet.create({
     editButtonText: {
         fontSize: 14,
         color: '#333',
+    },
+    error: {
+        fontSize: 18,
+        color: 'red',
+        textAlign: 'center',
+        marginBottom: 20,
     },
 });
 
