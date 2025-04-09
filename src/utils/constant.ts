@@ -11,7 +11,8 @@ export const ROUTING = {
     SEARCH_SCREEN: 'Tìm kiếm',
     CHAT_SCREEN: 'ChatScreen',
     PROFILE: 'Profile',
-
+    QR: 'QR',
+    CHANGE_PASSWORD: 'Đổi mật khẩu',
+    UPDATE_PROFILE: 'Cập nhật thông tin cá nhân',
     TAB_WITH_HEADER_NAVIGATION: 'TabWithHeaderNavigator',
-
 };
