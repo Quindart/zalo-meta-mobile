@@ -1,14 +1,17 @@
-
-
 import React, { useState, useEffect } from 'react';
+import { RootStackParamList } from '@/navigation/type';
+import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity } from 'react-native';
 import AntDesign from '@expo/vector-icons/AntDesign';
 import styles from './css';
 import RootLayout from '@/layout/RootLayout';
 import theme from '@/theme';
 import useAuth from '@/hooks/useAuth';
-
+import { useNavigation } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { ROUTING } from '@/utils/constant';
 const Login = () => {
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const { handleLogin } = useAuth();
 
   const [passwordVisible, setPasswordVisible] = useState(false);
@@ -83,7 +86,9 @@ const Login = () => {
           <Text style={styles.buttonText}>Đăng nhập</Text>
         </TouchableOpacity>
         <View style={styles.forgotPassword}>
-          <Text style={styles.forgotPasswordText}>Quên mật khẩu?</Text>
+          <TouchableOpacity onPress={() => navigation.navigate(ROUTING.FORGOT_PASSWORD)}>
+            <Text style={styles.forgotPasswordText}>Quên mật khẩu?</Text>
+          </TouchableOpacity>
         </View>
       </View>
     </RootLayout>
