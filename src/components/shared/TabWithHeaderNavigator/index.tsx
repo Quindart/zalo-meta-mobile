@@ -8,7 +8,7 @@ import theme from '@/theme';
 import { ROUTING } from '@/utils/constant';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { NavigationProp, ParamListBase, useNavigation } from '@react-navigation/native';
-import { View, StyleSheet } from 'react-native';
+import { View, StyleSheet, TouchableOpacity, Text } from 'react-native';
 import { AntDesign, FontAwesome, MaterialCommunityIcons, SimpleLineIcons, Feather } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import SearchBar from '@/components/ui/SearchBar';
@@ -60,15 +60,52 @@ function TabWithHeaderNavigator() {
         name={ROUTING.CHAT_LIST_SCREEN}
         component={MessagesScreen}
         options={{
-          headerLeft: () => (
-            <SearchBar />
-          ),
-          headerRight: () => (
-            <View style={styles.headerRightIcon}>
-              <QR_Scan />
-              <AntDesign name="plus" size={sizeIcon} color={colorIcon} onPress={() => { }} />
+          header: () => (
+            <View style={{ backgroundColor: theme.colors.primary, height: 100 }}>
+              <View style={{
+                flex: 1,
+                justifyContent: 'flex-end',
+                paddingBottom: 10
+              }}>
+                <View style={{
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  paddingHorizontal: 15
+                }}>
+                  <TouchableOpacity
+                    onPress={() => navigation.navigate(ROUTING.SEARCH_SCREEN)}
+                    activeOpacity={1}
+                    style={{
+                      flexDirection: 'row',
+                      alignItems: 'center',
+                      paddingHorizontal: 15,
+                      height: 40,
+                      width: '85%',
+                    }}
+                  >
+                    <AntDesign name="search1" size={20} color="white" style={{ marginRight: 15 }} />
+                    <View>
+                      <Text style={{ fontSize: 16, color: 'white' }}>Tìm kiếm</Text>
+                    </View>
+                  </TouchableOpacity>
+                  <View style={styles.headerRightIcon}>
+                    <QR_Scan />
+                    <AntDesign name="plus" size={sizeIcon} color={colorIcon} onPress={() => { }} />
+                  </View>
+                </View>
+              </View>
             </View>
           ),
+          // headerLeft: () => (
+          //   <SearchBar />
+          // ),
+          // headerRight: () => (
+          //   <View style={styles.headerRightIcon}>
+          //     <QR_Scan />
+          //     <AntDesign name="plus" size={sizeIcon} color={colorIcon} onPress={() => { }} />
+          //   </View>
+          // ),
           headerStyle: {
             height: 50, // Adjusted header height
           },
