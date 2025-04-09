@@ -30,7 +30,8 @@ import { AntDesign } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import TabWithHeaderNavigator from '@/components/shared/TabWithHeaderNavigator';
 import { RootStackParamList } from './type';
-
+import ForgotPasswordTemplate from '@/screens/Auth/Forgot/index';
+import ResetPasswordTemplate from '@/screens/Auth/Reset/index';
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
 function NavigationApp() {
@@ -158,6 +159,13 @@ function NavigationApp() {
         <Stack.Screen
           name={ROUTING.UPDATE_PROFILE}
           component={UpdateProfile}
+          name={ROUTING.RESET_PASSWORD}
+          component={ResetPasswordTemplate}
+          options={{ headerShown: false }}
+        />
+        <Stack.Screen
+          name={ROUTING.FORGOT_PASSWORD}
+          component={ForgotPasswordTemplate}
           options={{ headerShown: false }}
         />
 
