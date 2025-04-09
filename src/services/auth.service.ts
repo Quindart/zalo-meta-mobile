@@ -11,6 +11,10 @@ export const login = async ({ phone, password }: ILogin) => {
 export const register = async ({ phone, password, email, firstName, lastName, dateOfBirth }: IRegister) => {
     return await axiosConfig.post(`${api}/register`, { phone, password, email, firstName, lastName, dateOfBirth })
 }
+
+//TODO: CHANGE PASSWORD
+export const changePassword = async ({ password, newPassword }: { password: string; newPassword: string }) => {
+    return await axiosConfig.put(`api/v1/me/change-password`, { password, newPassword })
 //TODO: VERIFY OTP
 export const verifyOTP = async (OTP: string, email: string): Promise<any> => {
     try {

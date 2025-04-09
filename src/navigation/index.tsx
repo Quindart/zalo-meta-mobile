@@ -16,6 +16,11 @@ import DiaryScreen from '@/screens/DiaryScreen';
 import MessagesScreen from '@/screens/ChatListScreen';
 import SearchScreen from '@/screens/SearchScreen/HeaderSearch';
 import ChatScreen from '@/screens/ChatScreen';
+import Profile from '@/screens/ProfileScreen/profile';
+import QR_Scan from '@/screens/ProfileScreen/qr';
+import ChangePasswordScreen from '@/screens/ProfileScreen/changePassword';
+import UpdateProfile from '@/screens/ProfileScreen/updateProfile';
+
 
 
 import { LinearGradient } from 'expo-linear-gradient';
@@ -35,7 +40,7 @@ function NavigationApp() {
       <StatusBar barStyle="light-content" backgroundColor='#0D7DC9' />
 
       <Stack.Navigator
-        initialRouteName={ROUTING.HOME}
+        initialRouteName={ROUTING.LOGIN}
         screenOptions={{
           headerShadowVisible: false,
         }}
@@ -137,6 +142,23 @@ function NavigationApp() {
           options={{ headerShown: false }}
         />
         <Stack.Screen
+          name={ROUTING.PROFILE}
+          component={Profile}
+          options={{ headerShown: false }}
+        />
+        <Stack.Screen
+          name={ROUTING.QR}
+          component={QR_Scan}
+          options={{ headerShown: false }}
+        />
+        <Stack.Screen
+          name={ROUTING.CHANGE_PASSWORD}
+          component={ChangePasswordScreen}
+          options={{ headerShown: false }}
+        />
+        <Stack.Screen
+          name={ROUTING.UPDATE_PROFILE}
+          component={UpdateProfile}
           name={ROUTING.RESET_PASSWORD}
           component={ResetPasswordTemplate}
           options={{ headerShown: false }}

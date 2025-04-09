@@ -11,6 +11,7 @@ export type RootStackParamList = {
     [ROUTING.CHAT_LIST_SCREEN]: undefined;
     [ROUTING.SEARCH_SCREEN]: undefined;
     [ROUTING.CHAT_SCREEN]: { item: any };
+    [ROUTING.PROFILE]: undefined;
     [ROUTING.FORGOT_PASSWORD]: undefined;
     [ROUTING.RESET_PASSWORD]: { email: string };
 };
