@@ -23,9 +23,11 @@ import theme from '@/theme';
 import { TouchableOpacity } from 'react-native';
 import { AntDesign } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
-import TabWithHeaderNavigator from '@/components/Shared/TabWithHeaderNavigator';
-
-const Stack = createNativeStackNavigator();
+import TabWithHeaderNavigator from '@/components/shared/TabWithHeaderNavigator';
+import { RootStackParamList } from './type';
+import ForgotPasswordTemplate from '@/screens/Auth/Forgot/index';
+import ResetPasswordTemplate from '@/screens/Auth/Reset/index';
+const Stack = createNativeStackNavigator<RootStackParamList>();
 
 function NavigationApp() {
   return (
@@ -132,6 +134,16 @@ function NavigationApp() {
         <Stack.Screen
           name={ROUTING.CHAT_SCREEN}
           component={ChatScreen}
+          options={{ headerShown: false }}
+        />
+        <Stack.Screen
+          name={ROUTING.RESET_PASSWORD}
+          component={ResetPasswordTemplate}
+          options={{ headerShown: false }}
+        />
+        <Stack.Screen
+          name={ROUTING.FORGOT_PASSWORD}
+          component={ForgotPasswordTemplate}
           options={{ headerShown: false }}
         />
 

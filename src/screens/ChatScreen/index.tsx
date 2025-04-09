@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import {
   View,
   Text,
@@ -13,127 +13,185 @@ import {
 } from 'react-native';
 import { Ionicons, AntDesign } from '@expo/vector-icons';
 import styles from './css';
-import { RouteProp, useNavigation } from '@react-navigation/native';
+import { RouteProp, useNavigation, useRoute } from '@react-navigation/native';
 import { LinearGradient } from 'expo-linear-gradient';
 import theme from '@/theme';
+import { RootStackParamList } from '@/navigation/type';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { ROUTING } from '@/utils/constant';
+import { useChat } from '@/hooks/useChat';
+import { useSelector } from 'react-redux';
+import { RootState } from '@/redux/store';
 
-type ChatScreenRouteProp = RouteProp<{ ChatScreen: { item: any } }, 'ChatScreen'>;
+type ChatScreenRouteProp = RouteProp<RootStackParamList, typeof ROUTING.CHAT_SCREEN>;
+type ChatScreenNavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
-const ChatScreen = ({ route }: { route: ChatScreenRouteProp }) => {
-  const { item } = route.params;
-  const navigation = useNavigation();
-  const [message, setMessage] = useState('');
-  const [messages, setMessages] = useState([
-    {
-      id: '1',
-      sender: 'other',
-      text: 'Hello, how are you?',
-      time: '17:23',
-    },
-    {
-      id: '2',
-      sender: 'me',
-      text: 'I am good, thank you!',
-      time: '17:24',
-    },
-    {
-      id: '3',
-      sender: 'me',
-      text: 'What about you?',
-      time: '17:25',
-    },
-    {
-      id: '4',
-      sender: 'other',
-      text: 'I am doing well, just busy with work.',
-      time: '17:26',
-    },
-    {
-      id: '5',
-      sender: 'me',
-      text: 'That\'s good to hear.',
-      time: '17:27',
-    },
-    {
-      id: '6',
-      sender: 'other',
-      text: 'Yes, it is. Have you finished your project?',
-      time: '17:28',
-    },
-    {
-      id: '7',
-      sender: 'me',
-      text: 'Almost, just a few more things to wrap up.',
-      time: '17:29',
-    },
-    {
-      id: '8',
-      sender: 'other',
-      text: 'Great! Let me know if you need any help.',
-      time: '17:30',
-    },
-    {
-      id: '9',
-      sender: 'me',
-      text: 'Sure, thanks!',
-      time: '17:31',
-    },
-    {
-      id: '10',
-      sender: 'other',
-      text: 'No problem. Talk to you later.',
-      time: '17:32',
-    },
-    {
-      id: '11',
-      sender: 'me',
-      text: 'Bye!',
-      time: '17:33',
-    },
-  ]);
+const ChatHeader = React.memo(({
+  navigation,
+  item
+}: {
+  navigation: any,
+  item: any
+}) => (
+  <LinearGradient
+    colors={[theme.colors.primary, theme.colors.primaryContainer]}
+    start={{ x: 0, y: 0 }}
+    end={{ x: 1, y: 0 }}
+    style={styles.header}
+  >
+    <TouchableOpacity onPress={() => navigation.goBack()} style={styles.iconButton}>
+      <AntDesign name="arrowleft" size={20} color="white" />
+    </TouchableOpacity>
+    <Text style={styles.headerTitle}>{item.name}</Text>
+    <View style={styles.headerIcons}>
+      <TouchableOpacity style={styles.iconButton}>
+        <Ionicons name="call-outline" size={24} color="white" />
+      </TouchableOpacity>
+      <TouchableOpacity style={styles.iconButton}>
+        <Ionicons name="videocam-outline" size={24} color="white" />
+      </TouchableOpacity>
+    </View>
+  </LinearGradient>
+));
 
-  // useRef lưu trữ giá trị của một biến trong suốt quá trình render của component.
-  const flatListRef = useRef<FlatList>(null);
+const MessageItem = React.memo(
+  ({ item, sender, receiver }: { item: any; sender: any; receiver: any }) => {
+    const isMyMessage = useMemo(() => {
+      if (item.senderId && typeof item.senderId === 'object' && item.senderId._id) {
+        return item.senderId._id === sender?._id;
+      }
+      else if (typeof item.senderId === 'string') {
+        return item.senderId === sender?._id;
+      }
+      return false;
+    }, [item.senderId, sender?._id]);
 
-
-  const renderMessageItem = ({ item }: { item: any }) => {
-    const isMyMessage = item.sender === 'me';
+    const receiverPerson = item.receiverId;
 
     return (
       <View style={[
         styles.messageRow,
         isMyMessage ? styles.myMessageRow : styles.otherMessageRow
       ]}>
-        {!isMyMessage && item.avatar && (
-          <Image source={{ uri: item.avatar }} style={styles.messageAvatar} />
+        {!isMyMessage && (
+          <Image
+            source={{ uri: receiver?.avatar || receiverPerson?.avatar || 'https://via.placeholder.com/40' }}
+            style={styles.messageAvatar}
+            defaultSource={require('../../../assets/user_default.jpg')}
+          />
         )}
 
         <View style={[
           styles.messageBubble,
           isMyMessage ? styles.myMessageBubble : styles.otherMessageBubble
         ]}>
-          <Text style={styles.messageText}>{item.text}</Text>
-          <Text style={styles.messageTime}>{item.time}</Text>
+          <Text style={styles.messageText}>{item.content}</Text>
+          <Text style={styles.messageTime}>
+            {new Date(item.timestamp).toLocaleTimeString()}
+          </Text>
         </View>
       </View>
     );
-  };
+  },
+  (prevProps, nextProps) => {
+    return (
+      prevProps.item._id === nextProps.item._id &&
+      prevProps.item.content === nextProps.item.content &&
+      prevProps.item.status === nextProps.item.status &&
+      prevProps.item.timestamp === nextProps.item.timestamp &&
+      prevProps.sender?._id === nextProps.sender?._id
+    );
+  }
+);
 
-  const handleSendMessage = () => {
-    if (message.trim()) {
-      const newMessage = {
-        id: (messages.length + 1).toString(),
-        sender: 'me',
-        text: message,
-        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-      };
-      setMessages([...messages, newMessage]);
-      setMessage('');
+const MessageInputContainer = React.memo(() => {
+  const [inputMessage, setInputMessage] = useState('');
+  const route = useRoute<ChatScreenRouteProp>();
+  const { item } = route.params || { item: {} };
+  const sender = useSelector((state: RootState) => state.user.user);
+  const receiver = item.secondUser;
+  const flatListRef = useRef<FlatList>(null);
+
+  const chatHook = useChat();
+  const sendMessageAction = useCallback((receiverId: string, content: string, senderId: string) => {
+    chatHook.sendMessage(receiverId, content, senderId);
+  }, [chatHook]);
+
+  const handleSendMessage = useCallback(() => {
+    if (inputMessage.trim() && sender && receiver) {
+      sendMessageAction(receiver._id, inputMessage, sender._id);
+      setInputMessage('');
+
       setTimeout(() => {
-        flatListRef.current?.scrollToEnd({ animated: true });
+        if (global.chatListRef) {
+          global.chatListRef.scrollToEnd?.({ animated: true });
+        }
       }, 100);
     }
-  };
+  }, [inputMessage, sender, receiver, sendMessageAction]);
+
+  return (
+    <View style={styles.inputContainer}>
+      <TextInput
+        style={styles.input}
+        placeholder="Tin nhắn"
+        value={inputMessage}
+        onChangeText={setInputMessage}
+        multiline
+      />
+      <TouchableOpacity style={styles.sendButton} onPress={handleSendMessage}>
+        <Ionicons name="send" size={24} color="white" />
+      </TouchableOpacity>
+    </View>
+  );
+});
+
+const ChatScreen = ({ route }: { route: ChatScreenRouteProp }) => {
+  const renderCountRef = useRef(0);
+  renderCountRef.current += 1;
+  console.log(`ChatScreen render #${renderCountRef.current}`);
+
+  const { item } = route.params || { item: {} };
+  const navigation = useNavigation();
+  const sender = useSelector((state: RootState) => state.user.user);
+  const receiver = route.params?.item.secondUser;
+
+  const chatActionsRef = useRef<any>(null);
+  const { loadMessages, messages } = useChat();
+  const flatListRef = useRef<FlatList>(null);
+
+  useEffect(() => {
+    global.chatListRef = flatListRef.current;
+    return () => {
+      global.chatListRef = null;
+    };
+  }, []);
+
+  useEffect(() => {
+    chatActionsRef.current = {
+      loadMessages,
+    };
+  }, [loadMessages]);
+
+  useEffect(() => {
+    const fetchMessage = async () => {
+      if (sender?._id && receiver?._id && chatActionsRef.current) {
+        await chatActionsRef.current.loadMessages(receiver._id, sender._id);
+      }
+    };
+    fetchMessage();
+  }, [sender?._id, receiver?._id]);
+
+  const scrollToEnd = useCallback(() => {
+    flatListRef.current?.scrollToEnd({ animated: true });
+  }, []);
+
+  const renderItem = useCallback(({ item }: { item: any }) => (
+    <MessageItem item={item} sender={sender} receiver={receiver} />
+  ), [sender, receiver]);
+
+  const keyExtractor = useCallback((item: any, index: number) =>
+    item._id ? item._id.toString() : `msg-${index}-${Date.now()}`, []);
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -143,50 +201,30 @@ const ChatScreen = ({ route }: { route: ChatScreenRouteProp }) => {
         style={styles.container}
         keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
       >
-        <LinearGradient
-          colors={[theme.colors.primary, theme.colors.primaryContainer]}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 0 }}
-          style={styles.header}
-        >
-          <TouchableOpacity onPress={() => navigation.goBack()} style={styles.iconButton}>
-            <AntDesign name="arrowleft" size={20} color="white" />
-          </TouchableOpacity>
-          <Text style={styles.headerTitle}>{item.name}</Text>
-          <View style={styles.headerIcons}>
-            <TouchableOpacity style={styles.iconButton}>
-              <Ionicons name="call-outline" size={24} color="white" />
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.iconButton}>
-              <Ionicons name="videocam-outline" size={24} color="white" />
-            </TouchableOpacity>
-          </View>
-        </LinearGradient>
+        <ChatHeader navigation={navigation} item={item} />
 
         <FlatList
           ref={flatListRef}
           data={messages}
-          renderItem={renderMessageItem}
-          keyExtractor={item => item.id}
+          renderItem={renderItem}
+          keyExtractor={keyExtractor}
           style={styles.messageList}
-          onContentSizeChange={() => flatListRef.current?.scrollToEnd({ animated: true })}
+          onContentSizeChange={scrollToEnd}
+          onLayout={scrollToEnd}
+          initialNumToRender={15}
+          maxToRenderPerBatch={10}
+          windowSize={10}
+          removeClippedSubviews={true}
         />
 
-        <View style={styles.inputContainer}>
-          <TextInput
-            style={styles.input}
-            placeholder="Tin nhắn"
-            value={message}
-            onChangeText={setMessage}
-            multiline
-          />
-          <TouchableOpacity style={styles.sendButton} onPress={handleSendMessage}>
-            <Ionicons name="send" size={24} color="white" />
-          </TouchableOpacity>
-        </View>
+        <MessageInputContainer />
       </KeyboardAvoidingView>
     </SafeAreaView>
   );
 };
 
-export default ChatScreen;
+declare global {
+  var chatListRef: any;
+}
+
+export default React.memo(ChatScreen);
