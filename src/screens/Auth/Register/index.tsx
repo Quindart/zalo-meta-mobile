@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, TouchableOpacity, TextInput, Modal, FlatList, StyleSheet, ActivityIndicator, Alert, Button } from 'react-native';
 import AntDesign from '@expo/vector-icons/AntDesign';
 import DateTimePicker from '@react-native-community/datetimepicker';
@@ -7,28 +7,33 @@ import styles from './css';
 import RootLayout from '@/layout/RootLayout';
 import { NavigationProp, ParamListBase, useNavigation } from '@react-navigation/native';
 import theme from '@/theme';
-import useAuth from '@/hooks/useAuth'; 
+import useAuth from '@/hooks/useAuth';
 
 const Register = () => {
-  const { handleRegister } = useAuth(); 
-  const [selectedCode, setSelectedCode] = useState('+84'); 
-  const [modalVisible, setModalVisible] = useState(false); 
-  const [phoneFocused, setPhoneFocused] = useState(false); 
-  const [phone, setPhone] = useState(''); 
-  const [password, setPassword] = useState(''); 
-  const [email, setEmail] = useState(''); 
-  const [avatar, setAvatar] = useState(''); 
-  const [firstName, setFirstName] = useState(''); 
-  const [lastName, setLastName] = useState(''); 
-  const [dateOfBirth, setDateOfBirth] = useState(new Date()); 
-  const [showDatePicker, setShowDatePicker] = useState(false); 
-  const [loading, setLoading] = useState(false); 
-  const [titleDate, setTitleDate] = useState('Chọn ngày sinh'); 
+  const { handleRegister } = useAuth();
+  const [selectedCode, setSelectedCode] = useState('+84');
+  const [modalVisible, setModalVisible] = useState(false);
+  const [phoneFocused, setPhoneFocused] = useState(false);
+  const [phone, setPhone] = useState('');
+  const [password, setPassword] = useState('');
+  const [email, setEmail] = useState('');
+  const [avatar, setAvatar] = useState('');
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
+  const [dateOfBirth, setDateOfBirth] = useState(new Date());
+  const [showDatePicker, setShowDatePicker] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [titleDate, setTitleDate] = useState('Chọn ngày sinh');
 
-  
+  useEffect(() => {
+    setAvatar('hh'); // Set a default avatar URL
+  })
+
   const countryCodes = [
     { label: 'Việt Nam (+84)', value: '+84' },
   ];
+
+
 
   const onSubmit = async () => {
     if (!phone || !password || !email || !firstName || !lastName || !avatar) {
@@ -120,12 +125,6 @@ const Register = () => {
         />
         <TextInput
           style={styles.input}
-          placeholder="Avatar URL"
-          value={avatar}
-          onChangeText={setAvatar}
-        />
-        <TextInput
-          style={styles.input}
           placeholder="Họ"
           value={firstName}
           onChangeText={setFirstName}
@@ -144,7 +143,7 @@ const Register = () => {
             value={dateOfBirth}
             mode="date"
             display="default"
-            onChange={(_:any, selectedDate:any) => {
+            onChange={(_: any, selectedDate: any) => {
               setShowDatePicker(false);
               if (selectedDate) {
                 setDateOfBirth(selectedDate);

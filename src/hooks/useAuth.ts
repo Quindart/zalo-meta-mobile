@@ -5,7 +5,8 @@ import { setMe, clearUser } from '@/redux/userSlice';
 import { NavigationProp, ParamListBase, useNavigation } from '@react-navigation/native';
 import { ROUTING } from '@/utils/constant';
 import { setTokens, clearTokens } from '@/utils/tokenManager'; // Import từ tokenManager
-import { login, register } from '@/services/auth.service';
+import { login, register, changePassword } from '@/services/auth.service';
+import { getAccessToken } from '@/utils/tokenManager';
 
 const useAuth = () => {
     const navigation = useNavigation<NavigationProp<ParamListBase>>();
@@ -17,23 +18,10 @@ const useAuth = () => {
 
     const handleLogin = async (phone: string, password: string) => {
         try {
-            //Kiểm tra dữ liệu đầu vào 
-            // if (!phone || !password) {
-            //     Alert.alert('Lỗi', 'Vui lòng nhập số điện thoại và mật khẩu. Không được để trống');
-            //     return;
-            // }
-            // if (phone.length !== 10) {
-            //     Alert.alert('Lỗi', 'Số điện thoại phải có 10 số');
-            //     return;
-            // }
-            // if (password.length < 8) {
-            //     Alert.alert('Lỗi', 'Mật khẩu phải có ít nhất 6 ký tự');
-            //     return;
-            // }
             const loginResponse = await login({ phone, password });
             const jsonLoginResponse = toJSON(loginResponse);
             if (jsonLoginResponse.success) {
-                console.log('Đăng nhập thành công', loginResponse);
+                // console.log('Đăng nhập thành công', loginResponse);
                 setTokens(
                     loginResponse.data.tokens.accessToken,
                     loginResponse.data.tokens.refreshToken
@@ -51,10 +39,10 @@ const useAuth = () => {
                     Alert.alert('Lỗi', 'Không thể lấy thông tin người dùng');
                 }
             } else {
-                Alert.alert('Lỗi', 'Đăng nhập thất bại');
+                Alert.alert('Lỗi', jsonLoginResponse.message);
             }
         } catch (error) {
-            Alert.alert('Lỗi', 'Có lỗi xảy ra khi đăng nhập');
+            Alert.alert('Lỗi', error instanceof Error ? error.message : String(error));
         }
     };
 
@@ -75,17 +63,32 @@ const useAuth = () => {
                 navigation.navigate(ROUTING.HOME);
                 Alert.alert('Đăng ký thành công');
             } else {
-                console.error('Đăng ký thất bại');
+                // console.error('Đăng ký thất bại');
                 Alert.alert('Lỗi', 'Đăng ký thất bại');
             }
         } catch (error) {
-            console.error('Đăng ký thất bại', error);
+            // console.error('Đăng ký thất bại', error);
             Alert.alert('Lỗi', 'Có lỗi xảy ra khi đăng ký');
         }
     };
 
+    const handleChangePassword = async (password: string, newPassword: string) => {
+        try {
+            const changePasswordResponse = await changePassword({ password, newPassword });
+            const jsonChangePasswordResponse = toJSON(changePasswordResponse);
+            if (jsonChangePasswordResponse.success) {
+                navigation.goBack();
+            } else {
+                return changePasswordResponse?.data.message;
+            }
+        } catch (error: any) {
+            // console.error('Đổi mật khẩu thất bại', error);
+            Alert.alert('Lỗi', 'Có lỗi xảy ra khi đổi mật khẩu: ' + (error.response?.data?.message || error.message));
+        }
+    };
 
-    return { handleLogin, handleLogout, handleRegister };
+
+    return { handleLogin, handleLogout, handleRegister, handleChangePassword };
 };
 
 export default useAuth;

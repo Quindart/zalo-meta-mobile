@@ -10,9 +10,11 @@ export const ROUTING = {
     DISCOVERY_SCREEN: 'Khám phá',
     SEARCH_SCREEN: 'Tìm kiếm',
     CHAT_SCREEN: 'ChatScreen',
+    PROFILE: 'Profile',
+    QR: 'QR',
+    CHANGE_PASSWORD: 'Đổi mật khẩu',
+    UPDATE_PROFILE: 'Cập nhật thông tin cá nhân',
     FORGOT_PASSWORD: "/forgot-password",
     RESET_PASSWORD: "/reset-password",
-
     TAB_WITH_HEADER_NAVIGATION: 'TabWithHeaderNavigator',
-
 };
