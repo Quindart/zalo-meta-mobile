@@ -411,7 +411,7 @@ const UpdateProfile = () => {
                             {/* Ảnh đại diện */}
                             <View style={styles.avatarContainer}>
                                 <Image
-                                    source={{ uri: avatar || 'https://cdnv2.tgdd.vn/mwg-static/common/News/1569295/tho-7-mau-1-2-0.jpg' }}
+                                    source={{ uri: avatar || 'null' }}
                                     style={styles.avatar}
                                 />
                                 <TouchableOpacity style={styles.cameraIcon} onPress={pickImage}>
