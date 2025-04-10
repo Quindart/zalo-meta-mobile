@@ -86,11 +86,11 @@ function NavigationApp() {
           component={DiaryScreen}
           options={{ headerShown: false }}
         />
-        {/* <Stack.Screen
+        <Stack.Screen
           name={ROUTING.CHAT_LIST_SCREEN}
           component={MessagesScreen}
           options={{ headerShown: false }}
-        /> */}
+        />
         <Stack.Screen
           name={ROUTING.SEARCH_SCREEN}
           component={SearchScreen}
