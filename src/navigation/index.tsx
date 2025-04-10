@@ -41,7 +41,7 @@ function NavigationApp() {
       <StatusBar barStyle="light-content" backgroundColor='#0D7DC9' />
 
       <Stack.Navigator
-        initialRouteName={ROUTING.LOGIN}
+        initialRouteName={ROUTING.HOME}
         screenOptions={{
           headerShadowVisible: false,
         }}
@@ -49,58 +49,17 @@ function NavigationApp() {
         <Stack.Screen
           name={ROUTING.HOME}
           component={HomeScreen}
-          options={{
-            headerShown: false,
-          }}
+          options={{ headerShown: false, }}
         />
         <Stack.Screen
           name={ROUTING.LOGIN}
           component={LoginScreen}
-          options={({ navigation }) => ({
-            headerShown: true,
-            headerBackground: () => (
-              <LinearGradient
-                colors={[theme.colors.primary, theme.colors.primaryContainer]}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 0 }}
-                style={{
-                  flex: 1,
-                  // width: '100%',
-                  // height: '80%',
-                }}
-              />
-            ),
-            headerTintColor: "white",
-            headerLeft: () => (
-              <TouchableOpacity onPress={() => navigation.goBack()} style={{ marginRight: 10 }}>
-                <AntDesign name="left" size={24} color="white" />
-              </TouchableOpacity>
-            ),
-          })}
+          options={{ headerShown: false }}
         />
         <Stack.Screen
           name={ROUTING.REGISTER}
           component={RegisterScreen}
-          options={({ navigation }) => ({
-            headerShown: true,
-            headerBackground: () => (
-              <LinearGradient
-                colors={[theme.colors.primary, theme.colors.primaryContainer]}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 0 }}
-                style={{
-                  flex: 1,
-
-                }}
-              />
-            ),
-            headerTintColor: "white",
-            headerLeft: () => (
-              <TouchableOpacity onPress={() => navigation.goBack()} style={{ marginRight: 10 }}>
-                <AntDesign name="left" size={24} color="white" />
-              </TouchableOpacity>
-            ),
-          })}
+          options={{ headerShown: false }}
         />
         <Stack.Screen
           name={ROUTING.TAB_WITH_HEADER_NAVIGATION}
@@ -127,11 +86,11 @@ function NavigationApp() {
           component={DiaryScreen}
           options={{ headerShown: false }}
         />
-        <Stack.Screen
+        {/* <Stack.Screen
           name={ROUTING.CHAT_LIST_SCREEN}
           component={MessagesScreen}
           options={{ headerShown: false }}
-        />
+        /> */}
         <Stack.Screen
           name={ROUTING.SEARCH_SCREEN}
           component={SearchScreen}
@@ -165,6 +124,7 @@ function NavigationApp() {
         <Stack.Screen
           name={ROUTING.UPDATE_PROFILE}
           component={UpdateProfile}
+          options={{ headerShown: false }}
         />
         <Stack.Screen
           name={ROUTING.RESET_PASSWORD}
