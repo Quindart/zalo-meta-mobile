@@ -17,7 +17,8 @@ import MessagesScreen from '@/screens/ChatListScreen';
 import SearchScreen from '@/screens/SearchScreen/HeaderSearch';
 import ChatScreen from '@/screens/ChatScreen';
 import Profile from '@/screens/ProfileScreen/profile';
-import QR_Scan from '@/screens/ProfileScreen/qr';
+import My_QR from '@/screens/ProfileScreen/qr';
+import QR_SCAN from '@/screens/Auth/QRScan/index';
 import ChangePasswordScreen from '@/screens/ProfileScreen/changePassword';
 import UpdateProfile from '@/screens/ProfileScreen/updateProfile';
 
@@ -148,7 +149,12 @@ function NavigationApp() {
         />
         <Stack.Screen
           name={ROUTING.QR}
-          component={QR_Scan}
+          component={My_QR}
+          options={{ headerShown: false }}
+        />
+        <Stack.Screen
+          name={ROUTING.QR_SCAN}
+          component={QR_SCAN}
           options={{ headerShown: false }}
         />
         <Stack.Screen
@@ -159,6 +165,8 @@ function NavigationApp() {
         <Stack.Screen
           name={ROUTING.UPDATE_PROFILE}
           component={UpdateProfile}
+        />
+        <Stack.Screen
           name={ROUTING.RESET_PASSWORD}
           component={ResetPasswordTemplate}
           options={{ headerShown: false }}

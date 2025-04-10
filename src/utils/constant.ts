@@ -12,6 +12,7 @@ export const ROUTING = {
     CHAT_SCREEN: 'ChatScreen',
     PROFILE: 'Profile',
     QR: 'QR',
+    QR_SCAN: 'QR_SCAN',
     CHANGE_PASSWORD: 'Đổi mật khẩu',
     UPDATE_PROFILE: 'Cập nhật thông tin cá nhân',
     FORGOT_PASSWORD: "/forgot-password",
