@@ -1,0 +1,112 @@
+import { StyleSheet, Dimensions } from 'react-native';
+
+const { width, height } = Dimensions.get('window');
+
+export default StyleSheet.create({
+    openFlash: {
+        position: 'absolute',
+        bottom: 100,
+        right: 20,
+        zIndex: 10,
+        padding: 20,
+        borderRadius: '50%',
+        alignItems: 'center',
+        paddingHorizontal: 20,
+        backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    },
+    container: {
+        flex: 1,
+        flexDirection: 'column',
+        width: '100%',
+        height: '100%',
+    },
+    cameraContainer: {
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        width: width,
+        height: height,
+        zIndex: 1,
+    },
+    camera: {
+        flex: 1,
+        width: '100%',
+        height: '100%',
+    },
+    topContent: {
+        display: 'flex',
+        flexDirection: 'row',
+        gap: 10,
+        position: 'absolute',
+        top: 60,
+        left: 0,
+        right: 0,
+        zIndex: 10,
+        alignItems: 'center',
+        paddingHorizontal: 20,
+    },
+    centerText: {
+        fontSize: 16,
+        color: '#FFFFFF',
+        textAlign: 'center',
+        backgroundColor: 'rgba(0, 0, 0, 0.5)',
+        padding: 16,
+        borderRadius: 8,
+        maxWidth: '90%',
+    },
+    textBold: {
+        fontWeight: 'bold',
+        color: '#FFFFFF',
+    },
+    bottomContent: {
+        position: 'absolute',
+        bottom: 40,
+        left: 0,
+        right: 0,
+        zIndex: 10,
+        alignItems: 'center',
+        paddingHorizontal: 20,
+    },
+    buttonTouchable: {
+        padding: 16,
+        backgroundColor: '#2196F3',
+        borderRadius: 8,
+        width: '100%',
+        maxWidth: 200,
+        alignItems: 'center',
+    },
+    buttonText: {
+        fontSize: 16,
+        color: '#FFFFFF',
+        fontWeight: 'bold',
+    },
+    closeButton: {
+        backgroundColor: 'rgba(0, 0, 0, 0.5)',
+        padding: 10,
+    },
+    dialogTitle: {
+        alignItems: 'center',
+        justifyContent: 'center',
+        width: '100%',
+    },
+    info: {
+        flexDirection: 'row',
+        gap: 30,
+        marginBottom: 10,
+    },
+    fullScreenContainer: {
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        width: width,
+        height: height,
+        flex: 1,
+    },
+    fullScreenCamera: {
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        width: width,
+        height: height,
+    },
+});

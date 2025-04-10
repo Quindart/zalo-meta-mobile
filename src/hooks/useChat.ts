@@ -6,6 +6,8 @@ import { getChatList } from "@/services/chat.service";
 import { setChatList } from "@/redux/chatSlice";
 import { useDispatch } from 'react-redux';
 
+const socketService = SocketService.getInstance().getSocket();
+
 export const useChat = () => {
     const dispatch = useDispatch();
     const [messages, setMessages] = useState<any[]>([]);
@@ -36,7 +38,7 @@ export const useChat = () => {
             receiverId,
             content,
         };
-        SocketService.getSocket().emit(SOCKET_EVENTS.MESSAGE.SEND, messageData);
+        socketService.emit(SOCKET_EVENTS.MESSAGE.SEND, messageData);
     }, []);
 
     const getChatListService = useCallback(async () => {
@@ -58,15 +60,15 @@ export const useChat = () => {
         hasSetupListeners.current = true;
         console.log("Setting up socket listeners");
 
-        SocketService.getSocket().connect();
-        SocketService.getSocket().off(SOCKET_EVENTS.MESSAGE.RECEIVED);
-        SocketService.getSocket().off(SOCKET_EVENTS.MESSAGE.READ);
+        socketService.connect();
+        socketService.off(SOCKET_EVENTS.MESSAGE.RECEIVED);
+        socketService.off(SOCKET_EVENTS.MESSAGE.READ);
 
-        SocketService.getSocket().on(SOCKET_EVENTS.MESSAGE.RECEIVED, (newMessage: any) => {
+        socketService.on(SOCKET_EVENTS.MESSAGE.RECEIVED, (newMessage: any) => {
             setMessages((prev: any[]) => [...prev, newMessage]);
         });
 
-        SocketService.getSocket().on(SOCKET_EVENTS.MESSAGE.READ, (update: any) => {
+        socketService.on(SOCKET_EVENTS.MESSAGE.READ, (update: any) => {
             setMessages((prev: any[]) =>
                 prev.map((msg) =>
                     msg.id === update.messageId ? { ...msg, status: "read" } : msg,
@@ -76,8 +78,8 @@ export const useChat = () => {
 
         return () => {
             console.log("Cleaning up socket listeners");
-            SocketService.getSocket().off(SOCKET_EVENTS.MESSAGE.RECEIVED);
-            SocketService.getSocket().off(SOCKET_EVENTS.MESSAGE.READ);
+            socketService.off(SOCKET_EVENTS.MESSAGE.RECEIVED);
+            socketService.off(SOCKET_EVENTS.MESSAGE.READ);
         };
     }, []);
 
