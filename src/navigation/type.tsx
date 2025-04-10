@@ -14,4 +14,6 @@ export type RootStackParamList = {
     [ROUTING.PROFILE]: undefined;
     [ROUTING.FORGOT_PASSWORD]: undefined;
     [ROUTING.RESET_PASSWORD]: { email: string };
+    [ROUTING.QR]: undefined;
+    [ROUTING.QR_SCAN]: undefined;
 };
