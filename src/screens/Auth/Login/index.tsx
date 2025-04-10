@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { RootStackParamList } from '@/navigation/type';
-import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity } from 'react-native';
 import AntDesign from '@expo/vector-icons/AntDesign';
 import styles from './css';
@@ -27,8 +26,8 @@ const Login = () => {
 
   //Tự động chạy onSubmit khi mới khởi tạo
   useEffect(() => {
-    setPhone('0123456789');
-    setPassword('12345678');
+    setPhone('0334405617');
+    setPassword('11111111');
   }, []);
 
   return (
@@ -48,6 +47,7 @@ const Login = () => {
           style={styles.input}
           placeholder="Số điện thoại"
           keyboardType="phone-pad"
+          defaultValue={phone}
           onFocus={() => setPhoneFocused(true)}
           onBlur={() => setPhoneFocused(false)}
           onChangeText={setPhone}
@@ -64,6 +64,7 @@ const Login = () => {
         <TextInput
           style={[styles.input, styles.passwordInput]}
           placeholder="Mật khẩu"
+          defaultValue={password}
           secureTextEntry={!passwordVisible}
           onFocus={() => setPasswordFocused(true)}
           onBlur={() => setPasswordFocused(false)}
