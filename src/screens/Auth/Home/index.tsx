@@ -5,6 +5,7 @@ import styles from './css'
 import RootLayout from '@/layout/RootLayout';
 import { NavigationProp, ParamListBase, useNavigation } from '@react-navigation/native';
 import { ROUTING } from '@/utils/constant';
+import Header from '@/components/ui/Header';
 
 interface SlideData {
   title: string;
@@ -42,7 +43,6 @@ const Home = () => {
 
   return (
     <RootLayout>
-
       <Swiper style={styles.wrapper} showsButtons={false}>
         {slideDatas.map((slide, index) => (
           <View key={index} style={styles.slide}>
