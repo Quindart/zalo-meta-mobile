@@ -5,10 +5,14 @@ import { setMe } from '@/redux/userSlice';
 import { NavigationProp, ParamListBase, useNavigation } from '@react-navigation/native';
 import { ROUTING } from '@/utils/constant';
 import { RootState } from '@/redux/store';
-import { getAccessToken } from '@/utils/tokenManager';
+// import { getAccessToken } from '@/utils/tokenManager';
+import { selectAccessToken } from '@/redux/userSlice';
 import { User } from '@/models/user';
+import store from '@/redux/store'; // Import store để truy cập Redux state
+
 
 const useUser = () => {
+
     const navigation = useNavigation<NavigationProp<ParamListBase>>();
     const dispatch = useDispatch();
     const user = useSelector((state: RootState) => state.user.user) as User | null;
@@ -35,7 +39,7 @@ const useUser = () => {
     }) => {
         try {
             // Kiểm tra xem user có tồn tại không
-            if (!user || !user._id) {
+            if (!user || !user.id) {
                 console.error('B1: User không tồn tại hoặc không có _id');
                 Alert.alert('Lỗi', 'Không tìm thấy thông tin người dùng. Vui lòng đăng nhập lại.');
                 navigation.navigate(ROUTING.HOME);
@@ -43,7 +47,8 @@ const useUser = () => {
             }
 
             // Lấy accessToken
-            const accessToken = getAccessToken();
+            const state = store.getState(); // Lấy toàn bộ state từ Redux Store
+            const accessToken = state.user.accessToken; // Lấy accessToken từ state
             if (!accessToken) {
                 console.error('B2: Không tìm thấy accessToken');
                 Alert.alert('Lỗi', 'Không tìm thấy token. Vui lòng đăng nhập lại.');
@@ -71,16 +76,17 @@ const useUser = () => {
                     name: userData.avatar.name,
                     type: userData.avatar.type,
                 } as any);
+                console.log('B3: FormData', formData);
+
             }
 
-            console.log('B3: FormData', formData);
             console.log('B4: userData', userData);
             console.log('B5: accessToken', accessToken);
 
             // Gửi yêu cầu cập nhật thông tin user
+
             const updateResponse = await axiosConfig.put('/api/v1/me', formData, {
                 headers: {
-                    'Authorization': `Bearer ${accessToken}`,
                     'Content-Type': 'multipart/form-data',
                 },
             });
@@ -113,12 +119,15 @@ const useUser = () => {
                 Alert.alert('Lỗi', 'Cập nhật thông tin thất bại');
             }
         } catch (error: any) {
-            console.error('B7: Cập nhật thông tin thất bại', error.message);
-            console.error('B7: Error response', error.response?.data);
-            Alert.alert('Lỗi', 'Có lỗi xảy ra khi cập nhật thông tin: ' + (error.response?.data?.message || error.message));
+            // console.error('B7: Cập nhật thông tin thất bại', error.message);
+            // console.error('B7: Error response', error.response?.data);
+            // Alert.alert('Lỗi', 'Có lỗi xảy ra khi cập nhật thông tin: ' + (error.response?.data?.message || error.message));
+            Alert.alert('Lỗi', 'Mạng chưa chuẩn bị cập nhật ảnh ' + error.message);
+            return;
         }
     };
     return { handleUpdateUser };
 };
 
 export default useUser;
+

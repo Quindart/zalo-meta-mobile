@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
@@ -9,15 +10,24 @@ type HeaderProps = {
     title?: string;
     showBackButton?: boolean;
     useGradient?: boolean; // Cho phép bật tắt gradient
+    route?: string; // Route để điều hướng nếu được truyền
 };
 
-const Header = ({ title = '', showBackButton = true, useGradient = true }: HeaderProps) => {
+const Header = ({ title = '', showBackButton = true, useGradient = true, route }: HeaderProps) => {
     const navigation = useNavigation();
+
+    const handleBackPress = () => {
+        if (route) {
+            navigation.navigate(route as never); // Điều hướng tới route được chỉ định
+        } else {
+            navigation.goBack(); // Quay lại trang trước
+        }
+    };
 
     const Content = (
         <View style={styles.content}>
             {showBackButton && (
-                <TouchableOpacity onPress={() => navigation.goBack()} style={styles.iconButton}>
+                <TouchableOpacity onPress={handleBackPress} style={styles.iconButton}>
                     <Ionicons name="arrow-back" size={24} color="#fff" />
                 </TouchableOpacity>
             )}
