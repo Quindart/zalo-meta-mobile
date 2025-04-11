@@ -1,3 +1,4 @@
+
 // import React, { useState } from 'react';
 // import { View, Text, Image, StyleSheet, TouchableOpacity, SafeAreaView, TextInput, Platform, KeyboardAvoidingView, ScrollView, Alert } from 'react-native';
 // import { useNavigation, NavigationProp, ParamListBase } from '@react-navigation/native';
@@ -11,6 +12,9 @@
 // import * as ImagePicker from 'expo-image-picker';
 
 // const formatDate = (date: Date): string => {
+//     if (isNaN(date.getTime())) {
+//         return '';
+//     }
 //     const day = date.getDate().toString().padStart(2, '0');
 //     const month = (date.getMonth() + 1).toString().padStart(2, '0');
 //     const year = date.getFullYear();
@@ -36,10 +40,12 @@
 //         );
 //     }
 
-//     const [firstName, setFirstName] = useState(user.firstName);
-//     const [lastName, setLastName] = useState(user.lastName);
-//     const [birthday, setBirthday] = useState(new Date(user.dateOfBirth));
-//     const [avatar, setAvatar] = useState(user.avatar);
+//     // Khởi tạo birthday với giá trị hợp lệ
+//     const initialBirthday = user.dateOfBirth ? new Date(user.dateOfBirth) : new Date();
+//     const [firstName, setFirstName] = useState(user.firstName || '');
+//     const [lastName, setLastName] = useState(user.lastName || '');
+//     const [birthday, setBirthday] = useState(isNaN(initialBirthday.getTime()) ? new Date() : initialBirthday);
+//     const [avatar, setAvatar] = useState(user.avatar || '');
 //     const [focusedInput, setFocusedInput] = useState('');
 //     const [showDatePicker, setShowDatePicker] = useState(false);
 
@@ -71,16 +77,16 @@
 //     };
 
 //     const handleSave = () => {
-//         // // Validation
-//         // if (!firstName || !lastName) {
-//         //     Alert.alert('Lỗi', 'Vui lòng nhập đầy đủ họ và tên');
-//         //     return;
-//         // }
+//         // Validation
+//         if (!firstName || !lastName) {
+//             Alert.alert('Lỗi', 'Vui lòng nhập đầy đủ họ và tên');
+//             return;
+//         }
 
-//         // Kiểm tra xem avatar có được chọn không
-//         if (!avatar || avatar === user.avatar) {
-
-//             Alert.alert('Lỗi', 'Vui lòng chọn một ảnh đại diện mới');
+//         // Kiểm tra dateOfBirth
+//         const formattedDate = formatDate(birthday);
+//         if (!formattedDate || formattedDate.includes('NaN')) {
+//             Alert.alert('Lỗi', 'Ngày sinh không hợp lệ. Vui lòng chọn lại ngày sinh.');
 //             return;
 //         }
 
@@ -92,9 +98,10 @@
 //         } = {
 //             firstName,
 //             lastName,
-//             dateOfBirth: formatDate(birthday),
+//             dateOfBirth: formattedDate,
 //         };
 
+//         // Chỉ gửi avatar nếu người dùng chọn ảnh mới
 //         if (avatar && avatar !== user.avatar) {
 //             userData.avatar = {
 //                 uri: avatar,
@@ -121,7 +128,7 @@
 //                             {/* Ảnh đại diện */}
 //                             <View style={styles.avatarContainer}>
 //                                 <Image
-//                                     source={{ uri: avatar || 'https://cdnv2.tgdd.vn/mwg-static/common/News/1569295/tho-7-mau-1-2-0.jpg' }}
+//                                     source={{ uri: avatar || 'null' }}
 //                                     style={styles.avatar}
 //                                 />
 //                                 <TouchableOpacity style={styles.cameraIcon} onPress={pickImage}>
@@ -283,7 +290,20 @@
 // export default UpdateProfile;
 
 import React, { useState } from 'react';
-import { View, Text, Image, StyleSheet, TouchableOpacity, SafeAreaView, TextInput, Platform, KeyboardAvoidingView, ScrollView, Alert } from 'react-native';
+import {
+    View,
+    Text,
+    Image,
+    StyleSheet,
+    TouchableOpacity,
+    SafeAreaView,
+    TextInput,
+    Platform,
+    KeyboardAvoidingView,
+    ScrollView,
+    Alert,
+    ActivityIndicator,
+} from 'react-native';
 import { useNavigation, NavigationProp, ParamListBase } from '@react-navigation/native';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { Ionicons } from '@expo/vector-icons';
@@ -308,6 +328,7 @@ const UpdateProfile = () => {
     const navigation = useNavigation<NavigationProp<ParamListBase>>();
     const user = useSelector((state: RootState) => state.user.user);
     const { handleUpdateUser } = useUser();
+    const [isLoading, setIsLoading] = useState(false); // Thêm trạng thái loading
 
     if (!user) {
         return (
@@ -347,7 +368,7 @@ const UpdateProfile = () => {
         }
 
         const result = await ImagePicker.launchImageLibraryAsync({
-            mediaTypes: ImagePicker.MediaTypeOptions.Images,
+            mediaTypes: ImagePicker.MediaTypeOptions.Images, // Corrected to use MediaTypeOptions.Images
             allowsEditing: true,
             aspect: [1, 1],
             quality: 1,
@@ -359,7 +380,7 @@ const UpdateProfile = () => {
         }
     };
 
-    const handleSave = () => {
+    const handleSave = async () => {
         // Validation
         if (!firstName || !lastName) {
             Alert.alert('Lỗi', 'Vui lòng nhập đầy đủ họ và tên');
@@ -394,7 +415,12 @@ const UpdateProfile = () => {
         }
 
         console.log('Sending userData:', userData);
-        handleUpdateUser(userData);
+        setIsLoading(true); // Bật loading
+        try {
+            await handleUpdateUser(userData);
+        } finally {
+            setIsLoading(false); // Tắt loading dù thành công hay thất bại
+        }
     };
 
     return (
@@ -496,11 +522,22 @@ const UpdateProfile = () => {
                         </View>
 
                         {/* Nút lưu */}
-                        <TouchableOpacity style={styles.saveButton} onPress={handleSave}>
+                        <TouchableOpacity
+                            style={[styles.saveButton, isLoading && styles.saveButtonDisabled]}
+                            onPress={handleSave}
+                            disabled={isLoading}
+                        >
                             <Text style={styles.saveButtonText}>LƯU</Text>
                         </TouchableOpacity>
                     </View>
                 </ScrollView>
+
+                {/* Lớp phủ mờ khi loading */}
+                {isLoading && (
+                    <View style={styles.loadingOverlay}>
+                        <ActivityIndicator size="large" color="#00A4E4" />
+                    </View>
+                )}
             </KeyboardAvoidingView>
         </SafeAreaView>
     );
@@ -563,10 +600,21 @@ const styles = StyleSheet.create({
         marginHorizontal: 20,
         marginTop: 30,
     },
+    saveButtonDisabled: {
+        backgroundColor: '#99CFFF',
+        opacity: 0.6,
+    },
     saveButtonText: {
         fontSize: 16,
         fontWeight: 'bold',
         color: '#fff',
+    },
+    loadingOverlay: {
+        ...StyleSheet.absoluteFillObject,
+        backgroundColor: 'rgba(0, 0, 0, 0.5)', // Mờ với độ trong suốt
+        justifyContent: 'center',
+        alignItems: 'center',
+        zIndex: 1000, // Đảm bảo lớp phủ ở trên cùng
     },
 });
 
