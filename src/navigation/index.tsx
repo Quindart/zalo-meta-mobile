@@ -23,6 +23,7 @@ import ChangePasswordScreen from '@/screens/ProfileScreen/changePassword';
 import UpdateProfile from '@/screens/ProfileScreen/updateProfile';
 import OptionScreen from '@/screens/OptionScreen';
 import GroupScreen from '@/screens/GroupScreen';
+import FriendRequestScreen from '@/screens/ContactsScreen/friendRequest';
 
 
 
@@ -43,7 +44,7 @@ function NavigationApp() {
       <StatusBar barStyle="light-content" backgroundColor='#0D7DC9' />
 
       <Stack.Navigator
-        initialRouteName={ROUTING.HOME}
+        initialRouteName={ROUTING.TAB_WITH_HEADER_NAVIGATION}
         screenOptions={{
           headerShadowVisible: false,
         }}
@@ -146,6 +147,11 @@ function NavigationApp() {
         <Stack.Screen
           name={ROUTING.GROUP_SCREEN}
           component={GroupScreen}
+          options={{ headerShown: false }}
+        />
+        <Stack.Screen
+          name={ROUTING.FRIEND_REQUEST_SCREEN}
+          component={FriendRequestScreen}
           options={{ headerShown: false }}
         />
 
