@@ -20,4 +20,5 @@ export const ROUTING = {
     TAB_WITH_HEADER_NAVIGATION: 'TabWithHeaderNavigator',
     OPTION_SCREEN: 'Option',
     GROUP_SCREEN: 'Group',
+    FRIEND_REQUEST_SCREEN: 'Request',
 };
