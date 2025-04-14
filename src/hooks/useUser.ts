@@ -122,7 +122,7 @@ const useUser = () => {
             // console.error('B7: Cập nhật thông tin thất bại', error.message);
             // console.error('B7: Error response', error.response?.data);
             // Alert.alert('Lỗi', 'Có lỗi xảy ra khi cập nhật thông tin: ' + (error.response?.data?.message || error.message));
-            Alert.alert('Lỗi', 'Mạng chưa chuẩn bị cập nhật ảnh ' + error.message);
+            // Alert.alert('Lỗi', 'Mạng chưa chuẩn bị cập nhật ảnh ' + error.message);
             return;
         }
     };

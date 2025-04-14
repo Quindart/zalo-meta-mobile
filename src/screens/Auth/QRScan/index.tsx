@@ -12,11 +12,15 @@ import { Button, Dialog, Portal, Provider as PaperProvider } from 'react-native-
 import { getInforQR, loginQR } from '@/services/auth.service'
 import SocketService from '@/services/Socket.service';
 import SOCKET_EVENTS from '@/types/socket.event.enum';
+import { useSelector } from 'react-redux';
+import { RootState } from '@/redux/store';
 
 const socketService = SocketService.getInstance().getSocket();
 
 const QRScanTemplate = () => {
     const [visible, setVisible] = useState(false);
+    const userStore = useSelector((state: RootState) => state.user);
+    const token = userStore.accessToken
     const [scannedData, setScannedData] = useState('');
     const [hasPermission, setHasPermission] = useState(false);
     const [scanned, setScanned] = useState(false);
@@ -109,9 +113,10 @@ const QRScanTemplate = () => {
 
     const handleAcceptLoginOnWeb = async () => {
         console.log('Accept login on web');
+
         try {
-            let token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY3ZjY0ODZlMGVhMzFhY2NlMDNiM2QxMyIsInBob25lIjoiMDM2NDgzNTY5MiIsImVtYWlsIjoicXVhbmc4MnRoY3NwYkBnbWFpbC5jb20iLCJleHBpcnlfYWNjZXNzdG9rZW4iOiIxZCIsImV4cGlyeV9yZWZyZXNodG9rZW4iOiI3ZCIsImlhdCI6MTc0NDI2NDUzOSwiZXhwIjoxNzQ0MzUwOTM5fQ.wPPsC1PUNt_s4V5u18by9nb_Y5XCyU9avvWyIHYOD_4";
-            const result = await loginQR(token);
+            // let token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY3ZjY0ODZlMGVhMzFhY2NlMDNiM2QxMyIsInBob25lIjoiMDM2NDgzNTY5MiIsImVtYWlsIjoicXVhbmc4MnRoY3NwYkBnbWFpbC5jb20iLCJleHBpcnlfYWNjZXNzdG9rZW4iOiIxZCIsImV4cGlyeV9yZWZyZXNodG9rZW4iOiI3ZCIsImlhdCI6MTc0NDI2NDUzOSwiZXhwIjoxNzQ0MzUwOTM5fQ.wPPsC1PUNt_s4V5u18by9nb_Y5XCyU9avvWyIHYOD_4";
+            const result = await loginQR(`${token}`);
             hideDialog();
             setResultLogin(result.data);
             socketService.emit(SOCKET_EVENTS.QR.ACCEPTED_LOGIN, {
