@@ -1,6 +1,10 @@
 import React, { useState } from 'react';
 import { View, Text, FlatList, TouchableOpacity, StyleSheet, Image } from 'react-native';
 import { AntDesign, Feather, FontAwesome5, FontAwesome } from '@expo/vector-icons';
+import { useNavigation } from '@react-navigation/native';
+import { NavigationProp } from '@react-navigation/native';
+import { ParamListBase } from '@react-navigation/native';
+import { ROUTING } from '@/utils/constant';
 
 
 const contacts = [
@@ -11,25 +15,29 @@ const contacts = [
 ];
 
 const ChatListScreen = () => {
+  const navigation = useNavigation<NavigationProp<ParamListBase>>();
   const [activeTab, setActiveTab] = useState('Bạn bè');
 
   const renderItemContact = ({ item }: { item: any }) => {
     return (
-      <View style={styles.contactItem}>
-        <Image source={{ uri: item.avatar }} style={styles.avatar} />
-        <View style={styles.contactInfo}>
-          <Text style={styles.name}>{item.name}</Text>
+      <TouchableOpacity>
+
+        <View style={styles.contactItem}>
+          <Image source={{ uri: item.avatar }} style={styles.avatar} />
+          <View style={styles.contactInfo}>
+            <Text style={styles.name}>{item.name}</Text>
+          </View>
+          <Text style={styles.date}>{item.date}</Text>
+          <View style={styles.actionButtons}>
+            <TouchableOpacity style={styles.actionButton}>
+              <Feather name="phone" size={24} color="black" />
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.actionButton}>
+              <AntDesign name="videocamera" size={24} color="black" />
+            </TouchableOpacity>
+          </View>
         </View>
-        <Text style={styles.date}>{item.date}</Text>
-        <View style={styles.actionButtons}>
-          <TouchableOpacity style={styles.actionButton}>
-            <Feather name="phone" size={24} color="black" />
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.actionButton}>
-            <AntDesign name="videocamera" size={24} color="black" />
-          </TouchableOpacity>
-        </View>
-      </View>
+      </TouchableOpacity>
     );
   };
 
@@ -48,14 +56,14 @@ const ChatListScreen = () => {
         ))}
       </View>
 
-      <View style={styles.specialItem}>
+      <TouchableOpacity style={styles.specialItem} onPress={() => navigation.navigate(ROUTING.FRIEND_REQUEST_SCREEN)}>
         <View style={styles.specialIconContainer}>
           <FontAwesome5 style={styles.specialIcon} name="user-friends" />
         </View>
         <View style={styles.specialInfo}>
           <Text style={styles.specialName}>Lời mời kết bạn</Text>
         </View>
-      </View>
+      </TouchableOpacity>
       <View style={styles.specialItem}>
         <View style={styles.specialIconContainer}>
           <AntDesign style={styles.specialIcon} name="contacts" />
@@ -140,7 +148,7 @@ const styles = StyleSheet.create({
   },
   name: {
     fontSize: 16,
-    fontWeight: '600',
+    // fontWeight: '600',
     color: '#000',
   },
   date: {
