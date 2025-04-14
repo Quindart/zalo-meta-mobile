@@ -131,12 +131,12 @@ axiosConfig.interceptors.response.use(
         if (response.data && response.data.success) {
             return response.data;
         }
-        Alert.alert('Lỗi', response.data?.message || 'Có lỗi xảy ra');
+        // Alert.alert('Lỗi', response.data?.message || 'Có lỗi xảy ra');
         throw new Error(response.data?.message || 'Request failed');
     },
     (error) => {
         // console.error('Response Interceptor Error:', error.message);
-        Alert.alert('Lỗi', 'Không thể kết nối tới máy chủ.');
+        // Alert.alert('Lỗi', 'Không thể kết nối tới máy chủ.');
         return Promise.reject(error);
     },
 );
