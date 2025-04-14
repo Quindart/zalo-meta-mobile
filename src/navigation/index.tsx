@@ -43,7 +43,7 @@ function NavigationApp() {
       <StatusBar barStyle="light-content" backgroundColor='#0D7DC9' />
 
       <Stack.Navigator
-        initialRouteName={ROUTING.HOME}
+        initialRouteName={ROUTING.TAB_WITH_HEADER_NAVIGATION}
         screenOptions={{
           headerShadowVisible: false,
         }}
