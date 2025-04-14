@@ -37,7 +37,7 @@ export default StyleSheet.create({
         paddingVertical: 0,
     },
     phoneTextInput: {
-        height: 30,
+        height: 40,
         fontSize: 14,
     },
     phoneCodeText: {
