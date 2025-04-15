@@ -24,6 +24,7 @@ import UpdateProfile from '@/screens/ProfileScreen/updateProfile';
 import OptionScreen from '@/screens/OptionScreen';
 import GroupScreen from '@/screens/GroupScreen';
 import FriendRequestScreen from '@/screens/ContactsScreen/friendRequest';
+import ProfileUserScreen from '@/screens/ProfileUserScreen';
 
 
 
@@ -152,6 +153,11 @@ function NavigationApp() {
         <Stack.Screen
           name={ROUTING.FRIEND_REQUEST_SCREEN}
           component={FriendRequestScreen}
+          options={{ headerShown: false }}
+        />
+        <Stack.Screen
+          name={ROUTING.PROFILE_USER_SCREEN}
+          component={ProfileUserScreen}
           options={{ headerShown: false }}
         />
 
