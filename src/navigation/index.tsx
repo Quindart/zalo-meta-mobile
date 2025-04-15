@@ -21,6 +21,8 @@ import My_QR from '@/screens/ProfileScreen/qr';
 import QR_SCAN from '@/screens/Auth/QRScan/index';
 import ChangePasswordScreen from '@/screens/ProfileScreen/changePassword';
 import UpdateProfile from '@/screens/ProfileScreen/updateProfile';
+import OptionScreen from '@/screens/OptionScreen';
+import GroupScreen from '@/screens/GroupScreen';
 
 
 
@@ -136,6 +138,17 @@ function NavigationApp() {
           component={ForgotPasswordTemplate}
           options={{ headerShown: false }}
         />
+        <Stack.Screen
+          name={ROUTING.OPTION_SCREEN}
+          component={OptionScreen}
+          options={{ headerShown: false }}
+        />
+        <Stack.Screen
+          name={ROUTING.GROUP_SCREEN}
+          component={GroupScreen}
+          options={{ headerShown: false }}
+        />
+
 
 
       </Stack.Navigator>
