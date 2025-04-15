@@ -1,20 +1,37 @@
 import React, { useState } from 'react';
-import { View, TextInput, TouchableOpacity, FlatList, Text, StyleSheet } from 'react-native';
-import { AntDesign, Feather, MaterialCommunityIcons, EvilIcons } from '@expo/vector-icons';
+import { View, TextInput, TouchableOpacity, FlatList, Text, StyleSheet, Image } from 'react-native';
+import { AntDesign, Feather, MaterialCommunityIcons, EvilIcons, Ionicons, FontAwesome6 } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { RootStackParamList } from '@/navigation/type';
 import { LinearGradient } from 'expo-linear-gradient';
 import theme from '@/theme';
 import QR_Scan from '@/components/ui/QR_Scan';
+import useUser from '@/hooks/useUser';
+import { User } from '@/models/user';
+import { ROUTING } from '@/utils/constant';
 
 const SearchScreen = () => {
-  const navigation = useNavigation();
+  const { handleSearchUserByPhone } = useUser();
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const [searchText, setSearchText] = useState('');
-  const [results, setResults] = useState<string[]>([]);
+  const [results, setResults] = useState<any[]>([]);
 
-  const handleSearch = (text: string) => {
-    setSearchText(text);
-    setResults(text ? [`${text} 1`, `${text} 2`, `${text} 3`] : []);
+
+  const handleSearch = async (phone: string) => {
+    try {
+      const data = await handleSearchUserByPhone(phone);
+      if (data) {
+        setResults(data); // hoặc data.results tùy vào response
+      } else {
+        setResults([]);
+      }
+    } catch (error) {
+      console.error('Lỗi khi tìm kiếm:', error);
+      setResults([]);
+    }
   };
+
 
   return (
     <View style={styles.container}>
@@ -36,16 +53,19 @@ const SearchScreen = () => {
             placeholder="Tìm kiếm"
             placeholderTextColor="#989BA1"
             value={searchText}
-            onChangeText={handleSearch}
+            onChangeText={setSearchText} // Cập nhật searchText bình thường
+            onSubmitEditing={() => handleSearch(searchText)} // Gọi khi nhấn "Xong"
+            returnKeyType="search" // Hiển thị nút "Tìm" thay vì "Xong"
             autoFocus
           />
+
 
           {/* Icon Tìm Kiếm */}
           <AntDesign name="search1" size={18} color="#989BA1" style={{ position: 'absolute', left: '3%' }} />
 
           {/* Nút Xóa */}
           {searchText.length > 0 && (
-            <TouchableOpacity onPress={() => handleSearch('')} style={[styles.iconButton, { position: 'absolute', right: '15%' }]}>
+            <TouchableOpacity onPress={() => { setResults([]); setSearchText(''); }} style={[styles.iconButton, { position: 'absolute', right: '15%' }]}>
               <AntDesign name="closecircle" size={18} color="#989BA1" />
             </TouchableOpacity>
           )}
@@ -62,9 +82,27 @@ const SearchScreen = () => {
         data={results}
         keyExtractor={(item, index) => index.toString()}
         renderItem={({ item }) => (
-          <TouchableOpacity style={styles.resultItem}>
-            <Text style={styles.resultText}>{item}</Text>
-          </TouchableOpacity>
+
+          <View style={styles.resultItem}>
+            <View style={styles.userContainer}>
+              <TouchableOpacity onPress={() => {
+                navigation.navigate(ROUTING.PROFILE_USER_SCREEN, { userId: item._id })
+              }}
+                style={{ flexDirection: 'row', width: '85%', alignItems: 'center' }}>
+                <Image
+                  source={{ uri: item.avatar }}
+                  style={styles.avatar}
+                />
+                <View style={styles.userInfo}>
+                  <Text style={styles.userName}>{item.firstName} {item.lastName}</Text>
+                  <Text style={styles.userPhone}>Số điện thoại: {item.phone}</Text>
+                </View>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.callButton}>
+                <Feather name="message-circle" size={30} color="#00A4E4" />
+              </TouchableOpacity>
+            </View>
+          </View>
         )}
       />
     </View>
@@ -74,7 +112,7 @@ const SearchScreen = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: 'white',
+    backgroundColor: '#F5F5F5',
   },
   header: {
     flexDirection: 'row',
@@ -108,7 +146,12 @@ const styles = StyleSheet.create({
     marginLeft: 3,
   }
   ,
-
+  sectionTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#333',
+    marginBottom: 10,
+  },
   rightIcons: {
     marginRight: 12,
   },
@@ -116,9 +159,37 @@ const styles = StyleSheet.create({
     padding: 10,
     borderBottomWidth: 0.5,
     borderBottomColor: '#ddd',
+    backgroundColor: '#fff',
   },
   resultText: {
     fontSize: 16,
+  },
+  userContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 10,
+  },
+  avatar: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    marginRight: 15,
+  },
+  userInfo: {
+    flex: 1,
+  },
+  userName: {
+    fontSize: 16,
+    fontWeight: '400',
+    color: '#333',
+  },
+  userPhone: {
+    fontSize: 14,
+    color: '#666',
+    marginTop: 5,
+  },
+  callButton: {
+    padding: 10,
   },
 });
 

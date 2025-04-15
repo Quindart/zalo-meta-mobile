@@ -5,10 +5,8 @@ import { setMe } from '@/redux/userSlice';
 import { NavigationProp, ParamListBase, useNavigation } from '@react-navigation/native';
 import { ROUTING } from '@/utils/constant';
 import { RootState } from '@/redux/store';
-// import { getAccessToken } from '@/utils/tokenManager';
-import { selectAccessToken } from '@/redux/userSlice';
 import { User } from '@/models/user';
-import store from '@/redux/store'; // Import store để truy cập Redux state
+import { changePassword, searchUserByPhone, getUserById } from '@/services/user.service';
 
 
 const useUser = () => {
@@ -24,12 +22,12 @@ const useUser = () => {
     // Hàm chuyển định dạng ngày sang ISO (YYYY-MM-DD)
     const formatDateToISO = (dateStr: string): string => {
         const [day, month, year] = dateStr.split('/');
-        // Kiểm tra xem các giá trị có hợp lệ không
         if (!day || !month || !year || isNaN(parseInt(day)) || isNaN(parseInt(month)) || isNaN(parseInt(year))) {
             throw new Error('Invalid date format');
         }
         return `${year}-${month}-${day}`;
     };
+
 
     const handleUpdateUser = async (userData: {
         firstName?: string;
@@ -45,17 +43,6 @@ const useUser = () => {
                 navigation.navigate(ROUTING.HOME);
                 return;
             }
-
-            // Lấy accessToken
-            const state = store.getState(); // Lấy toàn bộ state từ Redux Store
-            const accessToken = state.user.accessToken; // Lấy accessToken từ state
-            if (!accessToken) {
-                console.error('B2: Không tìm thấy accessToken');
-                Alert.alert('Lỗi', 'Không tìm thấy token. Vui lòng đăng nhập lại.');
-                navigation.navigate(ROUTING.HOME);
-                return;
-            }
-
             // Tạo FormData
             const formData = new FormData();
             if (userData.firstName) formData.append('firstName', userData.firstName);
@@ -79,11 +66,7 @@ const useUser = () => {
                 console.log('B3: FormData', formData);
 
             }
-
             console.log('B4: userData', userData);
-            console.log('B5: accessToken', accessToken);
-
-            // Gửi yêu cầu cập nhật thông tin user
 
             const updateResponse = await axiosConfig.put('/api/v1/me', formData, {
                 headers: {
@@ -104,15 +87,9 @@ const useUser = () => {
                     avatar: jsonUpdateResponse.user.avatar || user.avatar,
                     updatedAt: jsonUpdateResponse.user.updatedAt,
                 };
-                console.log('B8: Updated user before dispatch', updatedUser);
                 dispatch(setMe(updatedUser));
-                console.log('B9: Dispatched updated user to Redux');
-
-                // Hiển thị thông báo thành công
                 console.log('Cập nhật thông tin thành công', jsonUpdateResponse.user);
                 Alert.alert('Thành công', 'Cập nhật thông tin thành công');
-
-                // Điều hướng về màn hình trước đó
                 navigation.goBack();
             } else {
                 console.error('B6: Cập nhật thất bại - Response không thành công', jsonUpdateResponse);
@@ -126,7 +103,73 @@ const useUser = () => {
             return;
         }
     };
-    return { handleUpdateUser };
+
+
+    const handleChangePassword = async (password: string, newPassword: string) => {
+        try {
+            const changeResponse = await changePassword({ password, newPassword });
+            const jsonChangeResponse = toJSON(changeResponse);
+            if (jsonChangeResponse.success) {
+                navigation.goBack();
+                Alert.alert('Thành công', jsonChangeResponse.message);
+            } else {
+                Alert.alert('Lỗi', jsonChangeResponse.message);
+            }
+        } catch (error: any) {
+            Alert.alert('Lỗi', (error.response?.data?.message || error.message));
+        }
+    };
+
+    const handleSearchUserByPhone = async (keywords: string) => {
+        try {
+            if (!keywords) {
+                return null;
+            }
+            console.log('Tìm kiếm người dùng với số điện thoại', keywords);
+            const type = 'phone';
+            const response = await searchUserByPhone(type, keywords);
+            const data = toJSON(response);
+            console.log('Response tìm kiếm:', data);
+            if (data.success) {
+                console.log('Tìm kiếm thành công:', data.users);
+                return data.users;
+            } else {
+                Alert.alert('Lỗi', data.message || 'Không tìm thấy người dùng');
+                return null;
+            }
+        } catch (error: any) {
+            console.error('Lỗi API:', error);
+            Alert.alert('Lỗi', error.response?.data?.message || error.message || 'Lỗi không xác định');
+            return null;
+        }
+    };
+
+    const handleGetUserById = async (userId: string) => {
+        try {
+            if (!userId) {
+                return null;
+            }
+            console.log('Lấy thông tin người dùng với ID', userId);
+            const response = await getUserById(userId);
+            console.log('Response lấy thông tin người dùng:', response);
+            const data = toJSON(response);
+            console.log('Response lấy thông tin người dùng:', data.user);
+            if (data.success) {
+                return data.user;
+            } else {
+                Alert.alert('Lỗi', data.message || 'Không tìm thấy người dùng');
+                return null;
+            }
+        }
+        catch (error: any) {
+            console.error('Lỗi API:', error);
+            Alert.alert('Lỗi', error.response?.data?.message || error.message || 'Lỗi không xác định');
+            return null;
+        }
+    };
+
+
+    return { handleUpdateUser, handleChangePassword, handleSearchUserByPhone, handleGetUserById };
 };
 
 export default useUser;
