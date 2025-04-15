@@ -1,172 +1,271 @@
 import SocketService from "@/services/Socket.service";
-import SOCKET_EVENTS from "@/types/socket.event.enum";
 import { useEffect, useState, useCallback, useRef } from "react";
-interface ResponseType<T> {
+
+const SOCKET_EVENTS = {
+    MESSAGE: {
+        SEND: "message:send",
+        RECEIVED: "message:received",
+        DELIVERED: "message:delivered",
+        READ: "message:read",
+        ERROR: "message:error",
+        LOAD: "message:load",
+        LOAD_RESPONSE: "message:loadResponse",
+    },
+    CHANNEL: {
+        FIND_BY_ID: "channel:findById",
+        FIND_BY_ID_RESPONSE: "channel:findByIdResponse",
+        FIND_ORCREATE: "channel:findOrCreate",
+        FIND_ORCREATE_RESPONSE: "channel:findOrCreateResponse",
+        LOAD_CHANNEL: "channel:load",
+        LOAD_CHANNEL_RESPONSE: "channel:loadResponse",
+        CREATE: "channel:create",
+        CREATE_RESPONSE: "channel:createResponse",
+        JOIN_ROOM: "joinRoom",
+        JOIN_ROOM_RESPONSE: "joinRoomResponse",
+        LEAVE_ROOM: "leaveRoom",
+        LEAVE_ROOM_RESPONSE: "leaveRoomResponse",
+    },
+};
+
+interface ResponseType {
     success: boolean;
     message: string;
     data: any;
 }
 
-// Hook nhận channelId và userId để hỗ trợ dynamic context
-export const useChat = (channelId: string, userId: string) => {
-    const socketService = useRef(SocketService.getInstance().getSocket()).current;
+interface MessageType {
+    id?: string;
+    _id?: string;
+    channelId: string;
+    senderId: string;
+    content: string;
+    timestamp: string;
+    status: string;
+    sender?: {
+        id: string;
+        name: string;
+        avatar: string;
+    };
+}
+
+export const useChat = (currentUserId: string) => {
     const [messages, setMessages] = useState<any[]>([]);
-    const [chatList, setChatList] = useState<any[]>([]);
+    const [channel, setChannel] = useState<any>(null);
+    const [listChannel, setListChannel] = useState<any[]>([]);
     const [loading, setLoading] = useState<boolean>(false);
-    const [loadingChatList, setLoadingChatList] = useState<boolean>(false);
-    const [error, setError] = useState<string | null>(null);
-    const hasSetupListeners = useRef(false);
+    const currentChannelRef = useRef<string | null>(null);
 
-    // Tải danh sách tin nhắn
-    const loadMessages = useCallback(async (chanId: string) => {
-        if (!chanId) {
-            setError("Channel ID is required");
-            return;
-        }
-        setLoading(true);
-        setError(null);
-        try {
-            if (!socketService.connected) {
-                throw new Error("Socket not connected");
-            }
-            socketService.emit(SOCKET_EVENTS.MESSAGE.LOAD, { channelId: chanId });
-            // Fallback: Dùng API nếu cần
-            // const response = await getMessages(chanId);
-            // setMessages(response.data);
-        } catch (err: any) {
-            setError(err.message || "Failed to load messages");
-            setLoading(false);
-        }
-    }, []);
+    const socketService = SocketService.getInstance(currentUserId);
 
-    // Gửi tin nhắn mới
-    const sendMessage = useCallback((chanId: string, senderId: string, content: string) => {
-        if (!chanId || !senderId || !content.trim()) {
-            setError("Channel ID, sender ID, and content are required");
-            return;
-        }
-        if (!socketService.connected) {
-            setError("Socket not connected");
-            return;
-        }
-        setError(null);
-        const messageData = {
-            channelId: chanId,
-            senderId,
-            content,
-        };
-        socketService.emit(SOCKET_EVENTS.MESSAGE.SEND, messageData);
-    }, []);
-
-    // Tải danh sách kênh chat
-    const getChatListService = useCallback(async (uId: string) => {
-        if (!uId) {
-            setError("User ID is required");
-            return;
-        }
-        setLoadingChatList(true);
-        setError(null);
-        try {
-            if (!socketService.connected) {
-                throw new Error("Socket not connected");
-            }
-            socketService.emit(SOCKET_EVENTS.CHANNEL.LOAD_CHANNEL, { currentUserId: uId });
-            // Fallback: Dùng API nếu cần
-            // const response = await getChatList(uId);
-            // setChatList(response.data);
-        } catch (err: any) {
-            setError(err.message || "Failed to load chat list");
-            setLoadingChatList(false);
-        }
-    }, []);
-
-    // Thiết lập Socket.IO listeners
     useEffect(() => {
-        if (hasSetupListeners.current || !channelId || !userId) return;
+        const socket = socketService.getSocket();
+        if (!socket.connected) {
+            socket.connect();
+        }
+        console.log("Socket connected:", socket.connected);
 
-        hasSetupListeners.current = true;
-        console.log("Setting up socket listeners");
+        const findOrCreateResponse = (response: ResponseType) => {
+            if (response.success) {
+                console.log("Channel received:", response.data);
+                setChannel(response.data);
+                setLoading(false);
+                currentChannelRef.current = response.data.id;
+            } else {
+                console.error("Failed to create/find channel:", response.message);
+                setLoading(false);
+            }
+        };
 
-        // Kết nối socket nếu chưa kết nối
-        if (!socketService.connected) {
-            socketService.connect();
+        const joinRoomResponse = (response: ResponseType) => {
+            if (response.success) {
+                setChannel(response.data.channel);
+                setMessages(response.data.messages);
+                setLoading(false);
+                currentChannelRef.current = response.data.id;
+            }
+            else {
+                console.error("Failed to join room:", response.message);
+                setLoading(false);
+            }
         }
 
-        // Xóa listeners cũ
-        socketService.off(SOCKET_EVENTS.MESSAGE.RECEIVED);
-        socketService.off(SOCKET_EVENTS.MESSAGE.READ);
-        socketService.off(SOCKET_EVENTS.CHANNEL.LOAD_CHANNEL);
-        socketService.off(SOCKET_EVENTS.CHANNEL.LOAD_CHANNEL_RESPONSE);
-        socketService.off(SOCKET_EVENTS.MESSAGE.LOAD);
-        socketService.off(SOCKET_EVENTS.MESSAGE.LOAD_RESPONSE);
+        const updateChannelWithMessage = (message: MessageType) => {
+            setListChannel(prevChannels => {
+                return prevChannels.map(channel => {
+                    if (channel.id === message.channelId) {
+                        // Update the channel with the latest message
+                        return {
+                            ...channel,
+                            id: 123456789,
+                            avatar: message.sender?.avatar || "https://example.com/default-avatar.png",
+                            name: message.sender?.name || "Unknown",
+                            message: message.content,
+                            time: message.timestamp,
+                            isRead: message.status === "read",
+                            isChoose: currentChannelRef.current === message.channelId,
+                        };
+                    }
+                    return channel;
+                });
+            });
+        };
 
-        // Lắng nghe tin nhắn mới
-        socketService.on(SOCKET_EVENTS.MESSAGE.RECEIVED, (newMessage: any) => {
+        const receivedMessage = (message: any) => {
+            const members = message.members;
+            const isMember = members.some((member: any) => member.userId === currentUserId);
+            if (!isMember) {
+                console.log("Received message not for current user, ignoring:", message);
+                return;
+            }
+
+            loadChannel(currentUserId);
+
+            updateChannelWithMessage(message);
+
+            if (message.channelId !== currentChannelRef.current) {
+                console.log("Message is for a different channel, ignoring", {
+                    messageChannelId: message.channelId,
+                    currentChannelId: currentChannelRef.current
+                });
+                return;
+            }
             setMessages((prev) => {
-                // Tránh trùng lặp tin nhắn
-                if (prev.some((msg) => msg.id === newMessage.id)) {
+                const messageId = message.id || message._id;
+                const isDuplicate = messageId ?
+                    prev.some(msg => (msg.id === messageId || msg._id === messageId)) :
+                    false;
+
+                if (isDuplicate) {
+                    console.log("Duplicate message detected, not adding");
                     return prev;
                 }
-                return [...prev, newMessage];
+
+                console.log("Adding new message to state for channel:", currentChannelRef.current);
+                return [...prev, message];
             });
-        });
+        }
 
-        // Lắng nghe trạng thái tin nhắn
-        socketService.on(SOCKET_EVENTS.MESSAGE.READ, (update: { messageId: string }) => {
-            setMessages((prev) =>
-                prev.map((msg) =>
-                    msg.id === update.messageId ? { ...msg, status: "read" } : msg,
-                ),
-            );
-        });
-
-        // Lắng nghe danh sách kênh
-        socketService.on(SOCKET_EVENTS.CHANNEL.LOAD_CHANNEL_RESPONSE, (data: ResponseType<any[]>) => {
-            setLoadingChatList(false);
-            if (data.success) {
-                setChatList(data.data);
-            } else {
-                setError(data.message);
+        const loadChannelResponse = (response: ResponseType) => {
+            if (response.success) {
+                setListChannel(response.data);
+                setLoading(false);
             }
-        });
-
-        // Lắng nghe danh sách tin nhắn
-        socketService.on(SOCKET_EVENTS.MESSAGE.LOAD_RESPONSE, (data: ResponseType<any[]>) => {
-            setLoading(false);
-            if (data.success) {
-                setMessages(data.data);
-            } else {
-                setError(data.message);
+            else {
+                console.error("Failed to load channel:", response.message);
+                setLoading(false);
             }
-        });
+        }
 
-        // Xử lý lỗi socket
-        socketService.on("error", (err: { message: string }) => {
-            setError(err.message);
-        });
+        const createGroupResponse = (response: ResponseType) => {
+            if (response.success) {
+                setListChannel((prev) => [...prev, response.data]);
+                setLoading(false);
+            } else {
+                console.error("Failed to create group:", response.message);
+                setLoading(false);
+            }
+        }
 
-        // Cleanup
+        const leaveRoomResponse = (response: ResponseType) => {
+            if (response.success) {
+                setChannel(null);
+                setMessages([]);
+                setLoading(false);
+                setListChannel((prev) => prev.filter(channel => channel.id !== response.data.channelId));
+            }
+            else {
+                console.error("Failed to leave room:", response.message);
+                setLoading(false);
+            }
+        }
+
+
+
+
+
+
+        socket.on(SOCKET_EVENTS.CHANNEL.JOIN_ROOM_RESPONSE, joinRoomResponse);
+        socket.on(SOCKET_EVENTS.CHANNEL.FIND_ORCREATE_RESPONSE, findOrCreateResponse);
+        socket.on(SOCKET_EVENTS.MESSAGE.RECEIVED, receivedMessage);
+        socket.on(SOCKET_EVENTS.CHANNEL.LOAD_CHANNEL_RESPONSE, loadChannelResponse);
+        socket.on(SOCKET_EVENTS.CHANNEL.CREATE_RESPONSE, createGroupResponse);
+        socket.on(SOCKET_EVENTS.CHANNEL.LEAVE_ROOM_RESPONSE, leaveRoomResponse);
+
         return () => {
-            console.log("Cleaning up socket listeners");
-            socketService.off(SOCKET_EVENTS.MESSAGE.RECEIVED);
-            socketService.off(SOCKET_EVENTS.MESSAGE.READ);
-            socketService.off(SOCKET_EVENTS.CHANNEL.LOAD_CHANNEL);
-            socketService.off(SOCKET_EVENTS.CHANNEL.LOAD_CHANNEL_RESPONSE);
-            socketService.off(SOCKET_EVENTS.MESSAGE.LOAD);
-            socketService.off(SOCKET_EVENTS.MESSAGE.LOAD_RESPONSE);
-            socketService.off("error");
-            socketService.disconnect();
+            socket.off(SOCKET_EVENTS.CHANNEL.FIND_ORCREATE_RESPONSE, findOrCreateResponse);
+            socket.off(SOCKET_EVENTS.CHANNEL.JOIN_ROOM_RESPONSE, joinRoomResponse);
+            socket.off(SOCKET_EVENTS.MESSAGE.RECEIVED, receivedMessage);
+            socket.off(SOCKET_EVENTS.CHANNEL.LOAD_CHANNEL_RESPONSE, loadChannelResponse);
+            socket.off(SOCKET_EVENTS.CHANNEL.CREATE_RESPONSE, createGroupResponse);
+            socket.off(SOCKET_EVENTS.CHANNEL.LEAVE_ROOM_RESPONSE, leaveRoomResponse);
         };
-    }, [channelId, userId]);
+    }, []);
+
+    const findOrCreateChat = useCallback((receiverId: string) => {
+        setLoading(true);
+        setChannel(null);
+        setMessages([]);
+        const socket = socketService.getSocket();
+        const params = { senderId: currentUserId, receiverId };
+        socket.emit(SOCKET_EVENTS.CHANNEL.FIND_ORCREATE, params);
+    }, []);
+
+    const joinRoom = useCallback((channelId: string) => {
+        setLoading(true);
+        setChannel(null);
+        setMessages([]);
+        const socket = socketService.getSocket();
+        currentChannelRef.current = channelId;
+        const params = { channelId, currentUserId };
+        socket.emit(SOCKET_EVENTS.CHANNEL.JOIN_ROOM, params);
+    }, []);
+
+    const sendMessage = useCallback((channelId: string, content: string) => {
+        const socket = socketService.getSocket();
+        const messageData = {
+            channelId,
+            senderId: currentUserId,
+            content: content.trim(),
+            timestamp: new Date().toISOString(),
+            status: "sent"
+        };
+        currentChannelRef.current = channelId;
+        socket.emit(SOCKET_EVENTS.MESSAGE.SEND, messageData);
+    }, []);
+
+    const loadChannel = useCallback((userId: string) => {
+        setLoading(true);
+        const socket = socketService.getSocket();
+        const params = { currentUserId: userId };
+        socket.emit(SOCKET_EVENTS.CHANNEL.LOAD_CHANNEL, params);
+    }, []);
+
+    const createGroup = useCallback((name: string, members: string[]) => {
+        setLoading(true);
+        const socket = socketService.getSocket();
+        const params = { name, currentUserId, members: members };
+        socket.emit(SOCKET_EVENTS.CHANNEL.CREATE, params);
+    }, []);
+
+    const leaveRoom = useCallback((channelId: string) => {
+        const socket = socketService.getSocket();
+        const params = {
+            channelId,
+            userId: currentUserId
+        };
+        socket.emit(SOCKET_EVENTS.CHANNEL.LEAVE_ROOM, params);
+    }, []);
 
     return {
-        messages,
+        findOrCreateChat,
+        joinRoom,
         sendMessage,
-        loadMessages,
-        getChatListService,
+        loadChannel,
+        createGroup,
+        leaveRoom,
+        listChannel,
+        channel,
+        messages,
         loading,
-        chatList,
-        loadingChatList,
-        error,
     };
 };

@@ -50,6 +50,9 @@ export default StyleSheet.create({
         padding: 10,
         borderRadius: 10,
     },
+    loadingContainer: {
+        flex: 1,
+    },
     myMessageBubble: {
         backgroundColor: '#DBEBFF',
     },
