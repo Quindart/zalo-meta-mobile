@@ -23,31 +23,16 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { ROUTING } from '@/utils/constant';
 import { useSelector } from 'react-redux';
 import { RootState } from '@/redux/store';
-import { useChat } from '@/hooks/useChat'; // Hook đã cải tiến
+import { useChat } from '@/hooks/useChat';
 
 type ChatScreenRouteProp = RouteProp<RootStackParamList, typeof ROUTING.CHAT_SCREEN>;
 type ChatScreenNavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
-// Định nghĩa interface (từ useChat)
-interface Message {
-  id: string;
-  channelId: string;
-  senderId: string;
-  content: string;
-  status: 'sent' | 'delivered' | 'read';
-  createdAt: string;
-}
 
-interface Chat {
-  id: string;
-  name: string;
-  lastMessage?: Message;
-  participants: string[];
-}
 
 // ChatHeader
 const ChatHeader = React.memo(
-  ({ navigation, item }: { navigation: ChatScreenNavigationProp; item: Chat }) => (
+  ({ navigation, item }: { navigation: ChatScreenNavigationProp; item: any }) => (
     <LinearGradient
       colors={[theme.colors.primary, theme.colors.primaryContainer]}
       start={{ x: 0, y: 0 }}
@@ -57,7 +42,7 @@ const ChatHeader = React.memo(
       <TouchableOpacity onPress={() => navigation.goBack()} style={styles.iconButton}>
         <AntDesign name="arrowleft" size={20} color="white" />
       </TouchableOpacity>
-      <Text style={styles.headerTitle}>{item.name}</Text>
+      <Text style={styles.headerTitle}>{item.name || 'Chat'}</Text>
       <View style={styles.headerIcons}>
         <TouchableOpacity style={styles.iconButton}>
           <Ionicons name="call-outline" size={24} color="white" />
@@ -72,26 +57,30 @@ const ChatHeader = React.memo(
 
 // MessageItem
 const MessageItem = React.memo(
-  ({ item, sender, receiver }: { item: Message; sender: any; receiver: any }) => {
+  (
+    { item }: { item: any }) => {
+    const me = useSelector((state: RootState) => state.user.user);
     const isMyMessage = useMemo(() => {
-      if (item.senderId && typeof item.senderId === 'object' && item.senderId._id) {
-        return item.senderId._id === sender?._id;
-      } else if (typeof item.senderId === 'string') {
-        return item.senderId === sender?._id;
-      }
+      if (me?.id === item.sender?.id)
+        return true;
       return false;
-    }, [item.senderId, sender?._id]);
-
-    const receiverPerson = item.receiverId;
-
+    }, [me?.id, item.sender?.id]);
     return (
       <View
         style={[styles.messageRow, isMyMessage ? styles.myMessageRow : styles.otherMessageRow]}
       >
-        {!isMyMessage && (
+        {!isMyMessage ? (
           <Image
             source={{
-              uri: receiver?.avatar || receiverPerson?.avatar || 'https://via.placeholder.com/40',
+              uri: item.sender.avatar,
+            }}
+            style={styles.messageAvatar}
+            defaultSource={require('../../../assets/user_default.jpg')}
+          />
+        ) : (
+          <Image
+            source={{
+              uri: me?.avatar,
             }}
             style={styles.messageAvatar}
             defaultSource={require('../../../assets/user_default.jpg')}
@@ -105,7 +94,7 @@ const MessageItem = React.memo(
         >
           <Text style={styles.messageText}>{item.content}</Text>
           <Text style={styles.messageTime}>
-            {new Date(item.createdAt).toLocaleTimeString()}
+            {new Date(item.timestamp).toLocaleTimeString()}
           </Text>
         </View>
       </View>
@@ -117,7 +106,7 @@ const MessageItem = React.memo(
       prevProps.item.content === nextProps.item.content &&
       prevProps.item.status === nextProps.item.status &&
       prevProps.item.createdAt === nextProps.item.createdAt &&
-      prevProps.sender?._id === nextProps.sender?._id
+      prevProps.item.senderId?._id === nextProps.item.senderId?._id
     );
   },
 );
@@ -126,25 +115,22 @@ const MessageItem = React.memo(
 const MessageInputContainer = React.memo(
   ({
     channelId,
-    senderId,
     sendMessage,
   }: {
     channelId: string;
-    senderId: string;
-    sendMessage: (chanId: string, senderId: string, content: string) => void;
+    sendMessage: (chanId: string, content: string) => void;
   }) => {
     const [inputMessage, setInputMessage] = useState('');
     const flatListRef = useRef<FlatList>(null);
-
     const handleSendMessage = useCallback(() => {
       if (inputMessage.trim()) {
-        sendMessage(channelId, senderId, inputMessage);
+        sendMessage(channelId, inputMessage);
         setInputMessage('');
         setTimeout(() => {
           flatListRef.current?.scrollToEnd?.({ animated: true });
         }, 100);
       }
-    }, [inputMessage, channelId, senderId, sendMessage]);
+    }, [inputMessage, channelId, sendMessage]);
 
     return (
       <View style={styles.inputContainer}>
@@ -152,7 +138,7 @@ const MessageInputContainer = React.memo(
           style={styles.input}
           placeholder="Tin nhắn"
           value={inputMessage}
-          onChangeText={setInputMessage}
+          onChangeText={(e) => setInputMessage(e)}
           multiline
         />
         <TouchableOpacity style={styles.sendButton} onPress={handleSendMessage}>
@@ -168,41 +154,27 @@ const ChatScreen = ({ route }: { route: ChatScreenRouteProp }) => {
   const renderCountRef = useRef(0);
   renderCountRef.current += 1;
   console.log(`ChatScreen render #${renderCountRef.current}`);
-
   const { item } = route.params || { item: {} };
   const navigation = useNavigation<ChatScreenNavigationProp>();
   const sender = useSelector((state: RootState) => state.user.user);
-  const channelId = item.id; // Giả định item.id là channelId
-  const userId = sender?._id || '';
+  const channelId = item.id || '';
+  const members = item.members || [];
 
   // Sử dụng useChat
-  const {
-    messages,
-    sendMessage,
-    loadMessages,
-    getChatListService,
-    loading,
-    chatList,
-    loadingChatList,
-    error,
-  } = useChat(channelId, userId);
+  const { sendMessage, messages, loading, joinRoom } = useChat(sender?.id);
+  console.log("check messages", messages);
 
   const flatListRef = useRef<FlatList>(null);
 
-  // Tải tin nhắn và danh sách kênh khi khởi tạo
+  // Tải tin nhắn khi khởi tạo
   useEffect(() => {
-    if (channelId && userId) {
-      loadMessages(channelId);
-      getChatListService(userId);
+    if (channelId && sender?.id) {
+      console.log('Loading messages for channelId:', channelId);
+      joinRoom(channelId);
     }
-  }, [channelId, userId, loadMessages, getChatListService]);
+  }, [channelId, sender?.id, joinRoom]);
 
-  // Hiển thị lỗi nếu có
-  useEffect(() => {
-    if (error) {
-      Alert.alert('Error', error, [{ text: 'OK', onPress: () => { } }]);
-    }
-  }, [error]);
+
 
   // Cuộn đến cuối danh sách tin nhắn
   const scrollToEnd = useCallback(() => {
@@ -210,14 +182,12 @@ const ChatScreen = ({ route }: { route: ChatScreenRouteProp }) => {
   }, []);
 
   const renderItem = useCallback(
-    ({ item }: { item: Message }) => (
-      <MessageItem item={item} sender={sender} receiver={item.secondUser} />
-    ),
+    ({ item }: { item: any }) => <MessageItem item={item} />,
     [sender],
   );
 
   const keyExtractor = useCallback(
-    (item: Message, index: number) =>
+    (item: any, index: number) =>
       item.id ? item.id.toString() : `msg-${index}-${Date.now()}`,
     [],
   );
@@ -252,7 +222,7 @@ const ChatScreen = ({ route }: { route: ChatScreenRouteProp }) => {
           removeClippedSubviews={true}
         />
 
-        <MessageInputContainer channelId={channelId} senderId={userId} sendMessage={sendMessage} />
+        <MessageInputContainer channelId={channelId} sendMessage={sendMessage} />
       </KeyboardAvoidingView>
     </SafeAreaView>
   );

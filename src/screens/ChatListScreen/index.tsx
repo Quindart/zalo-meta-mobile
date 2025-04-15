@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useCallback, memo } from 'react';
+import React, { useEffect, useCallback, memo } from 'react';
+import { useFocusEffect } from '@react-navigation/native';
 import {
   FlatList,
   TouchableOpacity,
@@ -8,7 +9,6 @@ import {
   ActivityIndicator,
   Alert,
 } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
 import styles from './css';
 import { NavigationProp, ParamListBase } from '@react-navigation/native';
 import { ROUTING } from '@/utils/constant';
@@ -16,25 +16,16 @@ import { useSelector } from 'react-redux';
 import { RootState } from '@/redux/store';
 import { useChat } from '@/hooks/useChat';
 
-// Định nghĩa type (đồng bộ với useChat)
-interface User {
-  _id: string;
-  firstName: string;
-  lastName: string;
-  avatar?: string;
-}
-
 interface Chat {
   id: string;
-  secondUser?: User;
-  lastMessage?: string;
-  lastMessageTime?: string;
-  isCallLog?: boolean;
-  hasNotification?: boolean;
-  userCount?: number;
+  avatar?: string;
+  name?: string;
+  message?: string;
+  time?: string;
+  type?: string;
+  members?: any[];
 }
 
-// Component render item
 const ChatItem = memo(
   ({ item, navigation }: { item: Chat; navigation: NavigationProp<ParamListBase> }) => {
     const getTimeDisplay = useCallback((time?: string) => {
@@ -61,7 +52,7 @@ const ChatItem = memo(
         <View style={styles.avatarContainer}>
           <Image
             source={{
-              uri: item.secondUser?.avatar || 'https://via.placeholder.com/150',
+              uri: item.avatar || 'https://via.placeholder.com/150',
             }}
             style={styles.avatar}
           />
@@ -69,25 +60,14 @@ const ChatItem = memo(
         <View style={styles.chatInfo}>
           <View style={styles.chatHeader}>
             <Text style={styles.chatName} numberOfLines={1}>
-              {item.secondUser
-                ? `${item.secondUser.firstName} ${item.secondUser.lastName}`
-                : 'Unknown User'}
+              {item.name || 'Unknown User'}
             </Text>
-            <Text style={styles.chatTime}>{getTimeDisplay(item.lastMessageTime)}</Text>
+            <Text style={styles.chatTime}>{getTimeDisplay(item.time)}</Text>
           </View>
           <View style={styles.chatPreview}>
-            {item.isCallLog && (
-              <Ionicons name="call" size={14} color="gray" style={styles.messageIcon} />
-            )}
             <Text style={styles.chatMessage} numberOfLines={1}>
-              {item.lastMessage || 'No messages'}
+              {item.message || 'No messages'}
             </Text>
-            {item.hasNotification && <View style={styles.notificationDot} />}
-            {item.userCount && (
-              <View style={styles.userCountContainer}>
-                <Text style={styles.userCountText}>{item.userCount}</Text>
-              </View>
-            )}
           </View>
         </View>
       </TouchableOpacity>
@@ -95,28 +75,27 @@ const ChatItem = memo(
   },
   (prevProps, nextProps) =>
     prevProps.item.id === nextProps.item.id &&
-    prevProps.item.lastMessage === nextProps.item.lastMessage &&
-    prevProps.item.lastMessageTime === nextProps.item.lastMessageTime,
+    prevProps.item.message === nextProps.item.message &&
+    prevProps.item.time === nextProps.item.time,
 );
 
-// ChatListScreen
-const ChatListScreen = ({ navigation }: { navigation: NavigationProp<ParamListBase> }) => {
-  const currentUserId = useSelector((state: RootState) => state.user.user?._id || '');
-  const { getChatListService, chatList, loadingChatList, error } = useChat('', currentUserId);
+const listChannelScreen = ({ navigation }: { navigation: NavigationProp<ParamListBase> }) => {
+  const currentUserId = useSelector((state: RootState) => state.user.user?.id || '');
+  console.log('currentUserId: ', currentUserId);
+  const { loadChannel, listChannel, loading } = useChat(currentUserId);
+  useFocusEffect(
+    useCallback(() => {
+      if (currentUserId) {
+        console.log('Screen focused, calling loadChannel with userId:', currentUserId);
+        loadChannel(currentUserId);
+      }
+    }, [currentUserId, loadChannel]),
+  );
 
-  // Tải danh sách kênh chat
-  useEffect(() => {
-    if (currentUserId) {
-      getChatListService(currentUserId);
-    }
-  }, [currentUserId, getChatListService]);
 
-  // Hiển thị lỗi nếu có
   useEffect(() => {
-    if (error) {
-      Alert.alert('Error', error, [{ text: 'OK', onPress: () => { } }]);
-    }
-  }, [error]);
+    console.log('listChannel updated:', listChannel);
+  }, [listChannel]);
 
   const renderChatItem = useCallback(
     ({ item }: { item: Chat }) => <ChatItem item={item} navigation={navigation} />,
@@ -127,30 +106,20 @@ const ChatListScreen = ({ navigation }: { navigation: NavigationProp<ParamListBa
 
   return (
     <View style={styles.container}>
-      {loadingChatList && (
-        <View style={styles.loadingContainer}>
+      {loading && (
+        <View style={{ alignItems: 'center', padding: 20 }}>
           <ActivityIndicator size="large" color="#1E88E5" />
           <Text>Loading chats...</Text>
         </View>
       )}
       <FlatList
-        data={chatList}
+        data={listChannel}
         renderItem={renderChatItem}
         keyExtractor={keyExtractor}
         style={styles.chatList}
-        ListEmptyComponent={() => {
-          if (!loadingChatList) {
-            return (
-              <View style={styles.emptyContainer}>
-                <Text style={styles.emptyText}>No chats available</Text>
-              </View>
-            );
-          }
-          return null;
-        }}
       />
     </View>
   );
 };
 
-export default ChatListScreen;
+export default listChannelScreen;
