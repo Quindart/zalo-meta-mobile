@@ -27,10 +27,10 @@ const SOCKET_EVENTS = {
     },
 };
 
-interface ResponseType {
-    success: boolean;
-    message: string;
-    data: any;
+interface Sender {
+    id: string;
+    name: string;
+    avatar: string;
 }
 
 interface MessageType {
@@ -40,22 +40,35 @@ interface MessageType {
     senderId: string;
     content: string;
     timestamp: string;
-    status: string;
-    sender?: {
-        id: string;
-        name: string;
-        avatar: string;
-    };
+    status: 'sent' | 'delivered' | 'read';
+    sender?: Sender;
+    members?: any[];
+}
+
+interface ResponseType {
+    success: boolean;
+    message: string;
+    data: any;
 }
 
 export const useChat = (currentUserId: string) => {
-    const [messages, setMessages] = useState<any[]>([]);
+    const [noMessageToLoad, setNoMessageToLoad] = useState(false);
+    const [messages, setMessages] = useState<MessageType[]>([]);
     const [channel, setChannel] = useState<any>(null);
     const [listChannel, setListChannel] = useState<any[]>([]);
     const [loading, setLoading] = useState<boolean>(false);
+    const [error, setError] = useState<string | null>(null);
     const currentChannelRef = useRef<string | null>(null);
+    const isLoadingMessagesRef = useRef<boolean>(false);
 
     const socketService = SocketService.getInstance(currentUserId);
+
+    // Log messages sau khi trạng thái cập nhật
+    useEffect(() => {
+        if (messages.length > 0) {
+            console.log("Messages updated:", messages);
+        }
+    }, [messages]);
 
     useEffect(() => {
         const socket = socketService.getSocket();
@@ -64,45 +77,74 @@ export const useChat = (currentUserId: string) => {
         }
         console.log("Socket connected:", socket.connected);
 
+        const handleConnectError = (err: Error) => {
+            console.error('Socket connection error:', err);
+            setError('Không thể kết nối đến server chat');
+        };
+
+        const handleDisconnect = (reason: string) => {
+            console.warn('Socket disconnected:', reason);
+            setError('Mất kết nối với server');
+        };
+
         const findOrCreateResponse = (response: ResponseType) => {
-            if (response.success) {
-                console.log("Channel received:", response.data);
+            setLoading(false);
+            if (response.success && response.data) {
                 setChannel(response.data);
-                setLoading(false);
                 currentChannelRef.current = response.data.id;
             } else {
-                console.error("Failed to create/find channel:", response.message);
-                setLoading(false);
+                setError(response.message || 'Không thể tạo/tìm phòng chat');
             }
         };
 
         const joinRoomResponse = (response: ResponseType) => {
-            if (response.success) {
+            setLoading(false);
+            if (response.success && response.data) {
                 setChannel(response.data.channel);
-                setMessages(response.data.messages);
-                setLoading(false);
-                currentChannelRef.current = response.data.id;
+                const messages = response.data.messages || [];
+                if (messages.length < 10) { // Giả sử server trả về tối đa 10 tin nhắn
+                    setNoMessageToLoad(true);
+                }
+                if (!isLoadingMessagesRef.current) {
+                    setMessages(messages);
+                }
+                currentChannelRef.current = response.data.channel.id;
+            } else {
+                setError(response.message || 'Không thể tham gia phòng chat');
             }
-            else {
-                console.error("Failed to join room:", response.message);
-                setLoading(false);
+        };
+
+        const loadMessageResponse = (response: ResponseType) => {
+            setLoading(false);
+            isLoadingMessagesRef.current = false;
+            console.log("Full response from server:", response);
+            if (response.success && response.data) {
+                const newMessages = Array.isArray(response.data) ? response.data : [];
+                console.log("Received new messages:", newMessages.length);
+                if (newMessages.length < 10) {
+                    console.log('Setting noMessageToLoad to true due to newMessages.length:', newMessages.length);
+                    setNoMessageToLoad(true);
+                }
+                setMessages(prevMessages => {
+                    const updatedMessages = [...newMessages, ...prevMessages];
+                    console.log("Updated messages:", updatedMessages);
+                    return updatedMessages;
+                });
+            } else {
+                setError(response.message || 'Không thể tải tin nhắn');
             }
-        }
+        };
 
         const updateChannelWithMessage = (message: MessageType) => {
             setListChannel(prevChannels => {
                 return prevChannels.map(channel => {
                     if (channel.id === message.channelId) {
-                        // Update the channel with the latest message
                         return {
                             ...channel,
-                            id: 123456789,
-                            avatar: message.sender?.avatar || "https://example.com/default-avatar.png",
-                            name: message.sender?.name || "Unknown",
                             message: message.content,
                             time: message.timestamp,
-                            isRead: message.status === "read",
-                            isChoose: currentChannelRef.current === message.channelId,
+                            lastMessage: message,
+                            isRead: currentChannelRef.current === message.channelId
                         };
                     }
                     return channel;
@@ -111,7 +153,8 @@ export const useChat = (currentUserId: string) => {
         };
 
         const receivedMessage = (message: any) => {
-            const members = message.members;
+            console.log("Received message:", message);
+            const members = message.members || [];
             const isMember = members.some((member: any) => member.userId === currentUserId);
             if (!isMember) {
                 console.log("Received message not for current user, ignoring:", message);
@@ -129,6 +172,7 @@ export const useChat = (currentUserId: string) => {
                 });
                 return;
             }
+
             setMessages((prev) => {
                 const messageId = message.id || message._id;
                 const isDuplicate = messageId ?
@@ -143,82 +187,105 @@ export const useChat = (currentUserId: string) => {
                 console.log("Adding new message to state for channel:", currentChannelRef.current);
                 return [...prev, message];
             });
-        }
+            setLoading(false);
+        };
 
         const loadChannelResponse = (response: ResponseType) => {
-            if (response.success) {
-                setListChannel(response.data);
-                setLoading(false);
+            setLoading(false);
+            if (response.success && response.data) {
+                console.log('Load channel response:', response.data);
+                const validChannels = (response.data || []).filter(
+                    (channel: any) => channel && channel.id && typeof channel === 'object'
+                );
+                setListChannel(validChannels);
+            } else {
+                setError(response.message || 'Không thể tải danh sách phòng chat');
             }
-            else {
-                console.error("Failed to load channel:", response.message);
-                setLoading(false);
-            }
-        }
+        };
 
         const createGroupResponse = (response: ResponseType) => {
-            if (response.success) {
-                setListChannel((prev) => [...prev, response.data]);
-                setLoading(false);
+            setLoading(false);
+            if (response.success && response.data) {
+                setListChannel(prev => [...prev, response.data]);
             } else {
-                console.error("Failed to create group:", response.message);
-                setLoading(false);
+                setError(response.message || 'Không thể tạo nhóm chat');
             }
-        }
+        };
 
         const leaveRoomResponse = (response: ResponseType) => {
-            if (response.success) {
+            setLoading(false);
+            if (response.success && response.data) {
                 setChannel(null);
                 setMessages([]);
-                setLoading(false);
-                setListChannel((prev) => prev.filter(channel => channel.id !== response.data.channelId));
+                setListChannel(prev => prev.filter(channel => channel && channel.id !== response.data.channelId));
+            } else {
+                setError(response.message || 'Không thể rời phòng chat');
             }
-            else {
-                console.error("Failed to leave room:", response.message);
-                setLoading(false);
-            }
-        }
+        };
 
-
-
-
-
-
+        socket.on('connect_error', handleConnectError);
+        socket.on('disconnect', handleDisconnect);
         socket.on(SOCKET_EVENTS.CHANNEL.JOIN_ROOM_RESPONSE, joinRoomResponse);
         socket.on(SOCKET_EVENTS.CHANNEL.FIND_ORCREATE_RESPONSE, findOrCreateResponse);
         socket.on(SOCKET_EVENTS.MESSAGE.RECEIVED, receivedMessage);
         socket.on(SOCKET_EVENTS.CHANNEL.LOAD_CHANNEL_RESPONSE, loadChannelResponse);
         socket.on(SOCKET_EVENTS.CHANNEL.CREATE_RESPONSE, createGroupResponse);
         socket.on(SOCKET_EVENTS.CHANNEL.LEAVE_ROOM_RESPONSE, leaveRoomResponse);
+        socket.on(SOCKET_EVENTS.MESSAGE.LOAD_RESPONSE, loadMessageResponse);
 
         return () => {
+            socket.off('connect_error', handleConnectError);
+            socket.off('disconnect', handleDisconnect);
             socket.off(SOCKET_EVENTS.CHANNEL.FIND_ORCREATE_RESPONSE, findOrCreateResponse);
             socket.off(SOCKET_EVENTS.CHANNEL.JOIN_ROOM_RESPONSE, joinRoomResponse);
             socket.off(SOCKET_EVENTS.MESSAGE.RECEIVED, receivedMessage);
             socket.off(SOCKET_EVENTS.CHANNEL.LOAD_CHANNEL_RESPONSE, loadChannelResponse);
             socket.off(SOCKET_EVENTS.CHANNEL.CREATE_RESPONSE, createGroupResponse);
             socket.off(SOCKET_EVENTS.CHANNEL.LEAVE_ROOM_RESPONSE, leaveRoomResponse);
+            socket.off(SOCKET_EVENTS.MESSAGE.LOAD_RESPONSE, loadMessageResponse);
         };
-    }, []);
+    }, [currentUserId]);
 
     const findOrCreateChat = useCallback((receiverId: string) => {
         setLoading(true);
         setChannel(null);
         setMessages([]);
+        setError(null);
         const socket = socketService.getSocket();
         const params = { senderId: currentUserId, receiverId };
         socket.emit(SOCKET_EVENTS.CHANNEL.FIND_ORCREATE, params);
-    }, []);
+    }, [currentUserId]);
 
     const joinRoom = useCallback((channelId: string) => {
-        setLoading(true);
+        setNoMessageToLoad(false); // Đặt lại khi tham gia phòng
         setChannel(null);
-        setMessages([]);
+        if (!isLoadingMessagesRef.current) {
+            setMessages([]);
+        }
+        setLoading(true);
+        setError(null);
         const socket = socketService.getSocket();
         currentChannelRef.current = channelId;
         const params = { channelId, currentUserId };
         socket.emit(SOCKET_EVENTS.CHANNEL.JOIN_ROOM, params);
-    }, []);
+    }, [currentUserId]);
+
+    const loadMessages = useCallback((channelId: string) => {
+        if (channelId !== currentChannelRef.current || isLoadingMessagesRef.current) {
+            console.log('Skipping loadMessages: wrong channel or already loading', {
+                channelId,
+                currentChannel: currentChannelRef.current,
+                isLoading: isLoadingMessagesRef.current,
+            });
+            return;
+        }
+        isLoadingMessagesRef.current = true;
+        setLoading(true);
+        setError(null);
+        const socket = socketService.getSocket();
+        const params = { channelId, offset: messages.length };
+        socket.emit(SOCKET_EVENTS.MESSAGE.LOAD, params);
+    }, [messages, currentUserId]);
 
     const sendMessage = useCallback((channelId: string, content: string) => {
         const socket = socketService.getSocket();
@@ -230,11 +297,13 @@ export const useChat = (currentUserId: string) => {
             status: "sent"
         };
         currentChannelRef.current = channelId;
+        setLoading(true);
         socket.emit(SOCKET_EVENTS.MESSAGE.SEND, messageData);
-    }, []);
+    }, [currentUserId]);
 
     const loadChannel = useCallback((userId: string) => {
         setLoading(true);
+        setError(null);
         const socket = socketService.getSocket();
         const params = { currentUserId: userId };
         socket.emit(SOCKET_EVENTS.CHANNEL.LOAD_CHANNEL, params);
@@ -242,23 +311,24 @@ export const useChat = (currentUserId: string) => {
 
     const createGroup = useCallback((name: string, members: string[]) => {
         setLoading(true);
+        setError(null);
         const socket = socketService.getSocket();
-        const params = { name, currentUserId, members: members };
+        const params = { name, currentUserId, members };
         socket.emit(SOCKET_EVENTS.CHANNEL.CREATE, params);
-    }, []);
+    }, [currentUserId]);
 
     const leaveRoom = useCallback((channelId: string) => {
+        setLoading(true);
+        setError(null);
         const socket = socketService.getSocket();
-        const params = {
-            channelId,
-            userId: currentUserId
-        };
+        const params = { channelId, userId: currentUserId };
         socket.emit(SOCKET_EVENTS.CHANNEL.LEAVE_ROOM, params);
-    }, []);
+    }, [currentUserId]);
 
     return {
         findOrCreateChat,
         joinRoom,
+        loadMessages,
         sendMessage,
         loadChannel,
         createGroup,
@@ -267,5 +337,7 @@ export const useChat = (currentUserId: string) => {
         channel,
         messages,
         loading,
+        error,
+        noMessageToLoad
     };
 };

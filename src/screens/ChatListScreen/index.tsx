@@ -79,22 +79,38 @@ const ChatItem = memo(
     prevProps.item.time === nextProps.item.time,
 );
 
-const listChannelScreen = ({ navigation }: { navigation: NavigationProp<ParamListBase> }) => {
+const ListChannelScreen = ({ navigation }: { navigation: NavigationProp<ParamListBase> }) => {
   const currentUserId = useSelector((state: RootState) => state.user.user?.id || '');
-  console.log('currentUserId: ', currentUserId);
-  const { loadChannel, listChannel, loading } = useChat(currentUserId);
+  const { loadChannel, listChannel, error } = useChat(currentUserId);
+
+  // Xử lý lỗi từ useChat
+  useEffect(() => {
+    if (error) {
+      Alert.alert('Lỗi', error);
+    }
+  }, [error]);
+
+  // Tải danh sách channel khi màn hình được focus
   useFocusEffect(
     useCallback(() => {
       if (currentUserId) {
         console.log('Screen focused, calling loadChannel with userId:', currentUserId);
         loadChannel(currentUserId);
+      } else {
+        console.warn('Missing currentUserId');
+        Alert.alert('Lỗi', 'Không thể tải danh sách phòng chat do thiếu thông tin người dùng');
       }
     }, [currentUserId, loadChannel]),
   );
 
-
+  // Ghi log để debug listChannel
   useEffect(() => {
     console.log('listChannel updated:', listChannel);
+  }, [listChannel]);
+
+  // Lọc các item hợp lệ trong listChannel
+  const validChannels = useCallback(() => {
+    return listChannel.filter(item => item && item.id && typeof item === 'object');
   }, [listChannel]);
 
   const renderChatItem = useCallback(
@@ -102,18 +118,12 @@ const listChannelScreen = ({ navigation }: { navigation: NavigationProp<ParamLis
     [navigation],
   );
 
-  const keyExtractor = useCallback((item: Chat) => item.id, []);
+  const keyExtractor = useCallback((item: Chat) => item.id.toString(), []);
 
   return (
     <View style={styles.container}>
-      {loading && (
-        <View style={{ alignItems: 'center', padding: 20 }}>
-          <ActivityIndicator size="large" color="#1E88E5" />
-          <Text>Loading chats...</Text>
-        </View>
-      )}
       <FlatList
-        data={listChannel}
+        data={validChannels()}
         renderItem={renderChatItem}
         keyExtractor={keyExtractor}
         style={styles.chatList}
@@ -122,4 +132,4 @@ const listChannelScreen = ({ navigation }: { navigation: NavigationProp<ParamLis
   );
 };
 
-export default listChannelScreen;
+export default ListChannelScreen;

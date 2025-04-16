@@ -15,7 +15,7 @@ import {
 } from 'react-native';
 import { Ionicons, AntDesign } from '@expo/vector-icons';
 import styles from './css';
-import { RouteProp, useNavigation, useRoute } from '@react-navigation/native';
+import { RouteProp, useNavigation } from '@react-navigation/native';
 import { LinearGradient } from 'expo-linear-gradient';
 import theme from '@/theme';
 import { RootStackParamList } from '@/navigation/type';
@@ -24,13 +24,29 @@ import { ROUTING } from '@/utils/constant';
 import { useSelector } from 'react-redux';
 import { RootState } from '@/redux/store';
 import { useChat } from '@/hooks/useChat';
+import { debounce } from 'lodash';
 
+// Định nghĩa kiểu cho navigation và route
 type ChatScreenRouteProp = RouteProp<RootStackParamList, typeof ROUTING.CHAT_SCREEN>;
 type ChatScreenNavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
+// Định nghĩa interface cho message
+interface Message {
+  id?: string;
+  _id?: string;
+  channelId: string;
+  senderId: string;
+  content: string;
+  timestamp: string;
+  status: 'sent' | 'delivered' | 'read';
+  sender: {
+    id: string;
+    name: string;
+    avatar: string;
+  };
+}
 
-
-// ChatHeader
+// ChatHeader component
 const ChatHeader = React.memo(
   ({ navigation, item }: { navigation: ChatScreenNavigationProp; item: any }) => (
     <LinearGradient
@@ -55,46 +71,43 @@ const ChatHeader = React.memo(
   ),
 );
 
-// MessageItem
+// MessageItem component
 const MessageItem = React.memo(
-  (
-    { item }: { item: any }) => {
+  ({
+    content,
+    timestamp,
+    senderId,
+    senderAvatar,
+    isMyMessage,
+    status,
+  }: {
+    content: string;
+    timestamp: string;
+    senderId: string;
+    senderAvatar: string;
+    isMyMessage: boolean;
+    status: string;
+  }) => {
     const me = useSelector((state: RootState) => state.user.user);
-    const isMyMessage = useMemo(() => {
-      if (me?.id === item.sender?.id)
-        return true;
-      return false;
-    }, [me?.id, item.sender?.id]);
+
     return (
-      <View
-        style={[styles.messageRow, isMyMessage ? styles.myMessageRow : styles.otherMessageRow]}
-      >
-        {!isMyMessage ? (
-          <Image
-            source={{
-              uri: item.sender.avatar,
-            }}
-            style={styles.messageAvatar}
-            defaultSource={require('../../../assets/user_default.jpg')}
-          />
-        ) : (
-          <Image
-            source={{
-              uri: me?.avatar,
-            }}
-            style={styles.messageAvatar}
-            defaultSource={require('../../../assets/user_default.jpg')}
-          />
-        )}
-        <View
-          style={[
-            styles.messageBubble,
-            isMyMessage ? styles.myMessageBubble : styles.otherMessageBubble,
-          ]}
-        >
-          <Text style={styles.messageText}>{item.content}</Text>
+      <View style={[styles.messageRow, isMyMessage ? styles.myMessageRow : styles.otherMessageRow]}>
+        <Image
+          source={{ uri: isMyMessage ? me?.avatar : senderAvatar }}
+          style={styles.messageAvatar}
+          defaultSource={require('../../../assets/user_default.jpg')}
+        />
+        <View style={[styles.messageBubble, isMyMessage ? styles.myMessageBubble : styles.otherMessageBubble]}>
+          <Text style={styles.messageText}>{content}</Text>
           <Text style={styles.messageTime}>
-            {new Date(item.timestamp).toLocaleTimeString()}
+            {timestamp ? new Date(timestamp).toLocaleTimeString() : ''}{' '}
+            {isMyMessage && (
+              <>
+                {status === 'sent' && '✓'}
+                {status === 'delivered' && '✓✓'}
+                {status === 'read' && '✓✓ (Đã đọc)'}
+              </>
+            )}
           </Text>
         </View>
       </View>
@@ -102,16 +115,17 @@ const MessageItem = React.memo(
   },
   (prevProps, nextProps) => {
     return (
-      prevProps.item.id === nextProps.item.id &&
-      prevProps.item.content === nextProps.item.content &&
-      prevProps.item.status === nextProps.item.status &&
-      prevProps.item.createdAt === nextProps.item.createdAt &&
-      prevProps.item.senderId?._id === nextProps.item.senderId?._id
+      prevProps.content === nextProps.content &&
+      prevProps.timestamp === nextProps.timestamp &&
+      prevProps.senderId === nextProps.senderId &&
+      prevProps.senderAvatar === nextProps.senderAvatar &&
+      prevProps.isMyMessage === nextProps.isMyMessage &&
+      prevProps.status === nextProps.status
     );
   },
 );
 
-// MessageInputContainer
+// MessageInputContainer component
 const MessageInputContainer = React.memo(
   ({
     channelId,
@@ -121,14 +135,11 @@ const MessageInputContainer = React.memo(
     sendMessage: (chanId: string, content: string) => void;
   }) => {
     const [inputMessage, setInputMessage] = useState('');
-    const flatListRef = useRef<FlatList>(null);
+
     const handleSendMessage = useCallback(() => {
       if (inputMessage.trim()) {
         sendMessage(channelId, inputMessage);
         setInputMessage('');
-        setTimeout(() => {
-          flatListRef.current?.scrollToEnd?.({ animated: true });
-        }, 100);
       }
     }, [inputMessage, channelId, sendMessage]);
 
@@ -140,6 +151,8 @@ const MessageInputContainer = React.memo(
           value={inputMessage}
           onChangeText={(e) => setInputMessage(e)}
           multiline
+          returnKeyType="send"
+          onSubmitEditing={handleSendMessage}
         />
         <TouchableOpacity style={styles.sendButton} onPress={handleSendMessage}>
           <Ionicons name="send" size={24} color="white" />
@@ -149,46 +162,178 @@ const MessageInputContainer = React.memo(
   },
 );
 
-// ChatScreen
+// ChatScreen component
 const ChatScreen = ({ route }: { route: ChatScreenRouteProp }) => {
   const renderCountRef = useRef(0);
   renderCountRef.current += 1;
   console.log(`ChatScreen render #${renderCountRef.current}`);
+
   const { item } = route.params || { item: {} };
   const navigation = useNavigation<ChatScreenNavigationProp>();
   const sender = useSelector((state: RootState) => state.user.user);
-  const channelId = item.id || '';
-  const members = item.members || [];
+  const channelId = item?.id || '';
 
-  // Sử dụng useChat
-  const { sendMessage, messages, loading, joinRoom } = useChat(sender?.id);
-  console.log("check messages", messages);
+  // Sử dụng useChat hook
+  const {
+    sendMessage,
+    messages,
+    loading,
+    error,
+    joinRoom,
+    loadMessages,
+    noMessageToLoad,
+  } = useChat(sender?.id);
 
+  // State theo dõi trạng thái
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [hasMoreMessages, setHasMoreMessages] = useState(true);
+  const [isAtBottom, setIsAtBottom] = useState(true);
+  const previousMessagesLength = useRef(0);
   const flatListRef = useRef<FlatList>(null);
+  const initialRenderRef = useRef(true);
 
-  // Tải tin nhắn khi khởi tạo
+
+  // Tham gia phòng khi vào màn hình
   useEffect(() => {
     if (channelId && sender?.id) {
-      console.log('Loading messages for channelId:', channelId);
+      console.log('Joining room with channelId:', channelId);
+      setHasMoreMessages(true);
       joinRoom(channelId);
+    } else {
+      Alert.alert('Lỗi', 'Không thể tham gia phòng chat do thiếu thông tin');
     }
   }, [channelId, sender?.id, joinRoom]);
 
+  // Đồng bộ hasMoreMessages với noMessageToLoad
+  useEffect(() => {
+    if (noMessageToLoad) {
+      console.log('No more messages to load based on noMessageToLoad');
+      setHasMoreMessages(false);
+    }
+  }, [noMessageToLoad]);
 
+  // Kiểm tra tin nhắn và cuộn xuống dưới
+  useEffect(() => {
+    if (loadingMore) {
+      setLoadingMore(false);
+    }
+    previousMessagesLength.current = messages.length;
 
-  // Cuộn đến cuối danh sách tin nhắn
-  const scrollToEnd = useCallback(() => {
-    flatListRef.current?.scrollToEnd({ animated: true });
-  }, []);
+    // Cuộn xuống dưới khi vào lần đầu
+    if (initialRenderRef.current && messages.length > 0) {
+      setTimeout(() => {
+        try {
+          flatListRef.current?.scrollToEnd({ animated: false });
+        } catch (err) {
+          console.log('Error scrolling to bottom initially:', err);
+        }
+        initialRenderRef.current = false;
+      }, 500);
+    }
+  }, [messages, loadingMore]);
 
+  // Cuộn xuống dưới khi có tin nhắn mới (nếu đang ở dưới cùng)
+  useEffect(() => {
+    if (
+      !initialRenderRef.current &&
+      !loadingMore &&
+      isAtBottom &&
+      messages.length > previousMessagesLength.current
+    ) {
+      setTimeout(() => {
+        try {
+          flatListRef.current?.scrollToEnd({ animated: true });
+        } catch (err) {
+          console.log('Error scrolling to bottom after new message:', err);
+        }
+      }, 300);
+    }
+  }, [messages.length, loadingMore, isAtBottom]);
+
+  const handleLoadMoreMessages = useCallback(
+    debounce(() => {
+      if (loading || loadingMore || !hasMoreMessages || !channelId || noMessageToLoad) {
+        console.log('Skipping loadMessages in chat room:', {
+          loading,
+          loadingMore,
+          hasMoreMessages,
+          channelId,
+          noMessageToLoad,
+        });
+        return;
+      }
+      console.log('Loading more messages for channelId:', channelId);
+      setLoadingMore(true);
+      loadMessages(channelId);
+    }, 300),
+    [channelId, loading, loadingMore, hasMoreMessages, loadMessages, noMessageToLoad],
+  );
+
+  // Theo dõi vị trí cuộn
+  const handleScroll = useCallback(
+    (event: any) => {
+      const { contentOffset, contentSize, layoutMeasurement } = event.nativeEvent;
+      const isBottom = contentOffset.y >= contentSize.height - layoutMeasurement.height - 50;
+      setIsAtBottom(isBottom);
+    },
+    [],
+  );
+
+  // Render header trạng thái load message
+  const renderListHeader = useCallback(() => {
+    if (loadingMore) {
+      return (
+        <View style={{ padding: 10, alignItems: 'center' }}>
+          <ActivityIndicator size="small" color={theme.colors.primary} />
+          <Text style={{ marginTop: 5, fontSize: 12, color: '#777' }}>
+            Đang tải tin nhắn cũ...
+          </Text>
+        </View>
+      );
+    }
+    if (!hasMoreMessages && messages.length > 0) {
+      return (
+        <View style={{ padding: 10, alignItems: 'center' }}>
+          <Text style={{ fontSize: 12, color: '#777' }}>Đã hiển thị tất cả tin nhắn</Text>
+        </View>
+      );
+    }
+    return messages.length > 0 ? (
+      <View style={{ padding: 10, alignItems: 'center' }}>
+        <Text style={{ fontSize: 12, color: '#777' }}>Kéo xuống để tải thêm tin nhắn cũ</Text>
+      </View>
+    ) : null;
+  }, [loadingMore, hasMoreMessages, messages.length]);
+
+  // Render danh sách trống
+  const renderEmptyList = useCallback(() => (
+    <View>
+      <Text>Chưa có tin nhắn nào. Bắt đầu trò chuyện ngay!</Text>
+    </View>
+  ), []);
+
+  // Render item tin nhắn
   const renderItem = useCallback(
-    ({ item }: { item: any }) => <MessageItem item={item} />,
+    ({ item }: { item: Message }) => {
+      const isMyMessage = sender?.id === item.sender.id ? true : false;
+      return (
+        <MessageItem
+          content={item.content || ''}
+          timestamp={item.timestamp || ''}
+          senderId={item.senderId || ''}
+          senderAvatar={item.sender?.avatar || 'https://example.com/default-avatar.png'}
+          isMyMessage={isMyMessage}
+          status={item.status || 'sent'}
+        />
+      );
+    },
     [sender],
   );
 
+  // Key extractor cho FlatList
   const keyExtractor = useCallback(
-    (item: any, index: number) =>
-      item.id ? item.id.toString() : `msg-${index}-${Date.now()}`,
+    (item: Message, index: number) =>
+      item.id ? item.id.toString() : item._id ? item._id.toString() : `msg-${index}-${Date.now()}`,
     [],
   );
 
@@ -202,9 +347,11 @@ const ChatScreen = ({ route }: { route: ChatScreenRouteProp }) => {
       >
         <ChatHeader navigation={navigation} item={item} />
 
-        {loading && (
+        {/* Hiển thị spinner khi tải tin nhắn ban đầu */}
+        {loading && messages.length === 0 && (
           <View style={styles.loadingContainer}>
             <ActivityIndicator size="large" color={theme.colors.primary} />
+            <Text style={{ marginTop: 10, color: '#777' }}>Đang tải tin nhắn...</Text>
           </View>
         )}
 
@@ -214,12 +361,17 @@ const ChatScreen = ({ route }: { route: ChatScreenRouteProp }) => {
           renderItem={renderItem}
           keyExtractor={keyExtractor}
           style={styles.messageList}
-          onContentSizeChange={scrollToEnd}
-          onLayout={scrollToEnd}
+          ListHeaderComponent={renderListHeader}
+          ListEmptyComponent={renderEmptyList}
           initialNumToRender={15}
-          maxToRenderPerBatch={10}
+          maxToRenderPerBatch={15}
           windowSize={10}
-          removeClippedSubviews={true}
+          removeClippedSubviews={Platform.OS === 'android'}
+          onRefresh={handleLoadMoreMessages}
+          refreshing={loadingMore}
+          onScroll={handleScroll}
+          scrollEventThrottle={16}
+          maintainVisibleContentPosition={{ minIndexForVisible: 0 }}
         />
 
         <MessageInputContainer channelId={channelId} sendMessage={sendMessage} />
