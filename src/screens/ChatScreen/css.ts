@@ -40,7 +40,8 @@ export default StyleSheet.create({
         marginHorizontal: 10,
     },
     myMessageRow: {
-        justifyContent: 'flex-end',
+        flexDirection: 'row-reverse',
+        gap: 10
     },
     otherMessageRow: {
         justifyContent: 'flex-start',
@@ -49,6 +50,12 @@ export default StyleSheet.create({
         maxWidth: '70%',
         padding: 10,
         borderRadius: 10,
+    },
+    loadMoreContainer: {
+
+    },
+    loadingContainer: {
+        flex: 1,
     },
     myMessageBubble: {
         backgroundColor: '#DBEBFF',
