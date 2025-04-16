@@ -1,10 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, FlatList, TouchableOpacity, StyleSheet, Image } from 'react-native';
 import { AntDesign, Feather, FontAwesome5, FontAwesome } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { NavigationProp } from '@react-navigation/native';
 import { ParamListBase } from '@react-navigation/native';
 import { ROUTING } from '@/utils/constant';
+import useFriend from '@/hooks/useFriend';
 
 
 const contacts = [
@@ -17,6 +18,24 @@ const contacts = [
 const ChatListScreen = () => {
   const navigation = useNavigation<NavigationProp<ParamListBase>>();
   const [activeTab, setActiveTab] = useState('Bạn bè');
+  const { getAllFriend } = useFriend();
+  const [friendsList, setFriendsList] = useState([]);
+
+  const fetchAllFriend = async () => {
+    try {
+      const data = await getAllFriend();
+      console.log('Danh sách bạn bè:', data);
+      setFriendsList(data); // Cập nhật state đúng cách
+    } catch (error) {
+      console.error('Error fetching friends list:', error);
+    }
+  };
+
+
+  useEffect(() => {
+    fetchAllFriend();
+  }, []);
+
 
   const renderItemContact = ({ item }: { item: any }) => {
     return (
@@ -30,10 +49,10 @@ const ChatListScreen = () => {
           <Text style={styles.date}>{item.date}</Text>
           <View style={styles.actionButtons}>
             <TouchableOpacity style={styles.actionButton}>
-              <Feather name="phone" size={24} color="black" />
+              <Feather name="phone" size={20} color="black" />
             </TouchableOpacity>
             <TouchableOpacity style={styles.actionButton}>
-              <AntDesign name="videocamera" size={24} color="black" />
+              <AntDesign name="videocamera" size={20} color="black" />
             </TouchableOpacity>
           </View>
         </View>
@@ -88,7 +107,7 @@ const ChatListScreen = () => {
         </View>
       </View>
       <FlatList
-        data={contacts}
+        data={friendsList}
         renderItem={renderItemContact}
         keyExtractor={(item) => item.id}
         contentContainerStyle={styles.flatListContent}

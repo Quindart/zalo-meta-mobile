@@ -111,7 +111,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         height: 50,
         paddingHorizontal: 16,
-        backgroundColor: 'rgba(0,0,0,0.5)',
+        backgroundColor: 'rgba(95, 95, 95, 0.5)',
         position: 'absolute',
         top: 0,
         left: 0,

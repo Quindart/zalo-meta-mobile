@@ -155,7 +155,7 @@ const Login = () => {
         </View>
 
         <Formik
-          initialValues={{ phone: '0364835692', password: '12345678' }}
+          initialValues={{ phone: '0329347499', password: '12345678' }}
           validationSchema={LoginSchema}
           validateOnBlur={false} // Disable automatic validation on blur to control it manually
           onSubmit={async (values, { setSubmitting, setErrors }) => {
