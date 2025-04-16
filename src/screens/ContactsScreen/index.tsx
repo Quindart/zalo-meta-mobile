@@ -5,25 +5,15 @@ import { useNavigation } from '@react-navigation/native';
 import { NavigationProp } from '@react-navigation/native';
 import { ParamListBase } from '@react-navigation/native';
 import { ROUTING } from '@/utils/constant';
-import { useFriend } from '@/hooks/useFriend';
 import { useDispatch, useSelector } from 'react-redux';
+import { useFriend } from '@/hooks/useFriend';
 import { User } from '@/models/user';
-
-
-const contacts = [
-  { id: '1', name: 'A Manh', date: '20/7', avatar: 'https://m.yodycdn.com/products/anhthobaymau1_m3o63bmw3s5jntxo22o.jpg' },
-  { id: '2', name: 'A Tứn', date: '20/7', avatar: 'https://m.yodycdn.com/products/anhthobaymau1_m3o63bmw3s5jntxo22o.jpg' },
-  { id: '3', name: 'A Việt', date: '20/7', avatar: 'https://m.yodycdn.com/products/anhthobaymau1_m3o63bmw3s5jntxo22o.jpg' },
-  { id: '4', name: 'A Vương', date: '20/7', avatar: 'https://m.yodycdn.com/products/anhthobaymau1_m3o63bmw3s5jntxo22o.jpg' },
-];
 
 const ContactsScreen = () => {
   const navigation = useNavigation<NavigationProp<ParamListBase>>();
   const [activeTab, setActiveTab] = useState('Bạn bè');
 
   const user: User | null = useSelector((state: any) => state.user.user);
-
-  // 🧠 Gọi hook TRƯỚC return, kể cả khi user null
   const { getListFriends, listFriends } = useFriend(user?.id || '');
 
   useEffect(() => {
@@ -40,9 +30,13 @@ const ContactsScreen = () => {
     );
   }
 
+
+
   const renderItemContact = ({ item }: { item: any }) => {
     return (
-      <TouchableOpacity>
+      <TouchableOpacity onPress={() => {
+        navigation.navigate(ROUTING.PROFILE_FRIEND_SCREEN, { userId: item.id })
+      }}>
 
         <View style={styles.contactItem}>
           <Image source={{ uri: item.avatar }} style={styles.avatar} />

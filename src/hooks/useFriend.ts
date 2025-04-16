@@ -50,6 +50,7 @@ export const useFriend = (currentUserId: string) => {
         if (!socketService.connected) {
             socketService.connect();
         }
+        //TODO: Danh sách bạn bè
         const listFriendsResponse = (response: ResponseType) => {
             if (response.success) {
                 setListFriends(response.data);
@@ -58,6 +59,7 @@ export const useFriend = (currentUserId: string) => {
                 console.error("Failed to load friend list:", response.message);
             }
         };
+        //TODO: Danh sách bạn bè đã gửi lời mời kết bạn
         const inviteListFriendsResponse = (response: ResponseType) => {
             if (response.success) {
                 dispatch(setReceiveFriends(response.data));
@@ -65,7 +67,7 @@ export const useFriend = (currentUserId: string) => {
                 console.error("Failed to load invite friend list:", response.message);
             }
         };
-
+        // TODO: Danh sách gửi yêu cầu kết bạn
         const sendListFriendsResponse = (response: ResponseType) => {
             if (response.success) {
                 dispatch(setSendFriends(response.data));
@@ -126,7 +128,6 @@ export const useFriend = (currentUserId: string) => {
         socketService.emit(SOCKET_EVENTS.FRIEND.LIST_FRIEND, params);
     }, [currentUserId]);
 
-
     const getReceviedInviteFriends = useCallback(() => {
         socketService.emit(SOCKET_EVENTS.FRIEND.LIST_RECEIVED_INVITE, { userId: currentUserId });
     }, []);
@@ -134,6 +135,7 @@ export const useFriend = (currentUserId: string) => {
     const getSendListFriends = useCallback(() => {
         socketService.emit(SOCKET_EVENTS.FRIEND.LIST_SEND_INVITE, { userId: currentUserId });
     }, [currentUserId]);
+
 
     const inviteFriend = useCallback((userFriendId: string) => {
         const params = {
@@ -171,32 +173,19 @@ export const useFriend = (currentUserId: string) => {
         });
     }, [currentUserId]);
 
-    const getAllFriend = async () => {
-        try {
-            console.log(' Danh sách bạn bè:');
-            const response = await getFriendsList();
-            console.log('B1: Danh sách bạn bè:', response.data);
-            console.log('B2: Danh sách bạn bè:', response.data.friends);
-            return response.data.friends;
-        } catch (error) {
-            console.error('Error fetching friends list:', error);
-            throw error;
-        }
-    }
 
     return {
         listFriends,
         receiveFriends,
         sendFriends,
         inviteFriend,
-        removeFriend,
-        revokeInviteFriend,
+        removeFriend, // Xóa bạn bè
+        revokeInviteFriend, // Thu hồi lời mời kết bạn
         accpetFriend,
         getListFriends,
         getReceviedInviteFriends,
         getSendListFriends,
-        rejectInviteFriend,
-        getAllFriend
+        rejectInviteFriend, // Từ chối lời mời kết bạn
     };
 
 }

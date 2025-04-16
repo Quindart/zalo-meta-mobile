@@ -1,57 +1,98 @@
-import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, SafeAreaView, Image } from 'react-native';
-import { useRoute } from '@react-navigation/native';
+
+import React, { useEffect, useState } from 'react';
+import {
+    View, Text, TouchableOpacity, StyleSheet, SafeAreaView, Image, FlatList, Alert
+} from 'react-native';
 import Header from '@/components/ui/Header';
-import { white } from 'react-native-paper/lib/typescript/styles/themes/v2/colors';
+import { useSelector } from 'react-redux';
+import { useFriend } from '@/hooks/useFriend';
+import { User } from '@/models/user';
 
 
 const FriendRequestScreen = () => {
+    const [activeTab, setActiveTab] = useState<'received' | 'sent'>('received');
+    const user: User | null = useSelector((state: any) => state.user.user);
+    const { getReceviedInviteFriends, receiveFriends, getSendListFriends, sendFriends, revokeInviteFriend, accpetFriend, rejectInviteFriend } = useFriend(user?.id || '');
+    const [receviedInviteFriends, setReceviedInviteFriends] = useState<any[]>([]);
+    const [sentInviteFriends, setSentInviteFriends] = useState<any[]>([]);
+
+    useEffect(() => {
+        if (activeTab === 'received') {
+            getReceviedInviteFriends();
+        }
+        if (activeTab === 'sent') {
+            getSendListFriends();
+        }
+    }, [activeTab]);
+
+    useEffect(() => {
+        setReceviedInviteFriends(receiveFriends);
+        setSentInviteFriends(sendFriends);
+    }, [receiveFriends, sendFriends, activeTab]);
+
+
+    const renderReceivedItem = ({ item }: any) => (
+        <View style={styles.requestCard}>
+            <View style={styles.requestHeader}>
+                <Image source={{ uri: item.avatar }} style={styles.avatar} />
+                <Text style={styles.requestName}>{item.name}</Text>
+            </View>
+            <View style={styles.requestMessageContainer}>
+                <Text style={styles.requestMessage}>Xin chào, mình là {item.name}. Mình tìm thấy bạn bằng số điện thoại.</Text>
+            </View>
+            <View style={styles.requestButtons}>
+                <TouchableOpacity style={[styles.button, styles.declineButton]} onPress={() => rejectInviteFriend(item.id)}>
+                    <Text style={styles.buttonText}>TỪ CHỐI</Text>
+                </TouchableOpacity>
+                <TouchableOpacity style={[styles.button, styles.acceptButton]} onPress={() => accpetFriend(item.id)}>
+                    <Text style={[styles.buttonText, { color: 'white' }]}>ĐỒNG Ý</Text>
+                </TouchableOpacity>
+            </View>
+        </View>
+    );
+
+    const renderSentItem = ({ item }: any) => (
+        <View style={styles.sentCard}>
+            <Image source={{ uri: item.avatar }} style={styles.avatar} />
+            <View style={styles.sentInfo}>
+                <Text style={styles.sentName}>{item.name}</Text>
+                <Text style={styles.sentSubtitle}>Tìm kiếm số điện thoại</Text>
+                <Text style={styles.sentTime}> </Text>
+            </View>
+            <TouchableOpacity style={styles.withdrawButton} onPress={() => revokeInviteFriend(item.id)}>
+                <Text style={styles.withdrawText}>THU HỒI</Text>
+            </TouchableOpacity>
+        </View>
+    );
 
     return (
         <SafeAreaView style={styles.container}>
-            <Header title='Lời mời kết bạn'></Header>
+            <Header title="Lời mời kết bạn" />
 
-            {/* Tabs */}
             <View style={styles.tabs}>
-                <TouchableOpacity style={[styles.tab, styles.activeTab]}>
-                    <Text style={[styles.tabText, styles.activeTabText]}>Đã nhận</Text>
-                </TouchableOpacity>
-                <TouchableOpacity style={styles.tab}>
-                    <Text style={styles.tabText}>Đã gửi</Text>
-                </TouchableOpacity>
-            </View>
-
-            {/* Timestamp */}
-            <Text style={styles.timestamp}>Tháng 04, 2025</Text>
-
-            {/* Friend Request Item */}
-            <View style={styles.requestCard}>
-                <View style={styles.requestHeader}>
-                    {/* Avatar */}
-                    <Image
-                        source={{ uri: 'https://i.pinimg.com/736x/34/31/56/343156de11f1fc645ae708e5b40e57d4.jpg' }} // Placeholder image
-                        style={styles.avatar}
-                    />
-                    <View style={styles.requestInfo}>
-                        <Text style={styles.requestName}>Anh Hồ Trọng Viễn</Text>
-                        <Text style={styles.requestCategory}>Business</Text>
-                    </View>
-                </View>
-                <Text style={styles.requestSource}>STUDY4 1 ngày trước • Tìm kiếm số điện thoại</Text>
-                <View style={styles.requestMessageContainer}>
-                    <Text style={styles.requestMessage}>
-                        Xin chào, mình là Anh Hồ Trọng Viễn. Minh tìm thấy bạn bằng số ... Xem thêm
+                <TouchableOpacity
+                    style={[styles.tab, activeTab === 'received' && styles.activeTab]}
+                    onPress={() => setActiveTab('received')}
+                >
+                    <Text style={[styles.tabText, activeTab === 'received' && styles.activeTabText]}>
+                        Đã nhận
                     </Text>
-                </View>
-                <View style={styles.requestButtons}>
-                    <TouchableOpacity style={[styles.button, styles.declineButton]}>
-                        <Text style={styles.buttonText}>TỪ CHỐI</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity style={[styles.button, styles.acceptButton]}>
-                        <Text style={[styles.buttonText, { color: 'white' }]}>ĐỒNG Ý</Text>
-                    </TouchableOpacity>
-                </View>
+                </TouchableOpacity>
+                <TouchableOpacity
+                    style={[styles.tab, activeTab === 'sent' && styles.activeTab]}
+                    onPress={() => setActiveTab('sent')}
+                >
+                    <Text style={[styles.tabText, activeTab === 'sent' && styles.activeTabText]}>
+                        Đã gửi
+                    </Text>
+                </TouchableOpacity>
             </View>
+
+            <FlatList
+                data={activeTab === 'received' ? receviedInviteFriends : sentInviteFriends}
+                keyExtractor={(item) => item.id}
+                renderItem={activeTab === 'received' ? renderReceivedItem : renderSentItem}
+            />
         </SafeAreaView>
     );
 };
@@ -60,18 +101,6 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
         backgroundColor: '#f0f2f5',
-    },
-    header: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        backgroundColor: '#1e90ff',
-        padding: 10,
-    },
-    headerTitle: {
-        color: '#fff',
-        fontSize: 18,
-        fontWeight: 'bold',
     },
     tabs: {
         flexDirection: 'row',
@@ -95,22 +124,18 @@ const styles = StyleSheet.create({
         color: '#1e90ff',
         fontWeight: 'bold',
     },
-    timestamp: {
-        fontSize: 14,
-        color: '#666',
-        marginVertical: 10,
-        marginHorizontal: 15,
-    },
     requestCard: {
         backgroundColor: '#fff',
         marginHorizontal: 15,
         padding: 15,
         borderRadius: 8,
         elevation: 2,
+        marginBottom: 15,
     },
     requestHeader: {
         flexDirection: 'row',
         alignItems: 'center',
+        marginBottom: 10,
     },
     avatar: {
         width: 40,
@@ -118,35 +143,15 @@ const styles = StyleSheet.create({
         borderRadius: 20,
         marginRight: 10,
     },
-    requestInfo: {
-        flex: 1,
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-    },
     requestName: {
         fontSize: 16,
-        fontWeight: 500,
-    },
-    requestCategory: {
-        fontSize: 12,
-        color: '#1e90ff',
-        backgroundColor: '#e6f0ff',
-        paddingHorizontal: 8,
-        paddingVertical: 2,
-        borderRadius: 10,
-    },
-    requestSource: {
-        fontSize: 12,
-        color: '#666',
-        marginVertical: 5,
-        marginLeft: 50, // Align with the name (avatar width + margin)
+        fontWeight: 'bold',
     },
     requestMessageContainer: {
         backgroundColor: '#f5f5f5',
         padding: 10,
         borderRadius: 8,
-        marginVertical: 10,
+        marginBottom: 10,
     },
     requestMessage: {
         fontSize: 14,
@@ -172,8 +177,51 @@ const styles = StyleSheet.create({
     buttonText: {
         fontSize: 14,
         fontWeight: 'bold',
+    },
+    status: {
+        fontSize: 13,
+        color: '#666',
+        marginTop: 5,
+        marginLeft: 50,
+    },
+    sentCard: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: '#fff',
+        paddingVertical: 10,
+        paddingHorizontal: 15,
+        borderBottomWidth: 1,
+        borderBottomColor: '#eee',
+    },
+
+    sentInfo: {
+        flex: 1,
+    },
+    sentName: {
+        fontSize: 16,
+        fontWeight: 'bold',
         color: '#333',
     },
+    sentSubtitle: {
+        fontSize: 13,
+        color: '#888',
+    },
+    sentTime: {
+        fontSize: 12,
+        color: '#aaa',
+    },
+    withdrawButton: {
+        backgroundColor: '#f0f0f0',
+        paddingHorizontal: 12,
+        paddingVertical: 6,
+        borderRadius: 16,
+    },
+    withdrawText: {
+        fontSize: 13,
+        fontWeight: 'bold',
+        color: '#333',
+    },
+
 });
 
 export default FriendRequestScreen;

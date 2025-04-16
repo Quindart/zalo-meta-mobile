@@ -86,7 +86,7 @@ const SearchScreen = () => {
           <View style={styles.resultItem}>
             <View style={styles.userContainer}>
               <TouchableOpacity onPress={() => {
-                navigation.navigate(ROUTING.PROFILE_USER_SCREEN, { userId: item._id })
+                navigation.navigate(ROUTING.PROFILE_FRIEND_SCREEN, { userId: item._id })
               }}
                 style={{ flexDirection: 'row', width: '85%', alignItems: 'center' }}>
                 <Image
