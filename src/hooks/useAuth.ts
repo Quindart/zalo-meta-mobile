@@ -6,7 +6,7 @@ import { setMe, clearUser, setAccessToken, setRefreshToken, clearTokens } from '
 import { NavigationProp, ParamListBase, useNavigation } from '@react-navigation/native';
 import { ROUTING } from '@/utils/constant';
 // import { setTokens, clearTokens } from '@/utils/tokenManager'; // Import từ tokenManager
-import { login, register, changePassword } from '@/services/auth.service';
+import { login, register } from '@/services/auth.service';
 
 
 const useAuth = () => {
@@ -25,10 +25,6 @@ const useAuth = () => {
 
                 dispatch(setAccessToken(jsonLoginResponse.data.tokens.accessToken));
                 dispatch(setRefreshToken(jsonLoginResponse.data.tokens.refreshToken));
-                // setTokens(
-                //     loginResponse.data.tokens.accessToken,
-                //     loginResponse.data.tokens.refreshToken
-                // );
                 const userId = loginResponse.data.user.id;
                 const userResponse = await axiosConfig.get(`/api/v1/users/${userId}`);
                 const jsonUserResponse = toJSON(userResponse);
@@ -72,31 +68,8 @@ const useAuth = () => {
         }
     };
 
-    const handleChangePassword = async (password: string, newPassword: string) => {
-        try {
-            const passwordData = {
-                password, // Mật khẩu hiện tại
-                newPassword, // Mật khẩu mới
-            };
-            // Gửi yêu cầu thay đổi mật khẩu
-            const changeResponse = await axiosConfig.put('/api/v1/me/change-password', passwordData, {
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-            });
-            const jsonChangeResponse = toJSON(changeResponse);
-            if (jsonChangeResponse.success) {
-                navigation.goBack();
-                Alert.alert('Thành công', jsonChangeResponse.message);
-            } else {
-                Alert.alert('Lỗi', jsonChangeResponse.message);
-            }
-        } catch (error: any) {
-            Alert.alert('Lỗi', (error.response?.data?.message || error.message));
-        }
-    };
 
-    return { handleLogin, handleLogout, handleRegister, handleChangePassword };
+    return { handleLogin, handleLogout, handleRegister };
 };
 
 export default useAuth;

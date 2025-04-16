@@ -21,4 +21,5 @@ export const ROUTING = {
     OPTION_SCREEN: 'Option',
     GROUP_SCREEN: 'Group',
     FRIEND_REQUEST_SCREEN: 'Request',
+    PROFILE_USER_SCREEN: 'ProfileUser',
 };
