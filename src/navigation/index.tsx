@@ -33,7 +33,7 @@ import { useNavigation } from "@react-navigation/native";
 import { RootStackParamList } from "./type";
 import ForgotPasswordTemplate from "@/screens/Auth/Forgot/index";
 import ResetPasswordTemplate from "@/screens/Auth/Reset/index";
-import TabWithHeaderNavigator from "@/components/Shared/TabWithHeaderNavigator";
+import TabWithHeaderNavigator from "@/components/shared/TabWithHeaderNavigator";
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
 function NavigationApp() {

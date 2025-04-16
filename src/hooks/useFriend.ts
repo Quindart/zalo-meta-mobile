@@ -3,6 +3,7 @@ import { setReceiveFriends, setSendFriends } from "@/redux/userSlice";
 import SocketService from "@/services/Socket.service";
 import { useEffect, useState, useCallback } from "react";
 import { useDispatch, useSelector } from "react-redux";
+import { getFriendsList } from "@/services/friend.service";
 
 const SOCKET_EVENTS = {
     FRIEND: {
@@ -170,6 +171,19 @@ export const useFriend = (currentUserId: string) => {
         });
     }, [currentUserId]);
 
+    const getAllFriend = async () => {
+        try {
+            console.log(' Danh sách bạn bè:');
+            const response = await getFriendsList();
+            console.log('B1: Danh sách bạn bè:', response.data);
+            console.log('B2: Danh sách bạn bè:', response.data.friends);
+            return response.data.friends;
+        } catch (error) {
+            console.error('Error fetching friends list:', error);
+            throw error;
+        }
+    }
+
     return {
         listFriends,
         receiveFriends,
@@ -182,6 +196,7 @@ export const useFriend = (currentUserId: string) => {
         getReceviedInviteFriends,
         getSendListFriends,
         rejectInviteFriend,
+        getAllFriend
     };
 
 }
