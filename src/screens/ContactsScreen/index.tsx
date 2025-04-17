@@ -8,13 +8,25 @@ import { ROUTING } from '@/utils/constant';
 import { useDispatch, useSelector } from 'react-redux';
 import { useFriend } from '@/hooks/useFriend';
 import { User } from '@/models/user';
+import useUser from '@/hooks/useUser';
+
 
 const ContactsScreen = () => {
   const navigation = useNavigation<NavigationProp<ParamListBase>>();
+  const { handleSearchUserByPhone } = useUser();
   const [activeTab, setActiveTab] = useState('Bạn bè');
 
   const user: User | null = useSelector((state: any) => state.user.user);
   const { getListFriends, listFriends } = useFriend(user?.id || '');
+
+
+  const handleGetFriends = async (phone: string) => {
+    const data = await handleSearchUserByPhone(phone);
+    // lấy ra phần từ đầu tiên trong mảng
+    const item = data[0];
+    console.log('Kết quả tìm kiếm:', data);
+    navigation.navigate(ROUTING.PROFILE_FRIEND_SCREEN, { itemFriend: item })
+  }
 
   useEffect(() => {
     if (user?.id) {
@@ -34,10 +46,7 @@ const ContactsScreen = () => {
 
   const renderItemContact = ({ item }: { item: any }) => {
     return (
-      <TouchableOpacity onPress={() => {
-        navigation.navigate(ROUTING.PROFILE_FRIEND_SCREEN, { userId: item.id })
-      }}>
-
+      <TouchableOpacity onPress={() => handleGetFriends(item.phone)} >
         <View style={styles.contactItem}>
           <Image source={{ uri: item.avatar }} style={styles.avatar} />
           <View style={styles.contactInfo}>
