@@ -1,0 +1,70 @@
+
+const SOCKET_EVENTS = Object.freeze({
+    CONNECTION: "connection",
+    DISCONNECT: "disconnect",
+    QR: {
+        VERIFY: 'qr:verify',
+        ACCEPTED_LOGIN: 'qr:accpeted-login',
+    },
+    MESSAGE: {
+        SEND: "message:send",
+        RECEIVED: "message:received",
+        DELIVERED: "message:delivered",
+        READ: "message:read",
+        ERROR: "message:error",
+        LOAD: "message:load",
+        LOAD_RESPONSE: "message:loadResponse",
+    },
+    USER: {
+        ONLINE: "user:online",
+        OFFLINE: "user:offline",
+        JOINED: "user:joined",
+        LEAVED: "user:leaved",
+    },
+    CHANNEL: {
+        FIND_ORCREATE: "channel:findOrCreate",
+        FIND_ORCREATE_RESPONSE: "channel:findOrCreateResponse",
+        FIND_BY_ID: "channel:findById",
+        FIND_BY_ID_RESPONSE: "channel:findByIdResponse",
+        LOAD_CHANNEL: "channel:load",
+        LOAD_CHANNEL_RESPONSE: "channel:loadResponse",
+        CREATE: "channel:create",
+        CREATE_RESPONSE: "channel:createResponse",
+        JOIN_ROOM: "joinRoom",
+        JOIN_ROOM_RESPONSE: "joinRoomResponse",
+        LEAVE_ROOM: "leaveRoom",
+        LEAVE_ROOM_RESPONSE: "leaveRoomResponse",
+        DISSOLVE_GROUP: "channel:dissolveGroup",
+        DISSOLVE_GROUP_RESPONSE: "channel:dissolveGroupResponse",
+    },
+    NOTIFICATION: {
+        FRIEND_REQUEST: "notification:friend_request",
+        MESSAGE_NEW: "notification:message_new",
+    },
+    FRIEND: {
+        ADD_FRIEND: "friend:add",
+        ADD_FRIEND_RESPONSE: "friend:addResponse",
+        REMOVE_FRIEND: "friend:remove",
+        REMOVE_FRIEND_RESPONSE: "friend:removeResponse",
+        ACCEPT_FRIEND: "friend:accept",
+        ACCEPT_FRIEND_RESPONSE: "friend:acceptResponse",
+        REJECT_FRIEND: "friend:reject",
+        REJECT_FRIEND_RESPONSE: "friend:rejectResponse",
+        LIST_FRIEND: "friend:list",
+        LIST_FRIEND_RESPONSE: "friend:listResponse",
+    },
+    EMOJI: {
+        LOAD_EMOJIS_OF_MESSAGE: "emoji:loadEmojis",
+        INTERACT_EMOJI: "emoji:interactEmoji",
+        REMOVE_MY_EMOJI: "emoji:removeMyEmoji",
+        LOAD_EMOJIS_OF_MESSAGE_RESPONSE: "emoji:loadEmojisResponse",
+        INTERACT_EMOJI_RESPONSE: "emoji:interactEmojiResponse",
+        REMOVE_MY_EMOJI_RESPONSE: "emoji:removeMyEmojiResponse"
+    },
+    FILE: {
+        UPLOAD: "file:upload",
+        UPLOAD_RESPONSE: "file:uploadResponse",
+    },
+});
+
+export default SOCKET_EVENTS;
