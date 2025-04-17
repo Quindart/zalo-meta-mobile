@@ -12,9 +12,15 @@ import {
   StatusBar,
   ActivityIndicator,
   Alert,
+  Modal,
+  TouchableWithoutFeedback,
+  Clipboard,
+  ScrollView,
 } from 'react-native';
 import { Ionicons, AntDesign } from '@expo/vector-icons';
+import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import styles from './css';
+import popupStyles from './popupcss';
 import { RouteProp, useNavigation } from '@react-navigation/native';
 import { LinearGradient } from 'expo-linear-gradient';
 import theme from '@/theme';
@@ -31,6 +37,16 @@ type ChatScreenRouteProp = RouteProp<RootStackParamList, typeof ROUTING.CHAT_SCR
 type ChatScreenNavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
 // Định nghĩa interface cho message
+interface Emoji {
+  emoji: string;
+  userId: string;
+  messageId: string;
+  quantity: number;
+  createAt: string;
+  updateAt: string;
+  deleteAt?: string;
+}
+
 interface Message {
   id?: string;
   _id?: string;
@@ -39,6 +55,7 @@ interface Message {
   content: string;
   timestamp: string;
   status: 'sent' | 'delivered' | 'read';
+  emojis?: Emoji[];
   sender: {
     id: string;
     name: string;
@@ -80,6 +97,8 @@ const MessageItem = React.memo(
     senderAvatar,
     isMyMessage,
     status,
+    emojis,
+    onLongPress,
   }: {
     content: string;
     timestamp: string;
@@ -87,29 +106,123 @@ const MessageItem = React.memo(
     senderAvatar: string;
     isMyMessage: boolean;
     status: string;
+    emojis?: Emoji[];
+    onLongPress?: () => void;
   }) => {
     const me = useSelector((state: RootState) => state.user.user);
+    const [isEmojiModalVisible, setEmojiModalVisible] = useState(false);
+    // Hiển thị các emoji
+    const renderEmojis = useMemo(() => {
+      if (!emojis || emojis.length === 0) return null;
 
-    return (
-      <View style={[styles.messageRow, isMyMessage ? styles.myMessageRow : styles.otherMessageRow]}>
-        <Image
-          source={{ uri: isMyMessage ? me?.avatar : senderAvatar }}
-          style={styles.messageAvatar}
-          defaultSource={require('../../../assets/user_default.jpg')}
-        />
-        <View style={[styles.messageBubble, isMyMessage ? styles.myMessageBubble : styles.otherMessageBubble]}>
-          <Text style={styles.messageText}>{content}</Text>
-          <Text style={styles.messageTime}>
-            {timestamp ? new Date(timestamp).toLocaleTimeString() : ''}{' '}
-            {isMyMessage && (
-              <>
-                {status === 'sent' && '✓'}
-                {status === 'delivered' && '✓✓'}
-                {status === 'read' && '✓✓ (Đã đọc)'}
-              </>
-            )}
-          </Text>
+      const maxDisplay = 4; // Giới hạn hiển thị tối đa 4 emoji
+      const displayEmojis = emojis.length > maxDisplay ? emojis.slice(0, 3) : emojis; // Lấy 3 emoji đầu nếu vượt quá 4
+      const remainingCount = emojis.length > maxDisplay ? emojis.length - 3 : 0; // Số lượng emoji còn lại
+
+      return (
+        <View style={[styles.emojiWrapper, isMyMessage ? styles.emojiWrapperRight : styles.emojiWrapperLeft]}>
+          {displayEmojis.map((emoji, index) => (
+            <View key={index} style={styles.emojiItem}>
+              <Text style={styles.emojiTextIcon}>{emoji.emoji}</Text>
+            </View>
+          ))}
+          {remainingCount > 0 && (
+            <View style={styles.remainingCount}>
+              <Text style={styles.remainingText}>+{remainingCount}</Text>
+            </View>
+          )}
         </View>
+      );
+    }, [emojis, isMyMessage]); // Thêm isMyMessage vào dependency để đảm bảo style thay đổi
+
+    const emojiSummary = useMemo(() => {
+      if (!emojis) return [];
+
+      const emojiCountMap: { [key: string]: { emoji: string; count: number } } = {};
+
+      emojis.forEach((emoji) => {
+        if (!emojiCountMap[emoji.emoji]) {
+          emojiCountMap[emoji.emoji] = { emoji: emoji.emoji, count: 0 };
+        }
+        emojiCountMap[emoji.emoji].count += emoji.quantity;
+      });
+
+      return Object.values(emojiCountMap);
+    }, [emojis]);
+
+    // Render mỗi item trong popup
+    const renderEmojiCount = ({ item }: { item: { emoji: string; count: number } }) => (
+      <View style={popupStyles.emojiRow}>
+        <Text style={popupStyles.emoji}>{item.emoji}</Text>
+        <Text style={popupStyles.emojiCount}>{item.count}</Text>
+      </View>
+    );
+    return (
+      <View style={styles.messageWrapper}>
+        <TouchableOpacity
+          activeOpacity={0.8}
+          onLongPress={onLongPress}
+          style={[styles.messageRow, isMyMessage ? styles.myMessageRow : styles.otherMessageRow]}
+        >
+          {/* Hiển thị avatar chỉ cho tin nhắn của người khác */}
+          {!isMyMessage && (
+            <Image
+              source={{ uri: senderAvatar }}
+              style={styles.messageAvatar}
+              defaultSource={require('../../../assets/user_default.jpg')}
+            />
+          )}
+
+          <View
+            style={[
+              styles.messageBubble,
+              isMyMessage ? styles.myMessageBubble : styles.otherMessageBubble,
+            ]}
+          >
+            <Text style={styles.messageText}>{content}</Text>
+            <Text style={styles.messageTime}>
+              {timestamp ? new Date(timestamp).toLocaleTimeString() : ''}{' '}
+              {isMyMessage && (
+                <>
+                  {status === 'sent' && '✓'}
+                  {status === 'delivered' && '✓✓'}
+                  {status === 'read' && '✓✓ (Đã đọc)'}
+                </>
+              )}
+            </Text>
+          </View>
+        </TouchableOpacity>
+        {renderEmojis && (
+          <TouchableOpacity
+            onPress={() => setEmojiModalVisible(true)}
+            style={isMyMessage ? styles.myEmojiContainer : styles.otherEmojiContainer}
+          >
+            {renderEmojis}
+          </TouchableOpacity>
+        )}
+        {/* Modal hiển thị số lượng của từng emoji */}
+        <Modal
+          visible={isEmojiModalVisible}
+          transparent={true}
+          animationType="fade"
+          onRequestClose={() => setEmojiModalVisible(false)}
+        >
+          <TouchableOpacity
+            style={popupStyles.modalOverlay}
+            onPress={() => setEmojiModalVisible(false)}
+            activeOpacity={1}
+          >
+            <View style={popupStyles.modalContent}>
+              <Text style={popupStyles.modalTitle}>Tất cả {emojiSummary.length}</Text>
+              <FlatList
+                data={emojiSummary}
+                renderItem={renderEmojiCount}
+                keyExtractor={(item) => item.emoji}
+                style={popupStyles.emojiList}
+              />
+            </View>
+          </TouchableOpacity>
+        </Modal>
       </View>
     );
   },
@@ -120,20 +233,16 @@ const MessageItem = React.memo(
       prevProps.senderId === nextProps.senderId &&
       prevProps.senderAvatar === nextProps.senderAvatar &&
       prevProps.isMyMessage === nextProps.isMyMessage &&
-      prevProps.status === nextProps.status
+      prevProps.status === nextProps.status &&
+      prevProps.onLongPress === nextProps.onLongPress &&
+      JSON.stringify(prevProps.emojis) === JSON.stringify(nextProps.emojis)
     );
   },
 );
 
 // MessageInputContainer component
 const MessageInputContainer = React.memo(
-  ({
-    channelId,
-    sendMessage,
-  }: {
-    channelId: string;
-    sendMessage: (chanId: string, content: string) => void;
-  }) => {
+  ({ channelId, sendMessage }: { channelId: string; sendMessage: (chanId: string, content: string) => void }) => {
     const [inputMessage, setInputMessage] = useState('');
 
     const handleSendMessage = useCallback(() => {
@@ -173,7 +282,7 @@ const ChatScreen = ({ route }: { route: ChatScreenRouteProp }) => {
   const sender = useSelector((state: RootState) => state.user.user);
   const channelId = item?.id || '';
 
-  // Sử dụng useChat hook
+  // Sử dụng useChat hook với đầy đủ các phương thức
   const {
     sendMessage,
     messages,
@@ -182,18 +291,25 @@ const ChatScreen = ({ route }: { route: ChatScreenRouteProp }) => {
     joinRoom,
     loadMessages,
     noMessageToLoad,
+    interactEmoji,
+    removeMyEmoji,
   } = useChat(sender?.id);
 
-  // State theo dõi trạng thái
   const [loadingMore, setLoadingMore] = useState(false);
   const [hasMoreMessages, setHasMoreMessages] = useState(true);
   const [isAtBottom, setIsAtBottom] = useState(true);
   const previousMessagesLength = useRef(0);
   const flatListRef = useRef<FlatList>(null);
   const initialRenderRef = useRef(true);
+  const [isPopupVisible, setIsPopupVisible] = useState(false);
+  const [selectedMessage, setSelectedMessage] = useState<Message | null>(null);
 
+  useEffect(() => {
+    if (error) {
+      Alert.alert('Lỗi', error);
+    }
+  }, [error]);
 
-  // Tham gia phòng khi vào màn hình
   useEffect(() => {
     if (channelId && sender?.id) {
       console.log('Joining room with channelId:', channelId);
@@ -204,7 +320,6 @@ const ChatScreen = ({ route }: { route: ChatScreenRouteProp }) => {
     }
   }, [channelId, sender?.id, joinRoom]);
 
-  // Đồng bộ hasMoreMessages với noMessageToLoad
   useEffect(() => {
     if (noMessageToLoad) {
       console.log('No more messages to load based on noMessageToLoad');
@@ -212,14 +327,12 @@ const ChatScreen = ({ route }: { route: ChatScreenRouteProp }) => {
     }
   }, [noMessageToLoad]);
 
-  // Kiểm tra tin nhắn và cuộn xuống dưới
   useEffect(() => {
     if (loadingMore) {
       setLoadingMore(false);
     }
     previousMessagesLength.current = messages.length;
 
-    // Cuộn xuống dưới khi vào lần đầu
     if (initialRenderRef.current && messages.length > 0) {
       setTimeout(() => {
         try {
@@ -232,7 +345,6 @@ const ChatScreen = ({ route }: { route: ChatScreenRouteProp }) => {
     }
   }, [messages, loadingMore]);
 
-  // Cuộn xuống dưới khi có tin nhắn mới (nếu đang ở dưới cùng)
   useEffect(() => {
     if (
       !initialRenderRef.current &&
@@ -262,32 +374,73 @@ const ChatScreen = ({ route }: { route: ChatScreenRouteProp }) => {
         });
         return;
       }
-      console.log('Loading more messages for channelId:', channelId);
       setLoadingMore(true);
       loadMessages(channelId);
     }, 300),
     [channelId, loading, loadingMore, hasMoreMessages, loadMessages, noMessageToLoad],
   );
 
-  // Theo dõi vị trí cuộn
-  const handleScroll = useCallback(
-    (event: any) => {
-      const { contentOffset, contentSize, layoutMeasurement } = event.nativeEvent;
-      const isBottom = contentOffset.y >= contentSize.height - layoutMeasurement.height - 50;
-      setIsAtBottom(isBottom);
-    },
-    [],
-  );
+  const handleScroll = useCallback((event: any) => {
+    const { contentOffset, contentSize, layoutMeasurement } = event.nativeEvent;
+    const isBottom = contentOffset.y >= contentSize.height - layoutMeasurement.height - 50;
+    setIsAtBottom(isBottom);
+  }, []);
 
-  // Render header trạng thái load message
+  const handleLongPressMessage = useCallback((message: Message) => {
+    setSelectedMessage(message);
+    setIsPopupVisible(true);
+  }, []);
+
+  const handleQuickReact = useCallback((emoji: string) => {
+    if (!selectedMessage) return;
+    interactEmoji(selectedMessage.id || selectedMessage._id || '', emoji, sender?.id || '');
+    setIsPopupVisible(false);
+    setSelectedMessage(null);
+  }, [selectedMessage, interactEmoji, sender?.id]);
+
+  const handlePopupAction = useCallback((action: string) => {
+    if (!selectedMessage) return;
+
+    switch (action) {
+      case 'reply':
+        Alert.alert('Thông báo', 'Chức năng trả lời tin nhắn chưa được triển khai.');
+        break;
+      case 'forward':
+        Alert.alert('Thông báo', 'Chức năng chuyển tiếp tin nhắn chưa được triển khai.');
+        break;
+      case 'copy':
+        if (selectedMessage) {
+          Clipboard.setString(selectedMessage.content);
+          Alert.alert('Thông báo', 'Đã sao chép tin nhắn!');
+        }
+        break;
+      case 'delete':
+        Alert.alert('Thông báo', 'Chức năng xóa tin nhắn chưa được triển khai.');
+        break;
+      case 'remove_reaction':
+        if (selectedMessage) {
+          console.log("check selected Message: ", selectedMessage);
+          removeMyEmoji(selectedMessage.id || selectedMessage._id || '', sender?.id || '');
+        }
+        break;
+      default:
+        break;
+    }
+    setIsPopupVisible(false);
+    setSelectedMessage(null);
+  }, [selectedMessage, removeMyEmoji, sender?.id]);
+
+  const closePopup = useCallback(() => {
+    setIsPopupVisible(false);
+    setSelectedMessage(null);
+  }, []);
+
   const renderListHeader = useCallback(() => {
     if (loadingMore) {
       return (
         <View style={{ padding: 10, alignItems: 'center' }}>
           <ActivityIndicator size="small" color={theme.colors.primary} />
-          <Text style={{ marginTop: 5, fontSize: 12, color: '#777' }}>
-            Đang tải tin nhắn cũ...
-          </Text>
+          <Text style={{ marginTop: 5, fontSize: 12, color: '#777' }}>Đang tải tin nhắn cũ...</Text>
         </View>
       );
     }
@@ -305,17 +458,15 @@ const ChatScreen = ({ route }: { route: ChatScreenRouteProp }) => {
     ) : null;
   }, [loadingMore, hasMoreMessages, messages.length]);
 
-  // Render danh sách trống
   const renderEmptyList = useCallback(() => (
     <View>
       <Text>Chưa có tin nhắn nào. Bắt đầu trò chuyện ngay!</Text>
     </View>
   ), []);
 
-  // Render item tin nhắn
   const renderItem = useCallback(
     ({ item }: { item: Message }) => {
-      const isMyMessage = sender?.id === item.sender.id ? true : false;
+      const isMyMessage = sender?.id === item.sender.id;
       return (
         <MessageItem
           content={item.content || ''}
@@ -324,18 +475,37 @@ const ChatScreen = ({ route }: { route: ChatScreenRouteProp }) => {
           senderAvatar={item.sender?.avatar || 'https://example.com/default-avatar.png'}
           isMyMessage={isMyMessage}
           status={item.status || 'sent'}
+          emojis={item.emojis}
+          onLongPress={() => handleLongPressMessage(item)}
         />
       );
     },
-    [sender],
+    [sender, handleLongPressMessage],
   );
 
-  // Key extractor cho FlatList
   const keyExtractor = useCallback(
     (item: Message, index: number) =>
       item.id ? item.id.toString() : item._id ? item._id.toString() : `msg-${index}-${Date.now()}`,
     [],
   );
+
+  const quickReactions = [
+    { emoji: '❤️', action: 'HEART' },
+    { emoji: '👍', action: 'LIKE' },
+    { emoji: '😂', action: 'LAUGH' },
+    { emoji: '😮', action: 'SURPRISED' },
+    { emoji: '😢', action: 'SAD' },
+    { emoji: '😡', action: 'ANGRY' },
+  ];
+
+  const actions = [
+    { label: 'Trả lời', icon: 'reply', action: 'reply', color: '#4a90e2' },
+    { label: 'Chuyển tiếp', icon: 'share', action: 'forward', color: '#4a90e2' },
+    { label: 'Sao chép', icon: 'content-copy', action: 'copy', color: '#4a90e2' },
+    { label: 'Ghim', icon: 'pin', action: 'pin', color: '#f5a623' },
+    { label: 'Xóa', icon: 'delete', action: 'delete', color: '#ff4d4f' },
+    { label: 'Bỏ cảm xúc', icon: 'heart-off', action: 'remove_reaction', color: 'grey' },
+  ];
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -347,7 +517,6 @@ const ChatScreen = ({ route }: { route: ChatScreenRouteProp }) => {
       >
         <ChatHeader navigation={navigation} item={item} />
 
-        {/* Hiển thị spinner khi tải tin nhắn ban đầu */}
         {loading && messages.length === 0 && (
           <View style={styles.loadingContainer}>
             <ActivityIndicator size="large" color={theme.colors.primary} />
@@ -366,7 +535,7 @@ const ChatScreen = ({ route }: { route: ChatScreenRouteProp }) => {
           initialNumToRender={15}
           maxToRenderPerBatch={15}
           windowSize={10}
-          removeClippedSubviews={Platform.OS === 'android'}
+          removeClippedSubviews={false}
           onRefresh={handleLoadMoreMessages}
           refreshing={loadingMore}
           onScroll={handleScroll}
@@ -375,6 +544,46 @@ const ChatScreen = ({ route }: { route: ChatScreenRouteProp }) => {
         />
 
         <MessageInputContainer channelId={channelId} sendMessage={sendMessage} />
+
+        <Modal
+          visible={isPopupVisible}
+          transparent={true}
+          animationType="fade"
+          onRequestClose={closePopup}
+        >
+          <TouchableWithoutFeedback onPress={closePopup}>
+            <View style={styles.modalOverlay}>
+              <View style={styles.popupContainer}>
+                {/* Hàng emoji phản hồi nhanh */}
+                <View style={styles.emojiRow}>
+                  {quickReactions.map((reaction, index) => (
+                    <TouchableOpacity
+                      key={index}
+                      style={styles.emojiButton}
+                      onPress={() => handleQuickReact(reaction.emoji)}
+                    >
+                      <Text style={styles.emojiText}>{reaction.emoji}</Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+
+                {/* Hàng các hành động */}
+                <View style={styles.actionRow}>
+                  {actions.map((action, index) => (
+                    <TouchableOpacity
+                      key={index}
+                      style={styles.actionButton}
+                      onPress={() => handlePopupAction(action.action)}
+                    >
+                      <MaterialCommunityIcons name={action.icon} size={24} color={action.color} />
+                      <Text style={[styles.actionText, { color: action.color }]}>{action.label}</Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              </View>
+            </View>
+          </TouchableWithoutFeedback>
+        </Modal>
       </KeyboardAvoidingView>
     </SafeAreaView>
   );

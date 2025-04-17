@@ -15,9 +15,11 @@ import SOCKET_EVENTS from '@/types/socket.event.enum';
 import { useSelector } from 'react-redux';
 import { RootState } from '@/redux/store';
 
-const socketService = SocketService.getInstance().getSocket();
 
 const QRScanTemplate = () => {
+    const sender = useSelector((state: RootState) => state.user.user);
+    const socketService = SocketService.getInstance(sender.id);
+    const socket = socketService.getSocket();
     const [visible, setVisible] = useState(false);
     const userStore = useSelector((state: RootState) => state.user);
     const token = userStore.accessToken
@@ -46,8 +48,7 @@ const QRScanTemplate = () => {
     }, [permission, requestPermission]);
 
     useEffect(() => {
-        socketService.connect();
-        socketService.off(SOCKET_EVENTS.QR.ACCEPTED_LOGIN);
+        socket.off(SOCKET_EVENTS.QR.ACCEPTED_LOGIN);
     }, []);
 
     const handleBarCodeScanned = async ({ type, data }: { type: string; data: string }) => {
@@ -119,7 +120,7 @@ const QRScanTemplate = () => {
             const result = await loginQR(`${token}`);
             hideDialog();
             setResultLogin(result.data);
-            socketService.emit(SOCKET_EVENTS.QR.ACCEPTED_LOGIN, {
+            socket.emit(SOCKET_EVENTS.QR.ACCEPTED_LOGIN, {
                 ...result.data
             });
 
