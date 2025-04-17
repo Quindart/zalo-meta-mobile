@@ -21,5 +21,5 @@ export type RootStackParamList = {
     [ROUTING.OPTION_SCREEN]: undefined;
     [ROUTING.GROUP_SCREEN]: undefined;
     [ROUTING.FRIEND_REQUEST_SCREEN]: undefined;
-    [ROUTING.PROFILE_USER_SCREEN]: { userId: string };
+    [ROUTING.PROFILE_FRIEND_SCREEN]: { itemFriend: any };
 };

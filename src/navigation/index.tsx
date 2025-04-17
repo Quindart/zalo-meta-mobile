@@ -23,7 +23,7 @@ import UpdateProfile from "@/screens/ProfileScreen/updateProfile";
 import OptionScreen from "@/screens/OptionScreen";
 import GroupScreen from "@/screens/GroupScreen";
 import FriendRequestScreen from "@/screens/ContactsScreen/friendRequest";
-import ProfileUserScreen from "@/screens/ProfileUserScreen";
+import ProfileUserScreen from "@/screens/ProfileFriendScreen";
 
 import { LinearGradient } from "expo-linear-gradient";
 import theme from "@/theme";
@@ -42,7 +42,7 @@ function NavigationApp() {
       <StatusBar barStyle="light-content" backgroundColor="#0D7DC9" />
 
       <Stack.Navigator
-        initialRouteName={ROUTING.TAB_WITH_HEADER_NAVIGATION}
+        initialRouteName={ROUTING.HOME}
         screenOptions={{
           headerShadowVisible: false,
         }}
@@ -153,10 +153,13 @@ function NavigationApp() {
           options={{ headerShown: false }}
         />
         <Stack.Screen
-          name={ROUTING.PROFILE_USER_SCREEN}
+          name={ROUTING.PROFILE_FRIEND_SCREEN}
           component={ProfileUserScreen}
           options={{ headerShown: false }}
         />
+
+
+
       </Stack.Navigator>
     </NavigationContainer>
   );
