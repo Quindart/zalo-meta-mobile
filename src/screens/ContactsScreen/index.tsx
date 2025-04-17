@@ -5,7 +5,9 @@ import { useNavigation } from '@react-navigation/native';
 import { NavigationProp } from '@react-navigation/native';
 import { ParamListBase } from '@react-navigation/native';
 import { ROUTING } from '@/utils/constant';
-import useFriend from '@/hooks/useFriend';
+import { useFriend } from '@/hooks/useFriend';
+import { useDispatch, useSelector } from 'react-redux';
+import { User } from '@/models/user';
 
 
 const contacts = [
@@ -15,27 +17,28 @@ const contacts = [
   { id: '4', name: 'A Vương', date: '20/7', avatar: 'https://m.yodycdn.com/products/anhthobaymau1_m3o63bmw3s5jntxo22o.jpg' },
 ];
 
-const ChatListScreen = () => {
+const ContactsScreen = () => {
   const navigation = useNavigation<NavigationProp<ParamListBase>>();
   const [activeTab, setActiveTab] = useState('Bạn bè');
-  const { getAllFriend } = useFriend();
-  const [friendsList, setFriendsList] = useState([]);
 
-  const fetchAllFriend = async () => {
-    try {
-      const data = await getAllFriend();
-      console.log('Danh sách bạn bè:', data);
-      setFriendsList(data); // Cập nhật state đúng cách
-    } catch (error) {
-      console.error('Error fetching friends list:', error);
-    }
-  };
+  const user: User | null = useSelector((state: any) => state.user.user);
 
+  // 🧠 Gọi hook TRƯỚC return, kể cả khi user null
+  const { getListFriends, listFriends } = useFriend(user?.id || '');
 
   useEffect(() => {
-    fetchAllFriend();
-  }, []);
+    if (user?.id) {
+      getListFriends();
+    }
+  }, [user]);
 
+  if (!user) {
+    return (
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+        <Text>Đang tải người dùng...</Text>
+      </View>
+    );
+  }
 
   const renderItemContact = ({ item }: { item: any }) => {
     return (
@@ -107,7 +110,7 @@ const ChatListScreen = () => {
         </View>
       </View>
       <FlatList
-        data={friendsList}
+        data={listFriends}
         renderItem={renderItemContact}
         keyExtractor={(item) => item.id}
         contentContainerStyle={styles.flatListContent}
@@ -219,4 +222,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default ChatListScreen;
+export default ContactsScreen;
