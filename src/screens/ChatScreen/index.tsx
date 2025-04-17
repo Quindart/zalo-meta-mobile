@@ -32,6 +32,14 @@ import { RootState } from '@/redux/store';
 import { useChat } from '@/hooks/useChat';
 import { debounce } from 'lodash';
 
+import * as DocumentPicker from 'expo-document-picker'; // thư viện để chọn file
+import { MaterialCommunityIcons } from '@expo/vector-icons';
+import * as FileSystem from 'expo-file-system'; // thư viện để làm việc với file hệ thống
+import * as Sharing from 'expo-sharing'; // thư viện để chia sẻ file
+import * as IntentLauncher from 'expo-intent-launcher'; // thư viện để mở file trên Android
+
+
+
 // Định nghĩa kiểu cho navigation và route
 type ChatScreenRouteProp = RouteProp<RootStackParamList, typeof ROUTING.CHAT_SCREEN>;
 type ChatScreenNavigationProp = NativeStackNavigationProp<RootStackParamList>;
@@ -254,6 +262,9 @@ const MessageInputContainer = React.memo(
 
     return (
       <View style={styles.inputContainer}>
+        <TouchableOpacity style={styles.attachmentButton}>
+          <Ionicons name="attach" size={22} color="#555" />
+        </TouchableOpacity>
         <TextInput
           style={styles.input}
           placeholder="Tin nhắn"
@@ -263,8 +274,12 @@ const MessageInputContainer = React.memo(
           returnKeyType="send"
           onSubmitEditing={handleSendMessage}
         />
-        <TouchableOpacity style={styles.sendButton} onPress={handleSendMessage}>
-          <Ionicons name="send" size={24} color="white" />
+        <TouchableOpacity
+          style={[styles.sendButton, inputMessage.trim() ? styles.sendButtonActive : null]}
+          onPress={handleSendMessage}
+          disabled={!inputMessage.trim()}
+        >
+          <Ionicons name="send" size={22} color="white" />
         </TouchableOpacity>
       </View>
     );
