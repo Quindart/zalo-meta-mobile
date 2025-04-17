@@ -20,7 +20,6 @@ const ProfileUserScreen = () => {
 
     const fetchUser = async () => {
         const userData = await handleGetUserById(userId.userId);
-        console.log('Response từ handleGetUserById:', userData);
         setUser(userData);
     };
     useEffect(() => {
@@ -28,8 +27,6 @@ const ProfileUserScreen = () => {
         console.log('user ', user);
     }, []);
 
-    console.log('userId ', userId.userId);
-    console.log('user ', user);
 
     return (
         <SafeAreaView style={styles.container}>

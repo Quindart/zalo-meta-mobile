@@ -100,17 +100,14 @@ export const useChat = (currentUserId: string) => {
         const loadMessageResponse = (response: ResponseType) => {
             setLoading(false);
             isLoadingMessagesRef.current = false;
-            console.log("Full response from server:", response);
             if (response.success && response.data) {
                 const newMessages = Array.isArray(response.data) ? response.data : [];
-                console.log("Received new messages:", newMessages.length);
                 if (newMessages.length < 10) {
                     console.log('Setting noMessageToLoad to true due to newMessages.length:', newMessages.length);
                     setNoMessageToLoad(true);
                 }
                 setMessages(prevMessages => {
                     const updatedMessages = [...newMessages, ...prevMessages];
-                    console.log("Updated messages:", updatedMessages);
                     return updatedMessages;
                 });
             } else {
@@ -176,7 +173,6 @@ export const useChat = (currentUserId: string) => {
         const loadChannelResponse = (response: ResponseType) => {
             setLoading(false);
             if (response.success && response.data) {
-                console.log('Load channel response:', response.data);
                 const validChannels = (response.data || []).filter(
                     (channel: any) => channel && channel.id && typeof channel === 'object'
                 );
@@ -222,8 +218,6 @@ export const useChat = (currentUserId: string) => {
         };
         const removeMyEmojiResponse = (response: ResponseType) => {
             setLoading(false);
-            console.log("Check response remove emoji: ", response);
-
             if (response.success) {
                 setMessages(prev => prev.map(msg => {
                     if (msg.id === response.data?._id || msg._id === response.data?._id) {
