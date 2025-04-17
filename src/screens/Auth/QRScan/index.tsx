@@ -113,8 +113,6 @@ const QRScanTemplate = () => {
     };
 
     const handleAcceptLoginOnWeb = async () => {
-        console.log('Accept login on web');
-
         try {
             // let token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY3ZjY0ODZlMGVhMzFhY2NlMDNiM2QxMyIsInBob25lIjoiMDM2NDgzNTY5MiIsImVtYWlsIjoicXVhbmc4MnRoY3NwYkBnbWFpbC5jb20iLCJleHBpcnlfYWNjZXNzdG9rZW4iOiIxZCIsImV4cGlyeV9yZWZyZXNodG9rZW4iOiI3ZCIsImlhdCI6MTc0NDI2NDUzOSwiZXhwIjoxNzQ0MzUwOTM5fQ.wPPsC1PUNt_s4V5u18by9nb_Y5XCyU9avvWyIHYOD_4";
             const result = await loginQR(`${token}`);

@@ -33,7 +33,6 @@ import { useChat } from '@/hooks/useChat';
 import { debounce } from 'lodash';
 
 import * as DocumentPicker from 'expo-document-picker'; // thư viện để chọn file
-import { MaterialCommunityIcons } from '@expo/vector-icons';
 import * as FileSystem from 'expo-file-system'; // thư viện để làm việc với file hệ thống
 import * as Sharing from 'expo-sharing'; // thư viện để chia sẻ file
 import * as IntentLauncher from 'expo-intent-launcher'; // thư viện để mở file trên Android
@@ -327,7 +326,6 @@ const ChatScreen = ({ route }: { route: ChatScreenRouteProp }) => {
 
   useEffect(() => {
     if (channelId && sender?.id) {
-      console.log('Joining room with channelId:', channelId);
       setHasMoreMessages(true);
       joinRoom(channelId);
     } else {
@@ -337,7 +335,6 @@ const ChatScreen = ({ route }: { route: ChatScreenRouteProp }) => {
 
   useEffect(() => {
     if (noMessageToLoad) {
-      console.log('No more messages to load based on noMessageToLoad');
       setHasMoreMessages(false);
     }
   }, [noMessageToLoad]);
@@ -353,7 +350,6 @@ const ChatScreen = ({ route }: { route: ChatScreenRouteProp }) => {
         try {
           flatListRef.current?.scrollToEnd({ animated: false });
         } catch (err) {
-          console.log('Error scrolling to bottom initially:', err);
         }
         initialRenderRef.current = false;
       }, 500);
@@ -371,7 +367,6 @@ const ChatScreen = ({ route }: { route: ChatScreenRouteProp }) => {
         try {
           flatListRef.current?.scrollToEnd({ animated: true });
         } catch (err) {
-          console.log('Error scrolling to bottom after new message:', err);
         }
       }, 300);
     }
@@ -434,7 +429,6 @@ const ChatScreen = ({ route }: { route: ChatScreenRouteProp }) => {
         break;
       case 'remove_reaction':
         if (selectedMessage) {
-          console.log("check selected Message: ", selectedMessage);
           removeMyEmoji(selectedMessage.id || selectedMessage._id || '', sender?.id || '');
         }
         break;
