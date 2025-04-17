@@ -11,7 +11,7 @@ export const changePassword = async ({ password, newPassword }: IChangePassword)
 
 //TODO: SEARCH USER BY PHONE
 export const searchUserByPhone = async (type: string, keywords: string) => {
-    return await axiosConfig.get(`${api1}/search`, {
+    return await axiosConfig.get(`${api1}/search-friends`, {
         params: {
             type,
             keywords
