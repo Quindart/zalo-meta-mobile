@@ -79,7 +79,12 @@ export default StyleSheet.create({
         borderRadius: 20,
         marginRight: 10,
     },
-
+    imageMessage: {
+        width: 200, // Adjust width as needed
+        height: 200, // Adjust height as needed
+        borderRadius: 10, // Optional: Add rounded corners
+        resizeMode: 'cover', // Optional: Adjust image scaling
+    },
     // Thêm vào file styles.js của bạn
     inputContainer: {
         flexDirection: 'row',

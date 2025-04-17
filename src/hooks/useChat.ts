@@ -1,5 +1,6 @@
 import SocketService from "@/services/Socket.service";
 import { useEffect, useState, useCallback, useRef } from "react";
+import * as FileSystem from 'expo-file-system';
 
 const SOCKET_EVENTS = {
     MESSAGE: {
@@ -10,6 +11,11 @@ const SOCKET_EVENTS = {
         ERROR: "message:error",
         LOAD: "message:load",
         LOAD_RESPONSE: "message:loadResponse",
+
+    },
+    FILE: {
+        UPLOAD: "file:upload",
+        UPLOAD_RESPONSE: "file:uploadResponse",
     },
     CHANNEL: {
         FIND_BY_ID: "channel:findById",
@@ -223,6 +229,30 @@ export const useChat = (currentUserId: string) => {
             }
         };
 
+        const uploadFileResponse = (response: ResponseType) => {
+            if (response.success) {
+                const newMessage = response.data.message;
+                setMessages((prev) => {
+                    const messageId = newMessage.id;
+                    const isDuplicate = messageId ?
+                        prev.some(msg => (msg.id === messageId)) :
+                        false;
+
+                    if (isDuplicate) {
+                        console.log("Duplicate file message detected, not adding");
+                        return prev;
+                    }
+
+                    return [...prev, newMessage];
+                });
+
+                updateChannelWithMessage(response.data.message);
+            } else {
+                console.error("Failed to upload file:", response.message);
+            }
+            setLoading(false);
+        };
+
         socket.on('connect_error', handleConnectError);
         socket.on('disconnect', handleDisconnect);
         socket.on(SOCKET_EVENTS.CHANNEL.JOIN_ROOM_RESPONSE, joinRoomResponse);
@@ -232,6 +262,8 @@ export const useChat = (currentUserId: string) => {
         socket.on(SOCKET_EVENTS.CHANNEL.CREATE_RESPONSE, createGroupResponse);
         socket.on(SOCKET_EVENTS.CHANNEL.LEAVE_ROOM_RESPONSE, leaveRoomResponse);
         socket.on(SOCKET_EVENTS.MESSAGE.LOAD_RESPONSE, loadMessageResponse);
+        socket.on(SOCKET_EVENTS.FILE.UPLOAD_RESPONSE, uploadFileResponse);
+
 
         return () => {
             socket.off('connect_error', handleConnectError);
@@ -243,6 +275,7 @@ export const useChat = (currentUserId: string) => {
             socket.off(SOCKET_EVENTS.CHANNEL.CREATE_RESPONSE, createGroupResponse);
             socket.off(SOCKET_EVENTS.CHANNEL.LEAVE_ROOM_RESPONSE, leaveRoomResponse);
             socket.off(SOCKET_EVENTS.MESSAGE.LOAD_RESPONSE, loadMessageResponse);
+            socket.off(SOCKET_EVENTS.FILE.UPLOAD_RESPONSE, uploadFileResponse);
         };
     }, [currentUserId]);
 
@@ -325,6 +358,105 @@ export const useChat = (currentUserId: string) => {
         socket.emit(SOCKET_EVENTS.CHANNEL.LEAVE_ROOM, params);
     }, [currentUserId]);
 
+    interface FileMessage {
+        channelId: string;
+        senderId: string;
+        content: string;
+        timestamp: string;
+        status: 'sent' | 'delivered' | 'read';
+        messageType: 'file';
+        file: File;
+    }
+
+    interface Acknowledgment {
+        success: boolean;
+        message: string;
+        data?: any;
+    }
+
+    // Sửa trong useChat.ts
+
+    interface FileData {
+        filename: string;
+        path: string;
+        extension: string;
+        size?: string | number;
+    }
+
+    interface FileData {
+        filename: string;
+        path: string;
+        extension: string;
+        size?: string | number;
+    }
+
+
+
+    const getMimeType = (ext: string): string => {
+        const map: { [key: string]: string } = {
+            jpg: 'image/jpeg',
+            jpeg: 'image/jpeg',
+            png: 'image/png',
+            gif: 'image/gif',
+            pdf: 'application/pdf',
+            docx: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+            xlsx: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            pptx: 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+            mp4: 'video/mp4',
+        };
+        return map[ext.toLowerCase()] || 'application/octet-stream';
+    };
+
+    // const sendFileMessage = useCallback((channelId: string, file: File) => {
+    //     const socket = socketService.getSocket();
+    //     setLoading(true);
+    //     console.log("Sending file message:", file);
+    //     console.log("id data:", channelId);
+    //     const reader = new FileReader(); // Tạo một FileReader để đọc file
+
+    //     console.log("Uploading file:", file);
+    //     reader.onload = () => {
+    //         const fileData = reader.result as ArrayBuffer; // Đọc dữ liệu file dưới dạng ArrayBuffer
+    //         console.log("File data:", fileData);
+    //         const fileMessage = {
+    //             channelId,
+    //             senderId: currentUserId,
+    //             fileName: file.name,
+    //             fileData,
+    //             timestamp: new Date().toISOString(),
+    //             status: "sent",
+    //         };
+    //         console.log("File data read:", fileData);
+    //         socket.emit(SOCKET_EVENTS.FILE.UPLOAD, fileMessage);
+    //     };
+    //     reader.readAsArrayBuffer(file);
+    // }, []);
+
+
+    const sendFileMessage = useCallback(async (channelId: string, file: any) => {
+        const socket = socketService.getSocket();
+        setLoading(true);
+        console.log("Sending file message:", file);
+        try {
+            // fetch file local path
+            const response = await fetch(file.path); // đường dẫn bắt đầu bằng file:// 
+            const arrayBuffer = await response.arrayBuffer();
+            console.log("Fetched file data:", arrayBuffer);
+            const fileMessage = {
+                channelId,
+                senderId: currentUserId,
+                fileName: file.filename + '.' + file.extension,
+                fileData: arrayBuffer,
+                mimeType: getMimeType(file.extension),
+                timestamp: new Date().toISOString(),
+                status: "sent",
+            };
+            socket.emit(SOCKET_EVENTS.FILE.UPLOAD, fileMessage);
+        } catch (error) {
+            console.error("Lỗi khi gửi file bằng fetch:", error);
+        }
+    }, []);
+
     return {
         findOrCreateChat,
         joinRoom,
@@ -333,6 +465,7 @@ export const useChat = (currentUserId: string) => {
         loadChannel,
         createGroup,
         leaveRoom,
+        sendFileMessage,
         listChannel,
         channel,
         messages,

@@ -179,13 +179,13 @@ export const useFriend = (currentUserId: string) => {
         receiveFriends,
         sendFriends,
         inviteFriend,
-        removeFriend, // Xóa bạn bè
-        revokeInviteFriend, // Thu hồi lời mời kết bạn
+        removeFriend,
+        revokeInviteFriend,
         accpetFriend,
+        rejectInviteFriend,
         getListFriends,
         getReceviedInviteFriends,
         getSendListFriends,
-        rejectInviteFriend, // Từ chối lời mời kết bạn
     };
 
 }

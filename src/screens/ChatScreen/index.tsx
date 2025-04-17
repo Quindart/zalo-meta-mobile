@@ -25,6 +25,8 @@ import { useSelector } from 'react-redux';
 import { RootState } from '@/redux/store';
 import { useChat } from '@/hooks/useChat';
 import { debounce } from 'lodash';
+import FileMessageBubble from '@/screens/ChatScreen/FileMessageBubble'; // import component FileMessageBubble
+
 
 import * as DocumentPicker from 'expo-document-picker'; // thư viện để chọn file
 import { MaterialCommunityIcons } from '@expo/vector-icons';
@@ -47,6 +49,13 @@ interface Message {
   content: string;
   timestamp: string;
   status: 'sent' | 'delivered' | 'read';
+  messageType?: 'text' | 'file'; // ✅ thêm vào đúng theo dữ liệu log
+  file?: {
+    filename: string;
+    path: string;
+    extension: string;
+    size?: string;
+  };
   sender: {
     id: string;
     name: string;
@@ -54,7 +63,8 @@ interface Message {
   };
 }
 
-// ChatHeader component
+
+// =========================ChatHeader component=============================
 const ChatHeader = React.memo(
   ({ navigation, item }: { navigation: ChatScreenNavigationProp; item: any }) => (
     <LinearGradient
@@ -88,6 +98,8 @@ const MessageItem = React.memo(
     senderAvatar,
     isMyMessage,
     status,
+    messageType,
+    file,
   }: {
     content: string;
     timestamp: string;
@@ -95,6 +107,12 @@ const MessageItem = React.memo(
     senderAvatar: string;
     isMyMessage: boolean;
     status: string;
+    messageType?: string;
+    file?: {
+      filename: string;
+      path: string;
+      extension: string;
+    };
   }) => {
     const me = useSelector((state: RootState) => state.user.user);
 
@@ -106,7 +124,15 @@ const MessageItem = React.memo(
           defaultSource={require('../../../assets/user_default.jpg')}
         />
         <View style={[styles.messageBubble, isMyMessage ? styles.myMessageBubble : styles.otherMessageBubble]}>
-          <Text style={styles.messageText}>{content}</Text>
+          {/* Nếu là file thì render file */}
+          {messageType === 'file' ? (
+            <FileMessageBubble file={file} />
+          ) : (
+            <Text style={styles.messageText}>{content}</Text>
+          )}
+
+
+
           <Text style={styles.messageTime}>
             {timestamp ? new Date(timestamp).toLocaleTimeString() : ''}{' '}
             {isMyMessage && (
@@ -121,26 +147,26 @@ const MessageItem = React.memo(
       </View>
     );
   },
-  (prevProps, nextProps) => {
-    return (
-      prevProps.content === nextProps.content &&
-      prevProps.timestamp === nextProps.timestamp &&
-      prevProps.senderId === nextProps.senderId &&
-      prevProps.senderAvatar === nextProps.senderAvatar &&
-      prevProps.isMyMessage === nextProps.isMyMessage &&
-      prevProps.status === nextProps.status
-    );
-  },
 );
+
+
+interface FileData {
+  filename: string;
+  path: string;
+  extension: string;
+  size?: string | number;
+}
 
 // MessageInputContainer component
 const MessageInputContainer = React.memo(
   ({
     channelId,
     sendMessage,
+    sendFileMessage,
   }: {
     channelId: string;
-    sendMessage: (chanId: string, content: string) => void;
+    sendMessage: (channelId: string, content: string) => void;
+    sendFileMessage: (channelId: string, file: FileData) => void;
   }) => {
     const [inputMessage, setInputMessage] = useState('');
 
@@ -151,16 +177,40 @@ const MessageInputContainer = React.memo(
       }
     }, [inputMessage, channelId, sendMessage]);
 
+    const handlePickFile = async () => {
+      const result = await DocumentPicker.getDocumentAsync({ type: '*/*' });
+
+      if (!result.canceled && result.assets && result.assets.length > 0) {
+        const asset = result.assets[0]; // lấy file đầu tiên
+        const name = asset.name; // "abc.jpg"
+        const uri = asset.uri; // "file://..."
+        const size = asset.size || 0;
+
+        const extension = name.split('.').pop() || '';
+        const filename = name.replace(`.${extension}`, '');
+
+        const fileData = {
+          filename,     // "abc"
+          path: uri,    // "file://..."
+          extension,    // "jpg"
+          size,         // kích thước file
+        };
+
+        // ✅ Gọi sendFileMessage với fileData này
+        sendFileMessage(channelId, fileData);
+      }
+    };
+
     return (
       <View style={styles.inputContainer}>
-        <TouchableOpacity style={styles.attachmentButton}>
+        <TouchableOpacity style={styles.attachmentButton} onPress={handlePickFile}>
           <Ionicons name="attach" size={22} color="#555" />
         </TouchableOpacity>
         <TextInput
           style={styles.input}
           placeholder="Tin nhắn"
           value={inputMessage}
-          onChangeText={(e) => setInputMessage(e)}
+          onChangeText={setInputMessage}
           multiline
           returnKeyType="send"
           onSubmitEditing={handleSendMessage}
@@ -174,8 +224,9 @@ const MessageInputContainer = React.memo(
         </TouchableOpacity>
       </View>
     );
-  },
+  }
 );
+
 
 // ChatScreen component
 const ChatScreen = ({ route }: { route: ChatScreenRouteProp }) => {
@@ -186,7 +237,9 @@ const ChatScreen = ({ route }: { route: ChatScreenRouteProp }) => {
   const { item } = route.params || { item: {} };
   const navigation = useNavigation<ChatScreenNavigationProp>();
   const sender = useSelector((state: RootState) => state.user.user);
-  const channelId = item?.id || '';
+  const channelId = item?.id;
+
+
 
   // Sử dụng useChat hook
   const {
@@ -197,7 +250,8 @@ const ChatScreen = ({ route }: { route: ChatScreenRouteProp }) => {
     joinRoom,
     loadMessages,
     noMessageToLoad,
-  } = useChat(sender?.id);
+    sendFileMessage,
+  } = useChat(sender?.id || '');
 
   // State theo dõi trạng thái
   const [loadingMore, setLoadingMore] = useState(false);
@@ -330,20 +384,23 @@ const ChatScreen = ({ route }: { route: ChatScreenRouteProp }) => {
   // Render item tin nhắn
   const renderItem = useCallback(
     ({ item }: { item: Message }) => {
-      const isMyMessage = sender?.id === item.sender.id ? true : false;
+      const isMyMessage = sender?.id === item.sender?.id;
       return (
         <MessageItem
           content={item.content || ''}
           timestamp={item.timestamp || ''}
           senderId={item.senderId || ''}
-          senderAvatar={item.sender?.avatar || 'https://example.com/default-avatar.png'}
+          senderAvatar={item.sender?.avatar || ''}
           isMyMessage={isMyMessage}
           status={item.status || 'sent'}
+          messageType={item.messageType}
+          file={item.file}
         />
       );
     },
     [sender],
   );
+
 
   // Key extractor cho FlatList
   const keyExtractor = useCallback(
@@ -389,7 +446,15 @@ const ChatScreen = ({ route }: { route: ChatScreenRouteProp }) => {
           maintainVisibleContentPosition={{ minIndexForVisible: 0 }}
         />
 
-        <MessageInputContainer channelId={channelId} sendMessage={sendMessage} />
+        {/* <MessageInputContainer channelId={channelId} sendMessage={sendMessage} /> */}
+        <MessageInputContainer
+          channelId={channelId}
+          sendMessage={sendMessage}
+          sendFileMessage={sendFileMessage}
+        />
+
+
+
       </KeyboardAvoidingView>
     </SafeAreaView>
   );
