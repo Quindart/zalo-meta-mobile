@@ -10,6 +10,8 @@ import QR_Scan from '@/components/ui/QR_Scan';
 import useUser from '@/hooks/useUser';
 import { User } from '@/models/user';
 import { ROUTING } from '@/utils/constant';
+import { useFriend } from '@/hooks/useFriend';
+
 
 const SearchScreen = () => {
   const { handleSearchUserByPhone } = useUser();
@@ -18,11 +20,13 @@ const SearchScreen = () => {
   const [results, setResults] = useState<any[]>([]);
 
 
+
   const handleSearch = async (phone: string) => {
     try {
       const data = await handleSearchUserByPhone(phone);
       if (data) {
         setResults(data); // hoặc data.results tùy vào response
+        console.log('Kết quả tìm kiếm:', data);
       } else {
         setResults([]);
       }
@@ -86,7 +90,7 @@ const SearchScreen = () => {
           <View style={styles.resultItem}>
             <View style={styles.userContainer}>
               <TouchableOpacity onPress={() => {
-                navigation.navigate(ROUTING.PROFILE_FRIEND_SCREEN, { userId: item._id })
+                navigation.navigate(ROUTING.PROFILE_FRIEND_SCREEN, { itemFriend: item })
               }}
                 style={{ flexDirection: 'row', width: '85%', alignItems: 'center' }}>
                 <Image
@@ -94,13 +98,17 @@ const SearchScreen = () => {
                   style={styles.avatar}
                 />
                 <View style={styles.userInfo}>
-                  <Text style={styles.userName}>{item.firstName} {item.lastName}</Text>
+                  <Text style={styles.userName}>{item.firstName} {item.lastName} </Text>
                   <Text style={styles.userPhone}>Số điện thoại: {item.phone}</Text>
                 </View>
               </TouchableOpacity>
-              <TouchableOpacity style={styles.callButton}>
-                <Feather name="message-circle" size={30} color="#00A4E4" />
-              </TouchableOpacity>
+              {/* <TouchableOpacity style={styles.callButton}>
+                {item.isFriend ? (
+                  <Feather name="message-circle" size={24} color="#00A4E4" />
+                ) : (
+                  <Ionicons name="person-add-outline" size={24} color="#00A4E4" />
+                )}
+              </TouchableOpacity> */}
             </View>
           </View>
         )}
