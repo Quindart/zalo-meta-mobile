@@ -233,6 +233,33 @@ export const useChat = (currentUserId: string) => {
             }
         };
 
+        //Thu hoi tin nhan
+        const recallMessageResponse = (response: ResponseType) => {
+            if (response.success) {
+                const messageId = response.data.messageId;
+                setMessages((prev) => prev.filter((msg) => msg.id !== messageId));
+                console.log("Check message after recall: ", messages);
+
+                loadChannel(currentUserId);
+                setLoading(false);
+            } else {
+                console.error("Failed to recall message:", response.message);
+            }
+        }
+        const deleteMessageResponse = (response: ResponseType) => {
+            if (response.success) {
+                const messageId = response.data.messageId;
+                setMessages((prev) =>
+                    prev.map((msg) =>
+                        msg.id === messageId ? { ...msg, content: "Tin nhắn đã được thu hồi", isRecalled: true } : msg
+                    )
+                );
+                setLoading(false);
+            } else {
+                console.error("Failed to delete message:", response.message);
+                setLoading(false);
+            }
+        }
         socket.on('connect_error', handleConnectError);
         socket.on('disconnect', handleDisconnect);
         socket.on(SOCKET_EVENTS.CHANNEL.JOIN_ROOM_RESPONSE, joinRoomResponse);
@@ -244,6 +271,8 @@ export const useChat = (currentUserId: string) => {
         socket.on(SOCKET_EVENTS.MESSAGE.LOAD_RESPONSE, loadMessageResponse);
         socket.on(SOCKET_EVENTS.EMOJI.INTERACT_EMOJI_RESPONSE, interactEmojiResponse);
         socket.on(SOCKET_EVENTS.EMOJI.REMOVE_MY_EMOJI_RESPONSE, removeMyEmojiResponse);
+        socket.on(SOCKET_EVENTS.MESSAGE.RECALL_RESPONSE, recallMessageResponse);
+        socket.on(SOCKET_EVENTS.MESSAGE.DELETE_RESPONSE, deleteMessageResponse);
 
         return () => {
             socket.off('connect_error', handleConnectError);
@@ -256,7 +285,9 @@ export const useChat = (currentUserId: string) => {
             socket.off(SOCKET_EVENTS.CHANNEL.LEAVE_ROOM_RESPONSE, leaveRoomResponse);
             socket.off(SOCKET_EVENTS.MESSAGE.LOAD_RESPONSE, loadMessageResponse);
             socket.off(SOCKET_EVENTS.EMOJI.INTERACT_EMOJI_RESPONSE, interactEmojiResponse);
-            socket.off(SOCKET_EVENTS.EMOJI.REMOVE_MY_EMOJI_RESPONSE, removeMyEmojiResponse)
+            socket.off(SOCKET_EVENTS.EMOJI.REMOVE_MY_EMOJI_RESPONSE, removeMyEmojiResponse);
+            socket.off(SOCKET_EVENTS.MESSAGE.RECALL_RESPONSE, recallMessageResponse);
+            socket.off(SOCKET_EVENTS.MESSAGE.DELETE_RESPONSE, deleteMessageResponse);
         };
     }, [currentUserId]);
 
@@ -355,6 +386,24 @@ export const useChat = (currentUserId: string) => {
         const params = { messageId, userId, channelId };
         socket.emit(SOCKET_EVENTS.EMOJI.REMOVE_MY_EMOJI, params);
     }, [])
+    //Thu hoi message
+    const recallMessage = useCallback((messageId: string) => {
+        const socket = socketService.getSocket();
+        const params = {
+            senderId: currentUserId,
+            messageId
+        };
+        socket.emit(SOCKET_EVENTS.MESSAGE.RECALL, params);
+    }, [])
+    const deleteMessage = useCallback((messageId: string, channelId: string) => {
+        const socket = socketService.getSocket();
+        const params = {
+            senderId: currentUserId,
+            messageId,
+            channelId
+        };
+        socket.emit(SOCKET_EVENTS.MESSAGE.DELETE, params);
+    }, [])
     return {
         findOrCreateChat,
         joinRoom,
@@ -365,6 +414,8 @@ export const useChat = (currentUserId: string) => {
         leaveRoom,
         interactEmoji,
         removeMyEmoji,
+        deleteMessage,
+        recallMessage,
         listChannel,
         channel,
         messages,

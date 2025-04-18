@@ -123,8 +123,8 @@ const MessageItem = React.memo(
       if (!emojis || emojis.length === 0) return null;
 
       const maxDisplay = 4; // Giới hạn hiển thị tối đa 4 emoji
-      const displayEmojis = emojis.length > maxDisplay ? emojis.slice(0, 3) : emojis; // Lấy 3 emoji đầu nếu vượt quá 4
-      const remainingCount = emojis.length > maxDisplay ? emojis.length - 3 : 0; // Số lượng emoji còn lại
+      const displayEmojis = emojis.length > maxDisplay ? emojis.slice(0, 3) : emojis;
+      const remainingCount = emojis.length > maxDisplay ? emojis.length - 3 : 0;
 
       return (
         <View style={[styles.emojiWrapper, isMyMessage ? styles.emojiWrapperRight : styles.emojiWrapperLeft]}>
@@ -307,6 +307,8 @@ const ChatScreen = ({ route }: { route: ChatScreenRouteProp }) => {
     noMessageToLoad,
     interactEmoji,
     removeMyEmoji,
+    recallMessage,
+    deleteMessage
   } = useChat(sender?.id);
 
   const [loadingMore, setLoadingMore] = useState(false);
@@ -418,6 +420,13 @@ const ChatScreen = ({ route }: { route: ChatScreenRouteProp }) => {
       case 'forward':
         Alert.alert('Thông báo', 'Chức năng chuyển tiếp tin nhắn chưa được triển khai.');
         break;
+      case 'backup-restore':
+        if (selectedMessage.sender.id !== sender?.id) {
+          Alert.alert('Thông báo', 'Chức năng thu hồi tin nhắn không giành cho người nhận.');
+          break;
+        }
+        deleteMessage(selectedMessage.id || selectedMessage._id || '', selectedMessage.channelId);
+        break;
       case 'copy':
         if (selectedMessage) {
           Clipboard.setString(selectedMessage.content);
@@ -425,7 +434,7 @@ const ChatScreen = ({ route }: { route: ChatScreenRouteProp }) => {
         }
         break;
       case 'delete':
-        Alert.alert('Thông báo', 'Chức năng xóa tin nhắn chưa được triển khai.');
+        recallMessage(selectedMessage.id || selectedMessage._id || '');
         break;
       case 'remove_reaction':
         if (selectedMessage) {
@@ -512,6 +521,7 @@ const ChatScreen = ({ route }: { route: ChatScreenRouteProp }) => {
     { label: 'Chuyển tiếp', icon: 'share', action: 'forward', color: '#4a90e2' },
     { label: 'Sao chép', icon: 'content-copy', action: 'copy', color: '#4a90e2' },
     { label: 'Ghim', icon: 'pin', action: 'pin', color: '#f5a623' },
+    { label: 'Thu hồi', icon: 'backup-restore', action: 'backup-restore', color: '#ff4d4f' },
     { label: 'Xóa', icon: 'delete', action: 'delete', color: '#ff4d4f' },
     { label: 'Bỏ cảm xúc', icon: 'heart-off', action: 'remove_reaction', color: 'grey' },
   ];
@@ -535,7 +545,7 @@ const ChatScreen = ({ route }: { route: ChatScreenRouteProp }) => {
 
         <FlatList
           ref={flatListRef}
-          data={messages}
+          data={messages.filter((msg) => msg.isDeletedById !== sender?.id)}
           renderItem={renderItem}
           keyExtractor={keyExtractor}
           style={styles.messageList}
