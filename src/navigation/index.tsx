@@ -44,7 +44,7 @@ function NavigationApp() {
       <StatusBar barStyle="light-content" backgroundColor="#0D7DC9" />
 
       <Stack.Navigator
-        initialRouteName={ROUTING.FORWARD_MESSAGE}
+        initialRouteName={ROUTING.HOME}
         screenOptions={{
           headerShadowVisible: false,
         }}
