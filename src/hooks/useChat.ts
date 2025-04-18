@@ -233,6 +233,30 @@ export const useChat = (currentUserId: string) => {
             }
         };
 
+        const uploadFileResponse = (response: ResponseType) => {
+            if (response.success) {
+                const newMessage = response.data.message;
+                setMessages((prev) => {
+                    const messageId = newMessage.id;
+                    const isDuplicate = messageId ?
+                        prev.some(msg => (msg.id === messageId)) :
+                        false;
+
+                    if (isDuplicate) {
+                        console.log("Duplicate file message detected, not adding");
+                        return prev;
+                    }
+
+                    return [...prev, newMessage];
+                });
+
+                updateChannelWithMessage(response.data.message);
+            } else {
+                console.error("Failed to upload file:", response.message);
+            }
+            setLoading(false);
+        };
+
         socket.on('connect_error', handleConnectError);
         socket.on('disconnect', handleDisconnect);
         socket.on(SOCKET_EVENTS.CHANNEL.JOIN_ROOM_RESPONSE, joinRoomResponse);
@@ -244,6 +268,7 @@ export const useChat = (currentUserId: string) => {
         socket.on(SOCKET_EVENTS.MESSAGE.LOAD_RESPONSE, loadMessageResponse);
         socket.on(SOCKET_EVENTS.EMOJI.INTERACT_EMOJI_RESPONSE, interactEmojiResponse);
         socket.on(SOCKET_EVENTS.EMOJI.REMOVE_MY_EMOJI_RESPONSE, removeMyEmojiResponse);
+        socket.on(SOCKET_EVENTS.FILE.UPLOAD_RESPONSE, uploadFileResponse);
 
         return () => {
             socket.off('connect_error', handleConnectError);
@@ -256,7 +281,8 @@ export const useChat = (currentUserId: string) => {
             socket.off(SOCKET_EVENTS.CHANNEL.LEAVE_ROOM_RESPONSE, leaveRoomResponse);
             socket.off(SOCKET_EVENTS.MESSAGE.LOAD_RESPONSE, loadMessageResponse);
             socket.off(SOCKET_EVENTS.EMOJI.INTERACT_EMOJI_RESPONSE, interactEmojiResponse);
-            socket.off(SOCKET_EVENTS.EMOJI.REMOVE_MY_EMOJI_RESPONSE, removeMyEmojiResponse)
+            socket.off(SOCKET_EVENTS.EMOJI.REMOVE_MY_EMOJI_RESPONSE, removeMyEmojiResponse);
+            socket.off(SOCKET_EVENTS.FILE.UPLOAD_RESPONSE, uploadFileResponse);
         };
     }, [currentUserId]);
 
@@ -355,6 +381,49 @@ export const useChat = (currentUserId: string) => {
         const params = { messageId, userId, channelId };
         socket.emit(SOCKET_EVENTS.EMOJI.REMOVE_MY_EMOJI, params);
     }, [])
+
+
+    const getMimeType = (ext: string): string => {
+        const map: { [key: string]: string } = {
+            jpg: 'image/jpeg',
+            jpeg: 'image/jpeg',
+            png: 'image/png',
+            gif: 'image/gif',
+            pdf: 'application/pdf',
+            docx: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+            xlsx: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            pptx: 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+            mp4: 'video/mp4',
+        };
+        return map[ext.toLowerCase()] || 'application/octet-stream';
+    };
+
+    const sendFileMessage = useCallback(async (channelId: string, file: any) => {
+        const socket = socketService.getSocket();
+        setLoading(true);
+        console.log("Sending file message:", file);
+        try {
+            // fetch file local path
+            const response = await fetch(file.path); // đường dẫn bắt đầu bằng file:// 
+            const arrayBuffer = await response.arrayBuffer();
+            console.log("Fetched file data:", arrayBuffer);
+            const fileMessage = {
+                channelId,
+                senderId: currentUserId,
+                fileName: file.filename + '.' + file.extension,
+                fileData: arrayBuffer,
+                mimeType: getMimeType(file.extension),
+                timestamp: new Date().toISOString(),
+                status: "sent",
+            };
+            socket.emit(SOCKET_EVENTS.FILE.UPLOAD, fileMessage);
+        } catch (error) {
+            console.error("Lỗi khi gửi file bằng fetch:", error);
+        }
+    }, []);
+
+
+
     return {
         findOrCreateChat,
         joinRoom,
@@ -365,6 +434,7 @@ export const useChat = (currentUserId: string) => {
         leaveRoom,
         interactEmoji,
         removeMyEmoji,
+        sendFileMessage,
         listChannel,
         channel,
         messages,

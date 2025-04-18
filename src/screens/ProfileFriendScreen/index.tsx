@@ -1,5 +1,6 @@
 import React from 'react';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
+import { useFocusEffect } from '@react-navigation/native';
 import { View, Text, Image, TouchableOpacity, StyleSheet, SafeAreaView, StatusBar, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import useUser from '@/hooks/useUser';
@@ -21,7 +22,8 @@ const ProfileUserScreen = () => {
     const userFriendId = route.params as { itemFriend: any };
     const [userFriend, setUserFriend] = useState<any | null>(null);
     const user: User | null = useSelector((state: any) => state.user.user);
-    const { inviteFriend, removeFriend, revokeInviteFriend, getSendListFriends, sendFriends } = useFriend(user?.id || '');
+    const { inviteFriend, removeFriend, revokeInviteFriend, getSendListFriends, sendFriends, getListFriends, listFriends } = useFriend(user?.id || '');
+    // kiểm tra userFriend?.phone có tồn tại trong danh sách bạn bè hay không nếu có thì setUserFriend.isFriend = true còn không thì setUserFriend.isFriend = false và từ đó kiểm tra icon và nút xóa bạn render lại cho đúng 
     const inviteFriendHandler = () => {
         if (userFriendId.itemFriend._id) {
             inviteFriend(userFriendId.itemFriend._id);
@@ -29,42 +31,86 @@ const ProfileUserScreen = () => {
         }
     }
 
+    const refreshFriendStatus = () => {
+        getListFriends(); // Gọi lại API
+    };
+
+    useFocusEffect(
+        useCallback(() => {
+            getListFriends();
+            getSendListFriends();
+        }, [])
+    );
+    // kiểm tra xem đã kết bạn hay chưa
     const isSentRequest = sendFriends?.some(
         (f: any) => f.phone === userFriend?.phone
     );
 
+    // const removeFriendHandler = () => {
+    //     console.log('userFriendId.userId', userFriendId.itemFriend._id);
+    //     if (userFriendId.itemFriend._id) {
+    //         Alert.alert(
+    //             'Xác nhận',
+    //             'Bạn có chắc chắn muốn xóa bạn bè này không?',
+    //             [
+    //                 { text: 'Hủy', style: 'cancel' },
+    //                 { text: 'Xóa', onPress: () => revokeInviteFriend(userFriendId.itemFriend._id) },
+    //             ],
+    //             { cancelable: false }
+    //         );
+    //     }
+    // }
+
+
+
     const removeFriendHandler = () => {
-        console.log('userFriendId.userId', userFriendId.itemFriend._id);
         if (userFriendId.itemFriend._id) {
             Alert.alert(
                 'Xác nhận',
                 'Bạn có chắc chắn muốn xóa bạn bè này không?',
                 [
                     { text: 'Hủy', style: 'cancel' },
-                    { text: 'Xóa', onPress: () => revokeInviteFriend(userFriendId.itemFriend._id) },
+                    {
+                        text: 'Xóa',
+                        onPress: async () => {
+                            revokeInviteFriend(userFriendId.itemFriend._id);
+                            setUserFriend((prev: any) => ({
+                                ...prev,
+                                isFriend: false,
+                            }));
+                            Alert.alert('Thành công', 'Đã xóa bạn bè');
+                        },
+                    },
                 ],
                 { cancelable: false }
             );
-
         }
-    }
+    };
 
-    // const fetchUser = async () => {
-    //     const userData = await handleGetUserById(userId.userId);
-    //     setUser(userData);
-    // };
+
     useEffect(() => {
         setUserFriend(userFriendId.itemFriend);
         getSendListFriends();
         console.log('userFriendId.itemFriend', userFriendId.itemFriend);
     }, []);
 
+    // useEffect(() => {
+    //     if (userFriend) {
+    //         console.log('userFriend :', userFriend);
+    //         console.log('Danh sach nguoi da gui yeu cau ket ban', sendFriends);
+    //     }
+    // }, [userFriend]);
     useEffect(() => {
-        if (userFriend) {
-            console.log('userFriend :', userFriend);
-            console.log('Danh sach nguoi da gui yeu cau ket ban', sendFriends);
+        if (userFriend && listFriends) {
+            const isFriend = listFriends.some(
+                (f: any) => f.phone === userFriend.phone
+            );
+            setUserFriend((prev: any) => ({
+                ...prev,
+                isFriend: isFriend,
+            }));
         }
-    }, [userFriend]);
+    }, [listFriends, userFriend?.phone]);
 
 
     return (
@@ -134,11 +180,11 @@ const ProfileUserScreen = () => {
                     disabled={userFriend?.isFriend || isSentRequest}
                 >
                     {userFriend?.isFriend ? (
-                        <Ionicons name="checkmark-circle-outline" size={20} color="#888" />
+                        <Ionicons name="checkmark-circle-outline" size={20} color="#888" /> // Đã kết bạn
                     ) : isSentRequest ? (
-                        <Ionicons name="hourglass-outline" size={20} color="#999" />
+                        <Ionicons name="hourglass-outline" size={20} color="#999" /> // Đã gửi yêu cầu
                     ) : (
-                        <Ionicons name="person-add-outline" size={20} color="#333" />
+                        <Ionicons name="person-add-outline" size={20} color="#333" /> // Chưa kết bạn
                     )}
                 </TouchableOpacity>
 
