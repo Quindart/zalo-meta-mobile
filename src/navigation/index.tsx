@@ -24,6 +24,8 @@ import OptionScreen from "@/screens/OptionScreen";
 import GroupScreen from "@/screens/GroupScreen";
 import FriendRequestScreen from "@/screens/ContactsScreen/friendRequest";
 import ProfileUserScreen from "@/screens/ProfileFriendScreen";
+import ForwardMessage from "@/screens/ChatScreen/ForwardMessage";
+
 
 import { LinearGradient } from "expo-linear-gradient";
 import theme from "@/theme";
@@ -155,6 +157,11 @@ function NavigationApp() {
         <Stack.Screen
           name={ROUTING.PROFILE_FRIEND_SCREEN}
           component={ProfileUserScreen}
+          options={{ headerShown: false }}
+        />
+        <Stack.Screen
+          name={ROUTING.FORWARD_MESSAGE}
+          component={ForwardMessage}
           options={{ headerShown: false }}
         />
 
