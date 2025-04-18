@@ -23,4 +23,5 @@ export const ROUTING = {
     FRIEND_REQUEST_SCREEN: 'Request',
     PROFILE_FRIEND_SCREEN: 'ProfileUser',
     FRIEND_LIST_SCREEN: 'FriendList',
+    FORWARD_MESSAGE: 'ForwardMessage'
 };

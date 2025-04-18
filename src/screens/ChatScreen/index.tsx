@@ -368,7 +368,7 @@ const ChatScreen = ({ route }: { route: ChatScreenRouteProp }) => {
   const sender = useSelector((state: RootState) => state.user.user);
   const channelId = item?.id || '';
 
-  // Sử dụng useChat hook với đầy đủ các phương thức
+  // Sử dụng useChat hook với đầy đủ các phương thức ts
   const {
     sendMessage,
     messages,
