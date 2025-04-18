@@ -12,14 +12,16 @@ import { ROUTING } from '@/utils/constant';
 import { User } from '@/models/user';
 import { useFriend } from '@/hooks/useFriend';
 import { useSelector } from 'react-redux';
-
-
+import { useChat } from '@/hooks/useChat';
+import { RootState } from '@/redux/store';
 
 const ProfileUserScreen = () => {
     const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
     type ProfileUserRouteProp = RouteProp<RootStackParamList, typeof ROUTING.PROFILE_FRIEND_SCREEN>;
     const route = useRoute<ProfileUserRouteProp>();
     const userFriendId = route.params as { itemFriend: any };
+    const sender = useSelector((state: RootState) => state.user.user);
+    const { findOrCreateChat, channel } = useChat(sender?.id)
     const [userFriend, setUserFriend] = useState<any | null>(null);
     const user: User | null = useSelector((state: any) => state.user.user);
     const { inviteFriend, removeFriend, revokeInviteFriend, getSendListFriends, sendFriends, getListFriends, listFriends } = useFriend(user?.id || '');
@@ -30,7 +32,16 @@ const ProfileUserScreen = () => {
             Alert.alert('Thành công', 'Đã gửi lời mời kết bạn');
         }
     }
+    const handleJoinChatRoom = () => {
+        findOrCreateChat(userFriendId?.itemFriend._id);
+        if (channel) {
+            navigation.navigate(ROUTING.CHAT_SCREEN, { item: channel });
+        }
+        else {
+            return;
+        }
 
+    }
     const refreshFriendStatus = () => {
         getListFriends(); // Gọi lại API
     };
@@ -166,7 +177,7 @@ const ProfileUserScreen = () => {
 
             {/* Action Buttons */}
             <View style={styles.actionButtonsContainer}>
-                <TouchableOpacity style={styles.messageButton}>
+                <TouchableOpacity onPress={handleJoinChatRoom} style={styles.messageButton}>
                     <Ionicons name="chatbubble-outline" size={20} color="#3B82F6" />
                     <Text style={styles.messageButtonText}>Nhắn tin</Text>
                 </TouchableOpacity>

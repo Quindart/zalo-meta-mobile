@@ -43,7 +43,6 @@ export const useChat = (currentUserId: string) => {
     const [error, setError] = useState<string | null>(null);
     const currentChannelRef = useRef<string | null>(null);
     const isLoadingMessagesRef = useRef<boolean>(false);
-
     const socketService = SocketService.getInstance(currentUserId);
 
     // Log messages sau khi trạng thái cập nhật
@@ -71,8 +70,7 @@ export const useChat = (currentUserId: string) => {
         };
 
         const findOrCreateResponse = (response: ResponseType) => {
-            setLoading(false);
-            if (response.success && response.data) {
+            if (response.success) {
                 setChannel(response.data);
                 currentChannelRef.current = response.data.id;
             } else {
@@ -321,6 +319,7 @@ export const useChat = (currentUserId: string) => {
         setChannel(null);
         setMessages([]);
         setError(null);
+
         const socket = socketService.getSocket();
         const params = { senderId: currentUserId, receiverId };
         socket.emit(SOCKET_EVENTS.CHANNEL.FIND_ORCREATE, params);
