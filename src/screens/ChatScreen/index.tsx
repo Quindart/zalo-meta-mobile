@@ -89,7 +89,53 @@ const MessageItem = React.memo(
     status: string;
   }) => {
     const me = useSelector((state: RootState) => state.user.user);
+    const [isEmojiModalVisible, setEmojiModalVisible] = useState(false);
+    // Hiển thị các emoji
+    const renderEmojis = useMemo(() => {
+      if (!emojis || emojis.length === 0) return null;
 
+      const maxDisplay = 4; // Giới hạn hiển thị tối đa 4 emoji
+      const displayEmojis = emojis.length > maxDisplay ? emojis.slice(0, 3) : emojis;
+      const remainingCount = emojis.length > maxDisplay ? emojis.length - 3 : 0;
+
+      return (
+        <View style={[styles.emojiWrapper, isMyMessage ? styles.emojiWrapperRight : styles.emojiWrapperLeft]}>
+          {displayEmojis.map((emoji, index) => (
+            <View key={index} style={styles.emojiItem}>
+              <Text style={styles.emojiTextIcon}>{emoji.emoji}</Text>
+            </View>
+          ))}
+          {remainingCount > 0 && (
+            <View style={styles.remainingCount}>
+              <Text style={styles.remainingText}>+{remainingCount}</Text>
+            </View>
+          )}
+        </View>
+      );
+    }, [emojis, isMyMessage]); // Thêm isMyMessage vào dependency để đảm bảo style thay đổi
+
+    const emojiSummary = useMemo(() => {
+      if (!emojis) return [];
+
+      const emojiCountMap: { [key: string]: { emoji: string; count: number } } = {};
+
+      emojis.forEach((emoji) => {
+        if (!emojiCountMap[emoji.emoji]) {
+          emojiCountMap[emoji.emoji] = { emoji: emoji.emoji, count: 0 };
+        }
+        emojiCountMap[emoji.emoji].count += emoji.quantity;
+      });
+
+      return Object.values(emojiCountMap);
+    }, [emojis]);
+
+    // Render mỗi item trong popup
+    const renderEmojiCount = ({ item }: { item: { emoji: string; count: number } }) => (
+      <View style={popupStyles.emojiRow}>
+        <Text style={popupStyles.emoji}>{item.emoji}</Text>
+        <Text style={popupStyles.emojiCount}>{item.count}</Text>
+      </View>
+    );
     return (
       <View style={[styles.messageRow, isMyMessage ? styles.myMessageRow : styles.otherMessageRow]}>
         <Image
@@ -182,6 +228,10 @@ const ChatScreen = ({ route }: { route: ChatScreenRouteProp }) => {
     joinRoom,
     loadMessages,
     noMessageToLoad,
+    interactEmoji,
+    removeMyEmoji,
+    recallMessage,
+    deleteMessage
   } = useChat(sender?.id);
 
   // State theo dõi trạng thái
@@ -269,17 +319,67 @@ const ChatScreen = ({ route }: { route: ChatScreenRouteProp }) => {
     [channelId, loading, loadingMore, hasMoreMessages, loadMessages, noMessageToLoad],
   );
 
-  // Theo dõi vị trí cuộn
-  const handleScroll = useCallback(
-    (event: any) => {
-      const { contentOffset, contentSize, layoutMeasurement } = event.nativeEvent;
-      const isBottom = contentOffset.y >= contentSize.height - layoutMeasurement.height - 50;
-      setIsAtBottom(isBottom);
-    },
-    [],
-  );
+  const handleScroll = useCallback((event: any) => {
+    const { contentOffset, contentSize, layoutMeasurement } = event.nativeEvent;
+    const isBottom = contentOffset.y >= contentSize.height - layoutMeasurement.height - 50;
+    setIsAtBottom(isBottom);
+  }, []);
 
-  // Render header trạng thái load message
+  const handleLongPressMessage = useCallback((message: Message) => {
+    setSelectedMessage(message);
+    setIsPopupVisible(true);
+  }, []);
+
+  const handleQuickReact = useCallback((emoji: string) => {
+    if (!selectedMessage) return;
+    interactEmoji(selectedMessage.id || selectedMessage._id || '', emoji, sender?.id || '', selectedMessage.channelId);
+    setIsPopupVisible(false);
+    setSelectedMessage(null);
+  }, [selectedMessage, interactEmoji, sender?.id]);
+
+  const handlePopupAction = useCallback((action: string) => {
+    if (!selectedMessage) return;
+
+    switch (action) {
+      case 'reply':
+        Alert.alert('Thông báo', 'Chức năng trả lời tin nhắn chưa được triển khai.');
+        break;
+      case 'forward':
+        Alert.alert('Thông báo', 'Chức năng chuyển tiếp tin nhắn chưa được triển khai.');
+        break;
+      case 'backup-restore':
+        if (selectedMessage.sender.id !== sender?.id) {
+          Alert.alert('Thông báo', 'Chức năng thu hồi tin nhắn không giành cho người nhận.');
+          break;
+        }
+        deleteMessage(selectedMessage.id || selectedMessage._id || '', selectedMessage.channelId);
+        break;
+      case 'copy':
+        if (selectedMessage) {
+          Clipboard.setString(selectedMessage.content);
+          Alert.alert('Thông báo', 'Đã sao chép tin nhắn!');
+        }
+        break;
+      case 'delete':
+        recallMessage(selectedMessage.id || selectedMessage._id || '');
+        break;
+      case 'remove_reaction':
+        if (selectedMessage) {
+          removeMyEmoji(selectedMessage.id || selectedMessage._id || '', sender?.id || '', selectedMessage.channelId);
+        }
+        break;
+      default:
+        break;
+    }
+    setIsPopupVisible(false);
+    setSelectedMessage(null);
+  }, [selectedMessage, removeMyEmoji, sender?.id]);
+
+  const closePopup = useCallback(() => {
+    setIsPopupVisible(false);
+    setSelectedMessage(null);
+  }, []);
+
   const renderListHeader = useCallback(() => {
     if (loadingMore) {
       return (
@@ -337,6 +437,25 @@ const ChatScreen = ({ route }: { route: ChatScreenRouteProp }) => {
     [],
   );
 
+  const quickReactions = [
+    { emoji: '❤️', action: 'HEART' },
+    { emoji: '👍', action: 'LIKE' },
+    { emoji: '😂', action: 'LAUGH' },
+    { emoji: '😮', action: 'SURPRISED' },
+    { emoji: '😢', action: 'SAD' },
+    { emoji: '😡', action: 'ANGRY' },
+  ];
+
+  const actions = [
+    { label: 'Trả lời', icon: 'reply', action: 'reply', color: '#4a90e2' },
+    { label: 'Chuyển tiếp', icon: 'share', action: 'forward', color: '#4a90e2' },
+    { label: 'Sao chép', icon: 'content-copy', action: 'copy', color: '#4a90e2' },
+    { label: 'Ghim', icon: 'pin', action: 'pin', color: '#f5a623' },
+    { label: 'Thu hồi', icon: 'backup-restore', action: 'backup-restore', color: '#ff4d4f' },
+    { label: 'Xóa', icon: 'delete', action: 'delete', color: '#ff4d4f' },
+    { label: 'Bỏ cảm xúc', icon: 'heart-off', action: 'remove_reaction', color: 'grey' },
+  ];
+
   return (
     <SafeAreaView style={styles.safeArea}>
       <StatusBar backgroundColor="#1E88E5" barStyle="light-content" />
@@ -357,7 +476,7 @@ const ChatScreen = ({ route }: { route: ChatScreenRouteProp }) => {
 
         <FlatList
           ref={flatListRef}
-          data={messages}
+          data={messages.filter((msg) => msg.isDeletedById !== sender?.id)}
           renderItem={renderItem}
           keyExtractor={keyExtractor}
           style={styles.messageList}
