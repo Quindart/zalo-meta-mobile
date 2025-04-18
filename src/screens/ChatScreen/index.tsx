@@ -499,7 +499,7 @@ const ChatScreen = ({ route }: { route: ChatScreenRouteProp }) => {
 
   const handleQuickReact = useCallback((emoji: string) => {
     if (!selectedMessage) return;
-    interactEmoji(selectedMessage.id || selectedMessage._id || '', emoji, sender?.id || '');
+    interactEmoji(selectedMessage.id || selectedMessage._id || '', emoji, sender?.id || '', selectedMessage.channelId);
     setIsPopupVisible(false);
     setSelectedMessage(null);
   }, [selectedMessage, interactEmoji, sender?.id]);
@@ -525,7 +525,7 @@ const ChatScreen = ({ route }: { route: ChatScreenRouteProp }) => {
         break;
       case 'remove_reaction':
         if (selectedMessage) {
-          removeMyEmoji(selectedMessage.id || selectedMessage._id || '', sender?.id || '');
+          removeMyEmoji(selectedMessage.id || selectedMessage._id || '', sender?.id || '', selectedMessage.channelId);
         }
         break;
       default:

@@ -366,19 +366,19 @@ export const useChat = (currentUserId: string) => {
     }, [currentUserId]);
 
     //emoji
-    const interactEmoji = useCallback((messageId: string, emoji: string, userId: string) => {
+    const interactEmoji = useCallback((messageId: string, emoji: string, userId: string, channelId: string) => {
         setLoading(true);
         setError(null);
         const socket = socketService.getSocket();
-        const params = { messageId, emoji, userId };
+        const params = { messageId, emoji, userId, channelId };
         socket.emit(SOCKET_EVENTS.EMOJI.INTERACT_EMOJI, params);
     }, [])
 
-    const removeMyEmoji = useCallback((messageId: string, userId: string) => {
+    const removeMyEmoji = useCallback((messageId: string, userId: string, channelId: string) => {
         setLoading(true);
         setError(null);
         const socket = socketService.getSocket();
-        const params = { messageId, userId };
+        const params = { messageId, userId, channelId };
         socket.emit(SOCKET_EVENTS.EMOJI.REMOVE_MY_EMOJI, params);
     }, [])
 
