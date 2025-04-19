@@ -527,8 +527,12 @@ const ChatScreen = ({ route }: { route: ChatScreenRouteProp }) => {
       case 'forward':
         Alert.alert('Thông báo', 'Chức năng chuyển tiếp tin nhắn chưa được triển khai.');
         break;
-      case 'recall':
-        handleRecallMessage();
+      case 'backup-restore':
+        if (selectedMessage.sender.id !== sender?.id) {
+          Alert.alert('Thông báo', 'Chức năng thu hồi tin nhắn không giành cho người nhận.');
+          break;
+        }
+        deleteMessage(selectedMessage.id || selectedMessage._id || '', selectedMessage.channelId);
         break;
       case 'copy':
         if (selectedMessage) {
@@ -537,7 +541,7 @@ const ChatScreen = ({ route }: { route: ChatScreenRouteProp }) => {
         }
         break;
       case 'delete':
-        handleDeleteMessage();
+        recallMessage(selectedMessage.id || selectedMessage._id || '');
         break;
       case 'remove_reaction':
         if (selectedMessage) {
@@ -627,7 +631,7 @@ const ChatScreen = ({ route }: { route: ChatScreenRouteProp }) => {
     { label: 'Chuyển tiếp', icon: 'share', action: 'forward', color: '#4a90e2' },
     { label: 'Sao chép', icon: 'content-copy', action: 'copy', color: '#4a90e2' },
     { label: 'Ghim', icon: 'pin', action: 'pin', color: '#f5a623' },
-    { label: 'Thu hồi', icon: 'backup-restore', action: 'recall', color: '#f5a623' },
+    { label: 'Thu hồi', icon: 'backup-restore', action: 'backup-restore', color: '#ff4d4f' },
     { label: 'Xóa', icon: 'delete', action: 'delete', color: '#ff4d4f' },
     { label: 'Bỏ cảm xúc', icon: 'heart-off', action: 'remove_reaction', color: 'grey' },
   ];
