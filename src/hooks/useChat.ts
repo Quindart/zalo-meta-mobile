@@ -43,7 +43,6 @@ export const useChat = (currentUserId: string) => {
     const [error, setError] = useState<string | null>(null);
     const currentChannelRef = useRef<string | null>(null);
     const isLoadingMessagesRef = useRef<boolean>(false);
-
     const socketService = SocketService.getInstance(currentUserId);
 
     // Log messages sau khi trạng thái cập nhật
@@ -71,8 +70,7 @@ export const useChat = (currentUserId: string) => {
         };
 
         const findOrCreateResponse = (response: ResponseType) => {
-            setLoading(false);
-            if (response.success && response.data) {
+            if (response.success) {
                 setChannel(response.data);
                 currentChannelRef.current = response.data.id;
             } else {
@@ -233,6 +231,29 @@ export const useChat = (currentUserId: string) => {
             }
         };
 
+        const uploadFileResponse = (response: ResponseType) => {
+            if (response.success) {
+                const newMessage = response.data.message;
+                setMessages((prev) => {
+                    const messageId = newMessage.id;
+                    const isDuplicate = messageId ?
+                        prev.some(msg => (msg.id === messageId)) :
+                        false;
+
+                    if (isDuplicate) {
+                        console.log("Duplicate file message detected, not adding");
+                        return prev;
+                    }
+
+                    return [...prev, newMessage];
+                });
+
+                updateChannelWithMessage(response.data.message);
+            } else {
+                console.error("Failed to upload file:", response.message);
+            }
+            setLoading(false);
+        };
         //Thu hoi tin nhan
         const recallMessageResponse = (response: ResponseType) => {
             if (response.success) {
@@ -271,6 +292,7 @@ export const useChat = (currentUserId: string) => {
         socket.on(SOCKET_EVENTS.MESSAGE.LOAD_RESPONSE, loadMessageResponse);
         socket.on(SOCKET_EVENTS.EMOJI.INTERACT_EMOJI_RESPONSE, interactEmojiResponse);
         socket.on(SOCKET_EVENTS.EMOJI.REMOVE_MY_EMOJI_RESPONSE, removeMyEmojiResponse);
+        socket.on(SOCKET_EVENTS.FILE.UPLOAD_RESPONSE, uploadFileResponse);
         socket.on(SOCKET_EVENTS.MESSAGE.RECALL_RESPONSE, recallMessageResponse);
         socket.on(SOCKET_EVENTS.MESSAGE.DELETE_RESPONSE, deleteMessageResponse);
 
@@ -286,6 +308,7 @@ export const useChat = (currentUserId: string) => {
             socket.off(SOCKET_EVENTS.MESSAGE.LOAD_RESPONSE, loadMessageResponse);
             socket.off(SOCKET_EVENTS.EMOJI.INTERACT_EMOJI_RESPONSE, interactEmojiResponse);
             socket.off(SOCKET_EVENTS.EMOJI.REMOVE_MY_EMOJI_RESPONSE, removeMyEmojiResponse);
+            socket.off(SOCKET_EVENTS.FILE.UPLOAD_RESPONSE, uploadFileResponse);
             socket.off(SOCKET_EVENTS.MESSAGE.RECALL_RESPONSE, recallMessageResponse);
             socket.off(SOCKET_EVENTS.MESSAGE.DELETE_RESPONSE, deleteMessageResponse);
         };
@@ -296,6 +319,7 @@ export const useChat = (currentUserId: string) => {
         setChannel(null);
         setMessages([]);
         setError(null);
+
         const socket = socketService.getSocket();
         const params = { senderId: currentUserId, receiverId };
         socket.emit(SOCKET_EVENTS.CHANNEL.FIND_ORCREATE, params);
@@ -386,6 +410,47 @@ export const useChat = (currentUserId: string) => {
         const params = { messageId, userId, channelId };
         socket.emit(SOCKET_EVENTS.EMOJI.REMOVE_MY_EMOJI, params);
     }, [])
+
+
+    const getMimeType = (ext: string): string => {
+        const map: { [key: string]: string } = {
+            jpg: 'image/jpeg',
+            jpeg: 'image/jpeg',
+            png: 'image/png',
+            gif: 'image/gif',
+            pdf: 'application/pdf',
+            docx: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+            xlsx: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            pptx: 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+            mp4: 'video/mp4',
+        };
+        return map[ext.toLowerCase()] || 'application/octet-stream';
+    };
+
+    const sendFileMessage = useCallback(async (channelId: string, file: any) => {
+        const socket = socketService.getSocket();
+        setLoading(true);
+        console.log("Sending file message:", file);
+        try {
+            // fetch file local path
+            const response = await fetch(file.path); // đường dẫn bắt đầu bằng file:// 
+            const arrayBuffer = await response.arrayBuffer();
+            console.log("Fetched file data:", arrayBuffer);
+            const fileMessage = {
+                channelId,
+                senderId: currentUserId,
+                fileName: file.filename + '.' + file.extension,
+                fileData: arrayBuffer,
+                mimeType: getMimeType(file.extension),
+                timestamp: new Date().toISOString(),
+                status: "sent",
+            };
+            socket.emit(SOCKET_EVENTS.FILE.UPLOAD, fileMessage);
+        } catch (error) {
+            console.error("Lỗi khi gửi file bằng fetch:", error);
+        }
+    }, []);
+
     //Thu hoi message
     const recallMessage = useCallback((messageId: string) => {
         const socket = socketService.getSocket();
@@ -404,6 +469,7 @@ export const useChat = (currentUserId: string) => {
         };
         socket.emit(SOCKET_EVENTS.MESSAGE.DELETE, params);
     }, [])
+
     return {
         findOrCreateChat,
         joinRoom,
@@ -416,6 +482,7 @@ export const useChat = (currentUserId: string) => {
         removeMyEmoji,
         deleteMessage,
         recallMessage,
+        sendFileMessage,
         listChannel,
         channel,
         messages,

@@ -43,7 +43,7 @@ const ChatItem = memo(
       if (diffDays < 7) return `${diffDays} ngày`;
       return msgDate.toLocaleDateString();
     }, []);
-
+    console.log("Check item: ", item);
     return (
       <TouchableOpacity
         style={styles.chatItem}

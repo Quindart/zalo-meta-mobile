@@ -32,6 +32,9 @@ import { RootState } from '@/redux/store';
 import { useChat } from '@/hooks/useChat';
 import { debounce } from 'lodash';
 
+import FileMessageBubble from '@/screens/ChatScreen/FileMessageBubble';
+
+
 import * as DocumentPicker from 'expo-document-picker'; // thư viện để chọn file
 import * as FileSystem from 'expo-file-system'; // thư viện để làm việc với file hệ thống
 import * as Sharing from 'expo-sharing'; // thư viện để chia sẻ file
@@ -63,12 +66,20 @@ interface Message {
   timestamp: string;
   status: 'sent' | 'delivered' | 'read';
   emojis?: Emoji[];
+  messageType?: 'text' | 'file';
+  file?: {
+    filename: string;
+    path: string;
+    extension: string;
+    size?: string | number;
+  };
   sender: {
     id: string;
     name: string;
     avatar: string;
   };
 }
+
 
 // ChatHeader component
 const ChatHeader = React.memo(
@@ -95,6 +106,7 @@ const ChatHeader = React.memo(
   ),
 );
 
+
 // MessageItem component
 const MessageItem = React.memo(
   ({
@@ -106,6 +118,8 @@ const MessageItem = React.memo(
     status,
     emojis,
     onLongPress,
+    messageType,
+    file,
   }: {
     content: string;
     timestamp: string;
@@ -115,14 +129,20 @@ const MessageItem = React.memo(
     status: string;
     emojis?: Emoji[];
     onLongPress?: () => void;
+    messageType?: string;
+    file?: {
+      filename: string;
+      path: string;
+      extension: string;
+      size?: string | number;
+    };
   }) => {
     const me = useSelector((state: RootState) => state.user.user);
     const [isEmojiModalVisible, setEmojiModalVisible] = useState(false);
-    // Hiển thị các emoji
+
     const renderEmojis = useMemo(() => {
       if (!emojis || emojis.length === 0) return null;
-
-      const maxDisplay = 4; // Giới hạn hiển thị tối đa 4 emoji
+      const maxDisplay = 4;
       const displayEmojis = emojis.length > maxDisplay ? emojis.slice(0, 3) : emojis;
       const remainingCount = emojis.length > maxDisplay ? emojis.length - 3 : 0;
 
@@ -140,30 +160,27 @@ const MessageItem = React.memo(
           )}
         </View>
       );
-    }, [emojis, isMyMessage]); // Thêm isMyMessage vào dependency để đảm bảo style thay đổi
+    }, [emojis, isMyMessage]);
 
     const emojiSummary = useMemo(() => {
       if (!emojis) return [];
-
       const emojiCountMap: { [key: string]: { emoji: string; count: number } } = {};
-
       emojis.forEach((emoji) => {
         if (!emojiCountMap[emoji.emoji]) {
           emojiCountMap[emoji.emoji] = { emoji: emoji.emoji, count: 0 };
         }
         emojiCountMap[emoji.emoji].count += emoji.quantity;
       });
-
       return Object.values(emojiCountMap);
     }, [emojis]);
 
-    // Render mỗi item trong popup
     const renderEmojiCount = ({ item }: { item: { emoji: string; count: number } }) => (
       <View style={popupStyles.emojiRow}>
         <Text style={popupStyles.emoji}>{item.emoji}</Text>
         <Text style={popupStyles.emojiCount}>{item.count}</Text>
       </View>
     );
+
     return (
       <View style={styles.messageWrapper}>
         <TouchableOpacity
@@ -171,7 +188,6 @@ const MessageItem = React.memo(
           onLongPress={onLongPress}
           style={[styles.messageRow, isMyMessage ? styles.myMessageRow : styles.otherMessageRow]}
         >
-          {/* Hiển thị avatar chỉ cho tin nhắn của người khác */}
           {!isMyMessage && (
             <Image
               source={{ uri: senderAvatar }}
@@ -186,7 +202,13 @@ const MessageItem = React.memo(
               isMyMessage ? styles.myMessageBubble : styles.otherMessageBubble,
             ]}
           >
-            <Text style={styles.messageText}>{content}</Text>
+            {/* ✅ Render content hoặc file */}
+            {(messageType === 'file' || messageType === 'image') && file ? (
+              <FileMessageBubble file={file} />
+            ) : (
+              <Text style={styles.messageText}>{content}</Text>
+            )}
+
             <Text style={styles.messageTime}>
               {timestamp ? new Date(timestamp).toLocaleTimeString() : ''}{' '}
               {isMyMessage && (
@@ -199,6 +221,8 @@ const MessageItem = React.memo(
             </Text>
           </View>
         </TouchableOpacity>
+
+        {/* ✅ Render emoji reaction */}
         {renderEmojis && (
           <TouchableOpacity
             onPress={() => setEmojiModalVisible(true)}
@@ -207,7 +231,7 @@ const MessageItem = React.memo(
             {renderEmojis}
           </TouchableOpacity>
         )}
-        {/* Modal hiển thị số lượng của từng emoji */}
+
         <Modal
           visible={isEmojiModalVisible}
           transparent={true}
@@ -233,23 +257,70 @@ const MessageItem = React.memo(
       </View>
     );
   },
-  (prevProps, nextProps) => {
-    return (
-      prevProps.content === nextProps.content &&
-      prevProps.timestamp === nextProps.timestamp &&
-      prevProps.senderId === nextProps.senderId &&
-      prevProps.senderAvatar === nextProps.senderAvatar &&
-      prevProps.isMyMessage === nextProps.isMyMessage &&
-      prevProps.status === nextProps.status &&
-      prevProps.onLongPress === nextProps.onLongPress &&
-      JSON.stringify(prevProps.emojis) === JSON.stringify(nextProps.emojis)
-    );
-  },
+  (prevProps, nextProps) =>
+    prevProps.content === nextProps.content &&
+    prevProps.timestamp === nextProps.timestamp &&
+    prevProps.senderId === nextProps.senderId &&
+    prevProps.senderAvatar === nextProps.senderAvatar &&
+    prevProps.isMyMessage === nextProps.isMyMessage &&
+    prevProps.status === nextProps.status &&
+    prevProps.onLongPress === nextProps.onLongPress &&
+    prevProps.messageType === nextProps.messageType &&
+    JSON.stringify(prevProps.file) === JSON.stringify(nextProps.file) &&
+    JSON.stringify(prevProps.emojis) === JSON.stringify(nextProps.emojis)
 );
 
+
+
+
+
 // MessageInputContainer component
+// const MessageInputContainer = React.memo(
+//   ({ channelId, sendMessage, onPickFile }: { channelId: string; sendMessage: (chanId: string, content: string) => void; }) => {
+//     const [inputMessage, setInputMessage] = useState('');
+
+//     const handleSendMessage = useCallback(() => {
+//       if (inputMessage.trim()) {
+//         sendMessage(channelId, inputMessage);
+//         setInputMessage('');
+//       }
+//     }, [inputMessage, channelId, sendMessage]);
+
+//     return (
+//       <View style={styles.inputContainer}>
+//         <TouchableOpacity style={styles.attachmentButton} onPress={onPickFile}>
+//           <Ionicons name="attach" size={22} color="#555" />
+//         </TouchableOpacity>
+//         <TextInput
+//           style={styles.input}
+//           placeholder="Tin nhắn"
+//           value={inputMessage}
+//           onChangeText={(e) => setInputMessage(e)}
+//           multiline
+//           returnKeyType="send"
+//           onSubmitEditing={handleSendMessage}
+//         />
+//         <TouchableOpacity
+//           style={[styles.sendButton, inputMessage.trim() ? styles.sendButtonActive : null]}
+//           onPress={handleSendMessage}
+//           disabled={!inputMessage.trim()}
+//         >
+//           <Ionicons name="send" size={22} color="white" />
+//         </TouchableOpacity>
+//       </View>
+//     );
+//   },
+// );
 const MessageInputContainer = React.memo(
-  ({ channelId, sendMessage }: { channelId: string; sendMessage: (chanId: string, content: string) => void }) => {
+  ({
+    channelId,
+    sendMessage,
+    onPickFile,
+  }: {
+    channelId: string;
+    sendMessage: (chanId: string, content: string) => void;
+    onPickFile: () => void;
+  }) => {
     const [inputMessage, setInputMessage] = useState('');
 
     const handleSendMessage = useCallback(() => {
@@ -261,7 +332,7 @@ const MessageInputContainer = React.memo(
 
     return (
       <View style={styles.inputContainer}>
-        <TouchableOpacity style={styles.attachmentButton}>
+        <TouchableOpacity style={styles.attachmentButton} onPress={onPickFile}>
           <Ionicons name="attach" size={22} color="#555" />
         </TouchableOpacity>
         <TextInput
@@ -282,8 +353,9 @@ const MessageInputContainer = React.memo(
         </TouchableOpacity>
       </View>
     );
-  },
+  }
 );
+
 
 // ChatScreen component
 const ChatScreen = ({ route }: { route: ChatScreenRouteProp }) => {
@@ -296,7 +368,7 @@ const ChatScreen = ({ route }: { route: ChatScreenRouteProp }) => {
   const sender = useSelector((state: RootState) => state.user.user);
   const channelId = item?.id || '';
 
-  // Sử dụng useChat hook với đầy đủ các phương thức
+  // Sử dụng useChat hook với đầy đủ các phương thức ts
   const {
     sendMessage,
     messages,
@@ -307,6 +379,7 @@ const ChatScreen = ({ route }: { route: ChatScreenRouteProp }) => {
     noMessageToLoad,
     interactEmoji,
     removeMyEmoji,
+    sendFileMessage,
     recallMessage,
     deleteMessage
   } = useChat(sender?.id);
@@ -374,6 +447,29 @@ const ChatScreen = ({ route }: { route: ChatScreenRouteProp }) => {
     }
   }, [messages.length, loadingMore, isAtBottom]);
 
+  const handlePickFile = async () => {
+    const result = await DocumentPicker.getDocumentAsync({ type: '*/*' });
+
+    if (!result.canceled && result.assets && result.assets.length > 0) {
+      const asset = result.assets[0];
+      const name = asset.name;
+      const uri = asset.uri;
+      const size = asset.size || 0;
+
+      const extension = name.split('.').pop() || '';
+      const filename = name.replace(`.${extension}`, '');
+
+      const fileData = {
+        filename,
+        path: uri,
+        extension,
+        size,
+      };
+
+      sendFileMessage(channelId, fileData); // ✅ Gửi file
+    }
+  };
+
   const handleLoadMoreMessages = useCallback(
     debounce(() => {
       if (loading || loadingMore || !hasMoreMessages || !channelId || noMessageToLoad) {
@@ -409,7 +505,18 @@ const ChatScreen = ({ route }: { route: ChatScreenRouteProp }) => {
     setIsPopupVisible(false);
     setSelectedMessage(null);
   }, [selectedMessage, interactEmoji, sender?.id]);
-
+  const handleRecallMessage = useCallback(() => {
+    if (!selectedMessage) return;
+    if (selectedMessage.sender.id !== sender?.id) {
+      Alert.alert('Thông báo', 'Bạn không thể thu hồi tin nhắn của người khác!');
+      return;
+    }
+    deleteMessage(selectedMessage.id || selectedMessage._id || '', selectedMessage.channelId);
+  }, [selectedMessage]);
+  const handleDeleteMessage = useCallback(() => {
+    if (!selectedMessage) return;
+    recallMessage(selectedMessage.id || selectedMessage._id || '');
+  }, [selectedMessage]);
   const handlePopupAction = useCallback((action: string) => {
     if (!selectedMessage) return;
 
@@ -494,12 +601,15 @@ const ChatScreen = ({ route }: { route: ChatScreenRouteProp }) => {
           isMyMessage={isMyMessage}
           status={item.status || 'sent'}
           emojis={item.emojis}
+          messageType={item.messageType} // 🆕
+          file={item.file} // 🆕
           onLongPress={() => handleLongPressMessage(item)}
         />
       );
     },
     [sender, handleLongPressMessage],
   );
+
 
   const keyExtractor = useCallback(
     (item: Message, index: number) =>
@@ -562,7 +672,11 @@ const ChatScreen = ({ route }: { route: ChatScreenRouteProp }) => {
           maintainVisibleContentPosition={{ minIndexForVisible: 0 }}
         />
 
-        <MessageInputContainer channelId={channelId} sendMessage={sendMessage} />
+        <MessageInputContainer
+          channelId={channelId}
+          sendMessage={sendMessage}
+          onPickFile={handlePickFile} // ✅ truyền vào đây
+        />
 
         <Modal
           visible={isPopupVisible}
