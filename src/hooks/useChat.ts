@@ -328,7 +328,7 @@ export const useChat = (currentUserId: string) => {
         setLoading(true);
         setError(null);
         const socket = socketService.getSocket();
-        const params = { channelId, offset: messages.length };
+        const params = { channelId, currentUserId, offset: messages.length };
         socket.emit(SOCKET_EVENTS.MESSAGE.LOAD, params);
     }, [messages, currentUserId]);
 
