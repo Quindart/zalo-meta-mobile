@@ -20,11 +20,13 @@ import My_QR from "@/screens/ProfileScreen/qr";
 import QR_SCAN from "@/screens/Auth/QRScan/index";
 import ChangePasswordScreen from "@/screens/ProfileScreen/changePassword";
 import UpdateProfile from "@/screens/ProfileScreen/updateProfile";
-import OptionScreen from "@/screens/OptionScreen";
+import OptionFriend from "@/screens/OptionScreen/OptionFriend";
+import OptionGroup from "@/screens/OptionScreen/OptionGroup";
 import GroupScreen from "@/screens/GroupScreen";
 import FriendRequestScreen from "@/screens/ContactsScreen/friendRequest";
 import ProfileUserScreen from "@/screens/ProfileFriendScreen";
 import ForwardMessage from "@/screens/ChatScreen/ForwardMessage";
+import MemberManagementScreen from "@/screens/GroupScreen/MemberManagement";
 
 
 import { LinearGradient } from "expo-linear-gradient";
@@ -44,7 +46,7 @@ function NavigationApp() {
       <StatusBar barStyle="light-content" backgroundColor="#0D7DC9" />
 
       <Stack.Navigator
-        initialRouteName={ROUTING.HOME}
+        initialRouteName={ROUTING.OPTION_GROUP}
         screenOptions={{
           headerShadowVisible: false,
         }}
@@ -140,8 +142,13 @@ function NavigationApp() {
           options={{ headerShown: false }}
         />
         <Stack.Screen
-          name={ROUTING.OPTION_SCREEN}
-          component={OptionScreen}
+          name={ROUTING.OPTION_GROUP}
+          component={OptionGroup}
+          options={{ headerShown: false }}
+        />
+        <Stack.Screen
+          name={ROUTING.OPTION_FRIEND}
+          component={OptionFriend}
           options={{ headerShown: false }}
         />
         <Stack.Screen
@@ -162,6 +169,11 @@ function NavigationApp() {
         <Stack.Screen
           name={ROUTING.FORWARD_MESSAGE}
           component={ForwardMessage}
+          options={{ headerShown: false }}
+        />
+        <Stack.Screen
+          name={ROUTING.MEMBER_MANAGEMENT_SCREEN}
+          component={MemberManagementScreen}
           options={{ headerShown: false }}
         />
 
