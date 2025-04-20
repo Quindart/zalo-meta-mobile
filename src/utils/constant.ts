@@ -18,10 +18,12 @@ export const ROUTING = {
     FORGOT_PASSWORD: "/forgot-password",
     RESET_PASSWORD: "/reset-password",
     TAB_WITH_HEADER_NAVIGATION: 'TabWithHeaderNavigator',
-    OPTION_SCREEN: 'Option',
+    OPTION_FRIEND: 'OptionFriend',
+    OPTION_GROUP: 'OptionGroup',
     GROUP_SCREEN: 'Group',
     FRIEND_REQUEST_SCREEN: 'Request',
     PROFILE_FRIEND_SCREEN: 'ProfileUser',
     FRIEND_LIST_SCREEN: 'FriendList',
-    FORWARD_MESSAGE: 'ForwardMessage'
+    FORWARD_MESSAGE: 'ForwardMessage',
+    MEMBER_MANAGEMENT_SCREEN: 'MemberManagement',
 };

@@ -13,6 +13,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
+
 const AVATAR_OPTIONS = [
     'https://cdn-icons-png.flaticon.com/512/149/149071.png',
     'https://cdn-icons-png.flaticon.com/512/847/847969.png',
