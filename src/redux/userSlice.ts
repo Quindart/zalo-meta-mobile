@@ -1,13 +1,15 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
 import { User } from '@/models/user';
 import { RootState } from '@/redux/store';
-const initialState: { user: User | null, accessToken: String | null, refreshToken: String | null, sendFriends: any, receiveFriends: any, friends: any } = {
+const initialState: { user: User | null, accessToken: String | null, refreshToken: String | null, sendFriends: any, receiveFriends: any, friends: any, members: any[] } = {
     user: null,
     accessToken: null,
     refreshToken: null,
     sendFriends: [],
     receiveFriends: [],
     friends: [],
+    members: [],
+
 };
 const userSlice = createSlice({
     name: 'user',
@@ -43,11 +45,14 @@ const userSlice = createSlice({
         setReceiveFriends: (state: any, { payload }: PayloadAction<any>) => {
             state.receiveFriends = payload;
         },
+        setMembers: (state: any, { payload }: PayloadAction<any>) => {
+            state.members = payload;
+        },
 
     },
 });
 
-export const { setMe, clearUser, setAccessToken, setRefreshToken, clearTokens, setReceiveFriends, setFriends, setSendFriends } = userSlice.actions;
+export const { setMe, clearUser, setAccessToken, setRefreshToken, clearTokens, setReceiveFriends, setFriends, setSendFriends, setMembers } = userSlice.actions;
 
 
 

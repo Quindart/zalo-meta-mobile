@@ -4,12 +4,12 @@ import { AntDesign, Feather, MaterialCommunityIcons, EvilIcons, Ionicons, FontAw
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '@/navigation/type';
+import { ROUTING } from '@/utils/constant';
 import { LinearGradient } from 'expo-linear-gradient';
 import theme from '@/theme';
 import QR_Scan from '@/components/ui/QR_Scan';
 import useUser from '@/hooks/useUser';
 import { User } from '@/models/user';
-import { ROUTING } from '@/utils/constant';
 import { useFriend } from '@/hooks/useFriend';
 
 

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
     View,
     Text,
@@ -9,52 +9,64 @@ import {
     SafeAreaView,
     Modal,
     Pressable,
+    Alert,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '@/navigation/type';
 import { ROUTING } from '@/utils/constant';
+import { RouteProp, useRoute } from '@react-navigation/native';
+import useUser from '@/hooks/useUser';
+import { useSelector } from 'react-redux';
+import { RootState } from '@/redux/store';
 
 const TABS = ['Tất cả', 'Trưởng và phó nhóm', 'Đã mời', 'Đã chặn'];
 
-const members = [
-    {
-        id: '1',
-        name: 'Bạn',
-        role: 'Trưởng nhóm',
-        avatar: 'https://i.imgur.com/UYiroysl.jpg',
-    },
-    {
-        id: '2',
-        name: 'Bá Hậu',
-        role: 'Thêm bởi bạn',
-        avatar: 'https://i.imgur.com/2nCt3Sbl.jpg',
-    },
-    {
-        id: '3',
-        name: 'Tiến Hoàng',
-        role: 'Thêm bởi bạn',
-        avatar: 'https://i.imgur.com/52xRlm8l.jpg',
-    },
-];
-
 const MemberManagementScreen = () => {
+    const { handleGetUserById } = useUser();
+    const members = useSelector((state: RootState) => state.user.members);
+
     const [selectedTab, setSelectedTab] = useState('Tất cả');
     const [selectedMember, setSelectedMember] = useState<any | null>(null);
     const [showOptions, setShowOptions] = useState(false);
     const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+    const route = useRoute<RouteProp<RootStackParamList, typeof ROUTING.MEMBER_MANAGEMENT_SCREEN>>();
+    const itemGroup = route.params as { itemGroup: any };
+    const [listMemberGroup, setListMemberGroup] = useState<any[]>([]);
+
+    useEffect(() => {
+        console.log('List member:', itemGroup.itemGroup.members);
+        const fetchUserData = async () => {
+            try {
+                for (const member of itemGroup.itemGroup.members) {
+                    const user = await handleGetUserById(member.userId);
+                    if (user) {
+                        const memberWithInfo = { ...member, user };
+                        setListMemberGroup(prev => [...prev, memberWithInfo]);
+                    }
+                }
+            } catch (error) {
+                console.error('❌ Error fetching user data:', error);
+            }
+        };
+        fetchUserData();
+        console.log('Member Store:', members);
+    }, []);
 
     const handleOpenOptions = (member: any): void => {
+        if (member.role === 'captain') {
+            return;
+        }
         setSelectedMember(member);
         setShowOptions(true);
     };
 
     const renderMember = ({ item }: any) => (
         <Pressable style={styles.memberItem} onPress={() => handleOpenOptions(item)}>
-            <Image source={{ uri: item.avatar }} style={styles.avatar} />
+            <Image source={{ uri: item.user.avatar }} style={styles.avatar} />
             <View style={{ flex: 1 }}>
-                <Text style={styles.name}>{item.name}</Text>
+                <Text style={styles.name}>{`${item.user.lastName} ${item.user.firstName}`}</Text>
                 <Text style={styles.role}>{item.role}</Text>
             </View>
         </Pressable>
@@ -70,7 +82,9 @@ const MemberManagementScreen = () => {
                     <Text style={styles.headerTitle}>Quản lý thành viên</Text>
                 </View>
                 <View style={styles.headerIcons}>
-                    <Ionicons name="person-add" size={22} color="#fff" style={{ marginRight: 16 }} />
+                    <TouchableOpacity onPress={() => navigation.navigate(ROUTING.ADD_TO_GROUP, itemGroup)}>
+                        <Ionicons name="person-add" size={22} color="#fff" style={{ marginRight: 16 }} />
+                    </TouchableOpacity>
                     <Ionicons name="search" size={22} color="#fff" />
                 </View>
             </View>
@@ -92,10 +106,11 @@ const MemberManagementScreen = () => {
                 <Text style={styles.approveText}>Duyệt thành viên</Text>
             </TouchableOpacity>
 
-            <Text style={styles.memberCount}>Thành viên ({members.length})</Text>
+            <Text style={styles.memberCount}>Thành viên ({listMemberGroup.length})</Text>
+
             <FlatList
                 data={members}
-                keyExtractor={(item) => item.id}
+                keyExtractor={(item) => item.userId}
                 renderItem={renderMember}
                 contentContainerStyle={{ paddingBottom: 20 }}
             />
@@ -111,8 +126,10 @@ const MemberManagementScreen = () => {
                         <Text style={styles.modalTitle}>Thông tin thành viên</Text>
                         <View style={styles.modalProfileRow}>
                             <View style={{ alignItems: 'center', flexDirection: 'row' }}>
-                                <Image source={{ uri: selectedMember?.avatar }} style={styles.modalAvatar} />
-                                <Text style={styles.modalName}>{selectedMember?.name}</Text>
+                                <Image source={{ uri: selectedMember?.user?.avatar }} style={styles.modalAvatar} />
+                                <Text style={styles.modalName}>
+                                    {selectedMember ? `${selectedMember.user?.lastName} ${selectedMember.user?.firstName}` : ''}
+                                </Text>
                             </View>
                             <View style={styles.modalActions}>
                                 <Ionicons name="call-outline" size={20} color="#555" style={styles.modalIcon} />

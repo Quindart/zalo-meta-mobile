@@ -26,4 +26,5 @@ export const ROUTING = {
     FRIEND_LIST_SCREEN: 'FriendList',
     FORWARD_MESSAGE: 'ForwardMessage',
     MEMBER_MANAGEMENT_SCREEN: 'MemberManagement',
+    ADD_TO_GROUP: 'AddToGroup',
 };
