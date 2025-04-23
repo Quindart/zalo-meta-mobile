@@ -6,7 +6,7 @@
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
-    "newArchEnabled": true,
+    "newArchEnabled": false,
     "splash": {
       "image": "./assets/splash-icon.png",
       "resizeMode": "contain",
@@ -14,14 +14,16 @@
     },
     "ios": {
       "supportsTablet": true,
-      "googleServicesFile": "./GoogleService-Info.plist"
+      "bundleIdentifier": "com.quindarts.zalometamobile",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
-      "googleServicesFile": "./google-services.json",
       "package": "com.quindarts.zalometamobile"
     },
     "web": {
@@ -29,8 +31,9 @@
     },
     "extra": {
       "eas": {
-        "projectId": "b6f79293-daf2-4c27-b2e3-de0107cffccb"
+        "projectId": "7d5f1162-064f-4bed-865f-a9ddd441bb91"
       }
-    }
+    },
+    "owner": "huyvu2379"
   }
 }
