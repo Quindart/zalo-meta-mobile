@@ -74,7 +74,7 @@ yarn-error.*
 
 # typescript
 *.tsbuildinfo
-
+.package-lock.json
 # @end expo-cli
 .google-services.json
 .GoogleService-Info.plist
