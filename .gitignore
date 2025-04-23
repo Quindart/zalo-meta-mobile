@@ -78,5 +78,6 @@ yarn-error.*
 # @end expo-cli
 .google-services.json
 .GoogleService-Info.plist
+.serviceAccountKey.json
 ./ios
 ./android
