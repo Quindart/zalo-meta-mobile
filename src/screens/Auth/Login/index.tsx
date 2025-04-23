@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import * as React from 'react';
 import { View, Text, TextInput, TouchableOpacity } from 'react-native';
@@ -6,7 +7,6 @@ import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Formik } from 'formik';
 import * as Yup from 'yup';
-
 import { RootStackParamList } from '@/navigation/type';
 import { ROUTING } from '@/utils/constant';
 import RootLayout from '@/layout/RootLayout';
