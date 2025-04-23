@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { View, Text, Image, FlatList, TouchableOpacity, ScrollView, StyleSheet, StatusBar } from 'react-native';
 import { Ionicons, MaterialIcons, AntDesign, MaterialCommunityIcons, Entypo } from '@expo/vector-icons'; // Using Ionicons for icons
 import Header from '@/components/ui/Header';
@@ -6,16 +6,85 @@ import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '@/navigation/type';
 import { ROUTING } from '@/utils/constant';
+import { RouteProp, useRoute } from '@react-navigation/native';
+import useUser from '@/hooks/useUser';
+import { RootState } from '@/redux/store';
+import { useSelector, useDispatch } from 'react-redux';
+import { useChat } from '@/hooks/useChat';
+import { setMembers } from '@/redux/userSlice'; // import action
+
+
+
 
 const OptionGroup = () => {
     const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+    type OptionGroupProp = RouteProp<RootStackParamList, typeof ROUTING.OPTION_GROUP>;
+    const route = useRoute<OptionGroupProp>();
+    const itemGroup = route.params as { itemGroup: any };
+    const { handleGetUserById } = useUser();
+    // const [members, setMembers] = React.useState<any[]>([]);
+    const user = useSelector((state: RootState) => state.user.user);
+    const { leaveRoom, dissolveGroup } = useChat(user?.id || '');
 
     // Sample data for menu options
     const menuOptions = [
         { id: '1', title: 'Lịch nhóm', icon: 'calendar' },
-        { id: '3', title: 'Tin nhắn đã ghim', icon: 'pushpino' },
+        // { id: '3', title: 'Tin nhắn đã ghim', icon: 'pushpino' },
         { id: '4', title: 'Bình chọn', icon: 'barschart' },
     ];
+
+
+    // useEffect(() => {
+    //     console.log("Check itemGroup: ", itemGroup);
+    // })
+
+    // kiểm tra user có trong danh sách thành viên không
+    const isCaptain = () => {
+        return itemGroup.itemGroup.members.some((member: any) => member.userId === user?.id && member.role === 'captain');
+    }
+
+    // useEffect(() => {
+    //     console.log("Check itemGroup: ", itemGroup);
+    //     const fetchUserData = async () => {
+    //         try {
+    //             for (const member of itemGroup.itemGroup.members) {
+    //                 const user = await handleGetUserById(member.userId);
+    //                 if (user) {
+    //                     const memberWithInfo = { ...member, user }; // thêm info vào từng member
+    //                     setMembers(prev => [...prev, memberWithInfo]);
+    //                 }
+    //             }
+    //         } catch (error) {
+    //             console.error('❌ Error fetching user data:', error);
+    //         }
+    //     };
+
+    //     fetchUserData();
+
+    // }, []);
+    const dispatch = useDispatch();
+
+
+    useEffect(() => {
+        const fetchUserData = async () => {
+            try {
+                const membersWithInfo: any[] = [];
+
+                for (const member of itemGroup.itemGroup.members) {
+                    const user = await handleGetUserById(member.userId);
+                    if (user) {
+                        membersWithInfo.push({ ...member, user });
+                    }
+                }
+                dispatch(setMembers(membersWithInfo));
+            } catch (error) {
+                console.error('❌ Error fetching user data:', error);
+            }
+        };
+
+        fetchUserData();
+    }, []);
+
 
     return (
         <View style={{ flex: 1 }}>
@@ -24,10 +93,10 @@ const OptionGroup = () => {
                 {/* Profile Section */}
                 <View style={styles.profileSection}>
                     <Image
-                        source={{ uri: 'https://i1.sndcdn.com/artworks-ebqbJNoRi9lD4ySF-49rsMw-t500x500.jpg' }}
+                        source={{ uri: itemGroup.itemGroup.avatar }}
                         style={styles.profileImage}
                     />
-                    <Text style={styles.profileName}>Group 8</Text>
+                    <Text style={styles.profileName}>{itemGroup.itemGroup.name}</Text>
                     <View style={styles.navIcons}>
                         <TouchableOpacity style={styles.navIcon}>
                             <View style={styles.iconContainer}>
@@ -74,7 +143,7 @@ const OptionGroup = () => {
 
                 {/* Group Actions */}
                 <View style={styles.groupSection}>
-                    <TouchableOpacity style={styles.groupItem} onPress={() => navigation.navigate(ROUTING.MEMBER_MANAGEMENT_SCREEN)}>
+                    <TouchableOpacity style={styles.groupItem} onPress={() => navigation.navigate(ROUTING.MEMBER_MANAGEMENT_SCREEN, itemGroup)}>
                         <Ionicons name="people" size={24} color="gray" style={styles.groupIcon} />
                         <Text style={styles.groupText}>Xem thành viên</Text>
                     </TouchableOpacity>
@@ -93,10 +162,16 @@ const OptionGroup = () => {
                         <MaterialIcons name="delete-outline" size={24} color="red" style={styles.groupIcon} />
                         <Text style={[styles.groupText, { color: 'red' }]}>Xóa lịch sử trò chuyện</Text>
                     </TouchableOpacity>
-                    <TouchableOpacity style={[styles.groupItem]}>
+                    <TouchableOpacity style={[styles.groupItem]} onPress={() => { leaveRoom(itemGroup.itemGroup.id), navigation.navigate(ROUTING.TAB_WITH_HEADER_NAVIGATION) }}>
                         <Entypo name="log-out" size={24} color="red" style={styles.groupIcon} />
                         <Text style={[styles.groupText, { color: 'red' }]}>Rời nhóm</Text>
                     </TouchableOpacity>
+                    {isCaptain() && (
+                        <TouchableOpacity style={[styles.groupItem]} onPress={() => { dissolveGroup(itemGroup.itemGroup.id), navigation.navigate(ROUTING.TAB_WITH_HEADER_NAVIGATION) }}>
+                            <Ionicons name="alert-circle-outline" size={24} color="red" style={styles.groupIcon} />
+                            <Text style={[styles.groupText, { color: 'red' }]}>Giải tán nhóm</Text>
+                        </TouchableOpacity>
+                    )}
                 </View>
             </ScrollView>
         </View>
@@ -215,3 +290,4 @@ const styles = StyleSheet.create({
 });
 
 export default OptionGroup;
+

@@ -18,8 +18,11 @@ export type RootStackParamList = {
     [ROUTING.QR_SCAN]: undefined;
     [ROUTING.CHANGE_PASSWORD]: undefined;
     [ROUTING.UPDATE_PROFILE]: undefined;
-    [ROUTING.OPTION_SCREEN]: undefined;
     [ROUTING.GROUP_SCREEN]: undefined;
     [ROUTING.FRIEND_REQUEST_SCREEN]: undefined;
     [ROUTING.PROFILE_FRIEND_SCREEN]: { itemFriend: any };
+    [ROUTING.OPTION_GROUP]: { itemGroup: any };
+    [ROUTING.OPTION_FRIEND]: { itemFriend: any };
+    [ROUTING.MEMBER_MANAGEMENT_SCREEN]: { itemGroup: any };
+    [ROUTING.ADD_TO_GROUP]: { itemGroup: any };
 };

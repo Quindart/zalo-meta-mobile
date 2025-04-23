@@ -34,6 +34,35 @@ interface ResponseType {
     data: any;
 }
 
+interface UserType {
+    id: string;
+    name?: string;
+    avatar?: string;
+    firstName?: string;
+    lastName?: string;
+}
+
+interface ChannelMemberType {
+    userId: string;
+    role?: string;
+    user?: UserType;
+}
+
+interface ChannelType {
+    id: string;
+    name?: string;
+    type?: 'direct' | 'group';
+    members: ChannelMemberType[];
+    createdAt?: string;
+    updatedAt?: string;
+    message?: string;
+    time?: string;
+    lastMessage?: MessageType;
+    isRead?: boolean;
+    avatar?: string;
+    isDeleted?: boolean;
+}
+
 export const useChat = (currentUserId: string) => {
     const [noMessageToLoad, setNoMessageToLoad] = useState(false);
     const [messages, setMessages] = useState<MessageType[]>([]);
@@ -168,26 +197,78 @@ export const useChat = (currentUserId: string) => {
             setLoading(false);
         };
 
+        // const loadChannelResponse = (response: ResponseType) => {
+        //     setLoading(false);
+        //     if (response.success && response.data) {
+        //         const validChannels = (response.data || []).filter(
+        //             (channel: any) => channel && channel.id && typeof channel === 'object'
+        //         );
+        //         setListChannel(validChannels);
+        //     } else {
+        //         setError(response.message || 'Không thể tải danh sách phòng chat');
+        //     }
+        // };
+
         const loadChannelResponse = (response: ResponseType) => {
-            setLoading(false);
-            if (response.success && response.data) {
-                const validChannels = (response.data || []).filter(
-                    (channel: any) => channel && channel.id && typeof channel === 'object'
+            if (response.success) {
+                // Remove duplicates using a Set with channel IDs
+                const uniqueChannels = (response.data as ChannelType[]).filter((channel, index, self) =>
+                    index === self.findIndex((c) => c.id === channel.id)
                 );
-                setListChannel(validChannels);
+
+                setListChannel(uniqueChannels);
+                setLoading(false);
             } else {
-                setError(response.message || 'Không thể tải danh sách phòng chat');
+                console.error("Failed to load channel:", response.message);
+                setLoading(false);
             }
-        };
+        }
+
+        // const createGroupResponse = (response: ResponseType) => {
+        //     setLoading(false);
+        //     if (response.success && response.data) {
+        //         setListChannel(prev => [...prev, response.data]);
+        //     } else {
+        //         setError(response.message || 'Không thể tạo nhóm chat');
+        //     }
+        // };
+
+        const dissolveGroupResponse = (response: ResponseType) => {
+            if (response.success) {
+                setChannel(null);
+                setMessages([]);
+                setLoading(false);
+                console.log("Group dissolved successfully:", response.data);
+                setListChannel((prev) => prev.filter(channel => channel.id !== response.data.id));
+            }
+            else {
+                console.error("Failed to dissolve group:", response.message);
+                setLoading(false);
+            }
+        }
 
         const createGroupResponse = (response: ResponseType) => {
-            setLoading(false);
-            if (response.success && response.data) {
-                setListChannel(prev => [...prev, response.data]);
+            if (response.success) {
+                console.log("Group created successfully:", response.data);
+                setListChannel((prev) => {
+                    const channelExists = prev.some(
+                        (channel) => channel.id === response.data.id
+                    );
+
+                    if (channelExists) {
+                        console.log("Channel already exists in list, not adding duplicate:", response.data.id);
+                        return prev;
+                    }
+
+                    console.log("Adding new channel to list:", response.data.id);
+                    return [...prev, response.data];
+                });
+                setLoading(false);
             } else {
-                setError(response.message || 'Không thể tạo nhóm chat');
+                console.error("Failed to create group:", response.message);
+                setLoading(false);
             }
-        };
+        }
 
         const leaveRoomResponse = (response: ResponseType) => {
             setLoading(false);
@@ -281,6 +362,26 @@ export const useChat = (currentUserId: string) => {
                 setLoading(false);
             }
         }
+
+        const addMemberResponse = (response: ResponseType) => {
+            setLoading(false);
+            if (response.success) {
+                // response.data chính là channel đã format (có trường members mới)
+                console.log("Thêm thành viên thành công:", response.data);
+                setChannel(response.data);           // Cập nhật channel hiện tại nếu đang view chi tiết
+                setListChannel(prev => {
+                    // Cập nhật listChannel nếu cần: replace channel cũ bằng channel mới
+                    return prev.map(ch =>
+                        ch.id === response.data.id ? response.data : ch
+                    );
+                });
+            } else {
+                console.error("Thêm thành viên thất bại:", response.message);
+            }
+        };
+
+
+
         socket.on('connect_error', handleConnectError);
         socket.on('disconnect', handleDisconnect);
         socket.on(SOCKET_EVENTS.CHANNEL.JOIN_ROOM_RESPONSE, joinRoomResponse);
@@ -295,6 +396,10 @@ export const useChat = (currentUserId: string) => {
         socket.on(SOCKET_EVENTS.FILE.UPLOAD_RESPONSE, uploadFileResponse);
         socket.on(SOCKET_EVENTS.MESSAGE.RECALL_RESPONSE, recallMessageResponse);
         socket.on(SOCKET_EVENTS.MESSAGE.DELETE_RESPONSE, deleteMessageResponse);
+        socket.on(SOCKET_EVENTS.CHANNEL.ADD_MEMBER_RESPONSE, addMemberResponse);
+        socket.on(SOCKET_EVENTS.CHANNEL.DISSOLVE_GROUP_RESPONSE, dissolveGroupResponse);
+
+
 
         return () => {
             socket.off('connect_error', handleConnectError);
@@ -311,6 +416,8 @@ export const useChat = (currentUserId: string) => {
             socket.off(SOCKET_EVENTS.FILE.UPLOAD_RESPONSE, uploadFileResponse);
             socket.off(SOCKET_EVENTS.MESSAGE.RECALL_RESPONSE, recallMessageResponse);
             socket.off(SOCKET_EVENTS.MESSAGE.DELETE_RESPONSE, deleteMessageResponse);
+            socket.off(SOCKET_EVENTS.CHANNEL.ADD_MEMBER_RESPONSE, addMemberResponse);
+            socket.off(SOCKET_EVENTS.CHANNEL.DISSOLVE_GROUP_RESPONSE, dissolveGroupResponse);
         };
     }, [currentUserId]);
 
@@ -378,6 +485,9 @@ export const useChat = (currentUserId: string) => {
         socket.emit(SOCKET_EVENTS.CHANNEL.LOAD_CHANNEL, params);
     }, []);
 
+
+
+
     const createGroup = useCallback((name: string, members: string[]) => {
         setLoading(true);
         setError(null);
@@ -393,6 +503,22 @@ export const useChat = (currentUserId: string) => {
         const params = { channelId, userId: currentUserId };
         socket.emit(SOCKET_EVENTS.CHANNEL.LEAVE_ROOM, params);
     }, [currentUserId]);
+
+    const dissolveGroup = useCallback((channelId: string) => {
+        setLoading(true);
+        const socket = socketService.getSocket();
+        const params = {
+            channelId,
+            userId: currentUserId
+        };
+        socket.emit(SOCKET_EVENTS.CHANNEL.DISSOLVE_GROUP, params);
+    }, []);
+
+    const addMember = useCallback((channelId: string, userId: string) => {
+        setLoading(true);
+        const socket = socketService.getSocket();
+        socket.emit(SOCKET_EVENTS.CHANNEL.ADD_MEMBER, { channelId, userId });
+    }, []);
 
     //emoji
     const interactEmoji = useCallback((messageId: string, emoji: string, userId: string, channelId: string) => {
@@ -470,6 +596,8 @@ export const useChat = (currentUserId: string) => {
         socket.emit(SOCKET_EVENTS.MESSAGE.DELETE, params);
     }, [])
 
+
+
     return {
         findOrCreateChat,
         joinRoom,
@@ -483,6 +611,8 @@ export const useChat = (currentUserId: string) => {
         deleteMessage,
         recallMessage,
         sendFileMessage,
+        dissolveGroup,
+        addMember,
         listChannel,
         channel,
         messages,

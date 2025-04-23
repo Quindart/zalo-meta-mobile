@@ -27,6 +27,7 @@ import FriendRequestScreen from "@/screens/ContactsScreen/friendRequest";
 import ProfileUserScreen from "@/screens/ProfileFriendScreen";
 import ForwardMessage from "@/screens/ChatScreen/ForwardMessage";
 import MemberManagementScreen from "@/screens/GroupScreen/MemberManagement";
+import AddToGroupScreen from "@/screens/GroupScreen/AddToGroup";
 
 
 import { LinearGradient } from "expo-linear-gradient";
@@ -46,7 +47,7 @@ function NavigationApp() {
       <StatusBar barStyle="light-content" backgroundColor="#0D7DC9" />
 
       <Stack.Navigator
-        initialRouteName={ROUTING.OPTION_GROUP}
+        initialRouteName={ROUTING.LOGIN}
         screenOptions={{
           headerShadowVisible: false,
         }}
@@ -174,6 +175,11 @@ function NavigationApp() {
         <Stack.Screen
           name={ROUTING.MEMBER_MANAGEMENT_SCREEN}
           component={MemberManagementScreen}
+          options={{ headerShown: false }}
+        />
+        <Stack.Screen
+          name={ROUTING.ADD_TO_GROUP}
+          component={AddToGroupScreen}
           options={{ headerShown: false }}
         />
 
