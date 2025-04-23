@@ -356,11 +356,12 @@ export const useChat = (currentUserId: string) => {
         socket.emit(SOCKET_EVENTS.MESSAGE.LOAD, params);
     }, [messages, currentUserId]);
 
-    const sendMessage = useCallback((channelId: string, content: string) => {
+    const sendMessage = useCallback((channelId: string, content: string, fcmToken: string) => {
         const socket = socketService.getSocket();
         const messageData = {
             channelId,
             senderId: currentUserId,
+            fcmToken: fcmToken,
             content: content.trim(),
             timestamp: new Date().toISOString(),
             status: "sent"

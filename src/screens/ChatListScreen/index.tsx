@@ -8,6 +8,7 @@ import {
   View,
   ActivityIndicator,
   Alert,
+  Platform
 } from 'react-native';
 import styles from './css';
 import { NavigationProp, ParamListBase } from '@react-navigation/native';
@@ -15,7 +16,11 @@ import { ROUTING } from '@/utils/constant';
 import { useSelector } from 'react-redux';
 import { RootState } from '@/redux/store';
 import { useChat } from '@/hooks/useChat';
-
+import { registerFCMToken } from '@/services/auth.service'
+import * as Notifications from 'expo-notifications';
+import Constants from 'expo-constants';
+import { useDispatch } from 'react-redux';
+import { setFcmToken } from '@/redux/userSlice';
 interface Chat {
   id: string;
   avatar?: string;
@@ -81,6 +86,73 @@ const ChatItem = memo(
 
 const ListChannelScreen = ({ navigation }: { navigation: NavigationProp<ParamListBase> }) => {
   const currentUserId = useSelector((state: RootState) => state.user.user?.id || '');
+  const dispatch = useDispatch();
+  const getPushToken = async () => {
+    try {
+      // // Kiểm tra xem thiết bị có hỗ trợ thông báo không
+      // if (!Constants.isDevice) {
+      //   console.log('Thông báo đẩy yêu cầu thiết bị vật lý (không hoạt động trên máy ảo)');
+      //   return null;
+      // }
+
+      // Yêu cầu quyền thông báo
+      const { status: existingStatus } = await Notifications.getPermissionsAsync();
+      let finalStatus = existingStatus;
+      if (existingStatus !== 'granted') {
+        const { status } = await Notifications.requestPermissionsAsync({
+          ios: {
+            allowAlert: true,
+            allowBadge: true,
+            allowSound: true,
+            allowDisplayInCarPlay: false,
+            allowCriticalAlerts: false,
+            provideAppNotificationSettings: false,
+            allowProvisional: false,
+          },
+        });
+        finalStatus = status;
+      }
+
+      if (finalStatus !== 'granted') {
+        console.log('Không nhận được quyền thông báo đẩy!');
+        return null;
+      }
+
+      // Tạo notification channel cho Android
+      if (Platform.OS === 'android') {
+        await Notifications.setNotificationChannelAsync('default', {
+          name: 'default',
+          importance: Notifications.AndroidImportance.MAX,
+          vibrationPattern: [0, 250, 250, 250],
+          lightColor: '#FF231F7C',
+        });
+      }
+
+      const { data: expoPushToken } = await Notifications.getExpoPushTokenAsync({
+        projectId: Constants.expoConfig?.extra?.eas?.projectId, // Uncommented projectId line
+      });
+
+      console.log('Expo Push Token:', expoPushToken);
+      return expoPushToken;
+    } catch (error) {
+      console.error('Error getting Expo Push Token:', error);
+      return null;
+    }
+  };
+  const handleRegisterFCMToken = async () => {
+    try {
+      const fcmToken = await getPushToken();
+      if (fcmToken) {
+        const response = await registerFCMToken(fcmToken, currentUserId);
+        dispatch(setFcmToken(response.data));
+        console.log('FCM Token registered successfully:', response.data);
+      } else {
+        console.warn('Failed to get FCM token');
+      }
+    } catch (error) {
+      console.error('Error registering FCM Token:', error);
+    }
+  }
   const { loadChannel, listChannel, error } = useChat(currentUserId);
 
   // Xử lý lỗi từ useChat
@@ -88,6 +160,7 @@ const ListChannelScreen = ({ navigation }: { navigation: NavigationProp<ParamLis
     if (error) {
       Alert.alert('Lỗi', error);
     }
+    handleRegisterFCMToken();
   }, [error]);
 
   // Tải danh sách channel khi màn hình được focus

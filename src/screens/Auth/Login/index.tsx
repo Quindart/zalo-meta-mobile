@@ -112,8 +112,9 @@
 
 // export default Login;
 
-import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity } from 'react-native';
+import { useState } from 'react';
+import * as React from 'react';
+import { View, Text, TextInput, TouchableOpacity, Platform } from 'react-native';
 import AntDesign from '@expo/vector-icons/AntDesign';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -127,7 +128,6 @@ import theme from '@/theme';
 import useAuth from '@/hooks/useAuth';
 import Header from '@/components/ui/Header';
 import styles from './css';
-
 // Validation schema using Yup
 const LoginSchema = Yup.object().shape({
   phone: Yup.string()

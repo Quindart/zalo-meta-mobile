@@ -70,3 +70,18 @@ export const loginQR = async (token: string) => {
         return error?.response.data;
     }
 }
+
+
+export const registerFCMToken = async (fcmToken: string, userId: string) => {
+    try {
+        const url = `${api}/fcm`;
+        const response = await axiosConfig.post(url, {
+            fcmToken: fcmToken,
+            userId: userId
+        })
+        return response;
+    } catch (error: any) {
+        console.error("Error fetching user data:", error);
+        return error?.response.data;
+    }
+}
