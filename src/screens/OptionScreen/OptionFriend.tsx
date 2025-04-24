@@ -3,7 +3,7 @@ import { View, Text, Image, FlatList, TouchableOpacity, ScrollView, StyleSheet, 
 import { Ionicons, MaterialIcons } from '@expo/vector-icons'; // Using Ionicons for icons
 import Header from '@/components/ui/Header';
 
-const OptionScreen = () => {
+const OptionFriend = () => {
     // Sample data for menu options
     const menuOptions = [
         { id: '1', title: 'Đổi tên gợi nhớ', icon: 'pencil' },
@@ -209,4 +209,4 @@ const styles = StyleSheet.create({
     },
 });
 
-export default OptionScreen;
+export default OptionFriend;
