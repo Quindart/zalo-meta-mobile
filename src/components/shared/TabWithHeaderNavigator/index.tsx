@@ -3,6 +3,7 @@ import DiaryScreen from '@/screens/DiaryScreen';
 import DiscoveryScreen from '@/screens/DiscoveryScreen';
 import MessagesScreen from '@/screens/ChatListScreen';
 import ProfileScreen from '@/screens/ProfileScreen';
+import { useState } from 'react';
 
 import theme from '@/theme';
 import { ROUTING } from '@/utils/constant';
@@ -14,6 +15,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import SearchBar from '@/components/ui/SearchBar';
 import QR_Scan from '@/components/ui/QR_Scan';
 import React from 'react';
+import PlusMenu from '@/components/ui/PlusMenu';
 
 const Tab = createBottomTabNavigator();
 
@@ -21,6 +23,8 @@ function TabWithHeaderNavigator() {
   const navigation: NavigationProp<ParamListBase> = useNavigation();
   const sizeIcon = 22;
   const colorIcon = 'white';
+  const [showMenu, setShowMenu] = useState(false);
+
   return (
     <Tab.Navigator
       screenOptions={{
@@ -66,7 +70,8 @@ function TabWithHeaderNavigator() {
           headerRight: () => (
             <View style={styles.headerRightIcon}>
               <QR_Scan />
-              <AntDesign name="plus" size={sizeIcon} color={colorIcon} onPress={() => { }} />
+              <AntDesign name="plus" size={sizeIcon} color={colorIcon} onPress={() => setShowMenu(true)} />
+              <PlusMenu visible={showMenu} onClose={() => setShowMenu(false)} />
             </View>
           ),
           headerStyle: {
