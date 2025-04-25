@@ -149,11 +149,8 @@ const useUser = () => {
             if (!userId) {
                 return null;
             }
-            console.log('Lấy thông tin người dùng với ID', userId);
             const response = await getUserById(userId);
-            console.log('Response lấy thông tin người dùng:', response);
             const data = toJSON(response);
-            console.log('Response lấy thông tin người dùng:', data.user);
             if (data.success) {
                 return data.user;
             } else {

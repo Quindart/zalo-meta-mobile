@@ -80,31 +80,90 @@ interface Message {
   };
 }
 
+// chuyển sang Option
+
+
 
 // ChatHeader component
+// const ChatHeader = React.memo(
+
+//   ({ navigation, item }: { navigation: ChatScreenNavigationProp; item: any }) => (
+
+//     <LinearGradient
+//       colors={[theme.colors.primary, theme.colors.primaryContainer]}
+//       start={{ x: 0, y: 0 }}
+//       end={{ x: 1, y: 0 }}
+//       style={styles.header}
+//     >
+
+//       <TouchableOpacity onPress={() => navigation.goBack()} style={styles.iconButton}>
+//         <AntDesign name="arrowleft" size={20} color="white" />
+//       </TouchableOpacity>
+//       <Text style={styles.headerTitle}>{item.name || 'Chat'}</Text>
+//       <View style={styles.headerIcons}>
+//         <TouchableOpacity style={styles.iconButton}>
+//           <Ionicons name="call-outline" size={24} color="white" />
+//         </TouchableOpacity>
+//         <TouchableOpacity style={styles.iconButton}>
+//           <Ionicons name="videocam-outline" size={24} color="white" />
+//         </TouchableOpacity>
+//         <TouchableOpacity style={styles.iconButton}>
+//           <AntDesign name="bars" size={24} color="white" />
+//         </TouchableOpacity>
+//       </View>
+//     </LinearGradient>
+//   ),
+// );
+
+
+
 const ChatHeader = React.memo(
-  ({ navigation, item }: { navigation: ChatScreenNavigationProp; item: any }) => (
-    <LinearGradient
-      colors={[theme.colors.primary, theme.colors.primaryContainer]}
-      start={{ x: 0, y: 0 }}
-      end={{ x: 1, y: 0 }}
-      style={styles.header}
-    >
-      <TouchableOpacity onPress={() => navigation.goBack()} style={styles.iconButton}>
-        <AntDesign name="arrowleft" size={20} color="white" />
-      </TouchableOpacity>
-      <Text style={styles.headerTitle}>{item.name || 'Chat'}</Text>
-      <View style={styles.headerIcons}>
-        <TouchableOpacity style={styles.iconButton}>
-          <Ionicons name="call-outline" size={24} color="white" />
+  ({ item }: { item: any }) => {
+    const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+    const currentUserId = useSelector((state: RootState) => state.user.user?.id);
+
+    const handleOptionsPress = useCallback(() => {
+      if (item?.type === 'group') {
+        navigation.navigate(ROUTING.OPTION_GROUP, { itemGroup: item });
+      } else if (item?.type === 'direct') {
+        const friend = item.members?.find((mem: any) => mem.userId !== currentUserId);
+        if (friend && friend.user) {
+          navigation.navigate(ROUTING.OPTION_FRIEND, { itemFriend: friend.user });
+        } else {
+          alert('Không tìm thấy thông tin bạn bè');
+        }
+      }
+    }, [item, currentUserId]);
+
+    return (
+      <LinearGradient
+        colors={['#1E88E5', '#42A5F5']}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 0 }}
+        style={styles.header}
+      >
+        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.iconButton}>
+          <AntDesign name="arrowleft" size={20} color="white" />
         </TouchableOpacity>
-        <TouchableOpacity style={styles.iconButton}>
-          <Ionicons name="videocam-outline" size={24} color="white" />
-        </TouchableOpacity>
-      </View>
-    </LinearGradient>
-  ),
+        <Text style={styles.headerTitle}>{item.name || 'Chat'}</Text>
+        <View style={styles.headerIcons}>
+          <TouchableOpacity style={styles.iconButton}>
+            <Ionicons name="call-outline" size={24} color="white" />
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.iconButton}>
+            <Ionicons name="videocam-outline" size={24} color="white" />
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.iconButton} onPress={handleOptionsPress}>
+            <AntDesign name="bars" size={24} color="white" />
+          </TouchableOpacity>
+        </View>
+      </LinearGradient>
+    );
+  }
 );
+
+export default ChatHeader;
+
 
 
 // MessageItem component
@@ -381,7 +440,9 @@ const ChatScreen = ({ route }: { route: ChatScreenRouteProp }) => {
     removeMyEmoji,
     sendFileMessage,
     recallMessage,
-    deleteMessage
+    deleteMessage,
+    loadChannel,
+    listChannel,
   } = useChat(sender?.id);
 
   const [loadingMore, setLoadingMore] = useState(false);
@@ -446,6 +507,8 @@ const ChatScreen = ({ route }: { route: ChatScreenRouteProp }) => {
       }, 300);
     }
   }, [messages.length, loadingMore, isAtBottom]);
+
+
 
   const handlePickFile = async () => {
     const result = await DocumentPicker.getDocumentAsync({ type: '*/*' });

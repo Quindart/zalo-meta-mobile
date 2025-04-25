@@ -26,10 +26,10 @@ const SOCKET_EVENTS = Object.freeze({
         LEAVED: "user:leaved",
     },
     CHANNEL: {
-        FIND_ORCREATE: "channel:findOrCreate",
-        FIND_ORCREATE_RESPONSE: "channel:findOrCreateResponse",
         FIND_BY_ID: "channel:findById",
         FIND_BY_ID_RESPONSE: "channel:findByIdResponse",
+        FIND_ORCREATE: "channel:findOrCreate",
+        FIND_ORCREATE_RESPONSE: "channel:findOrCreateResponse",
         LOAD_CHANNEL: "channel:load",
         LOAD_CHANNEL_RESPONSE: "channel:loadResponse",
         CREATE: "channel:create",
@@ -40,6 +40,8 @@ const SOCKET_EVENTS = Object.freeze({
         LEAVE_ROOM_RESPONSE: "leaveRoomResponse",
         DISSOLVE_GROUP: "channel:dissolveGroup",
         DISSOLVE_GROUP_RESPONSE: "channel:dissolveGroupResponse",
+        ADD_MEMBER: "channel:addMember",
+        ADD_MEMBER_RESPONSE: "channel:addMemberResponse",
     },
     NOTIFICATION: {
         FRIEND_REQUEST: "notification:friend_request",
