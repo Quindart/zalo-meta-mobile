@@ -1,4 +1,5 @@
-import React, { useEffect, useState } from 'react';
+
+import React, { useEffect, useState, useMemo } from 'react';
 import {
     View,
     Text,
@@ -14,52 +15,105 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { RouteProp, useRoute } from '@react-navigation/native';
 import { RootStackParamList } from '@/navigation/type';
 import { ROUTING } from '@/utils/constant';
-import { RouteProp, useRoute } from '@react-navigation/native';
 import useUser from '@/hooks/useUser';
-import { useSelector } from 'react-redux';
 import { RootState } from '@/redux/store';
+import { useSelector } from 'react-redux';
+import { useChat } from '@/hooks/useChat';
+import { setCurrentChannel } from '@/redux/userSlice';
+import { useDispatch } from 'react-redux';
 
 const TABS = ['Tất cả', 'Trưởng và phó nhóm', 'Đã mời', 'Đã chặn'];
 
 const MemberManagementScreen = () => {
+    const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+    const route = useRoute<RouteProp<RootStackParamList, typeof ROUTING.MEMBER_MANAGEMENT_SCREEN>>();
+    const itemGroup = route.params as { itemGroup: any };
+    const currentChannel = useSelector((state: RootState) => state.user.currentChannel);
+    const currentUser = useSelector((state: RootState) => state.user.user);
     const { handleGetUserById } = useUser();
-    const members = useSelector((state: RootState) => state.user.members);
+    const { assignRole, removeMember, channel, loadChannel } = useChat(currentUser?.id || '');
 
     const [selectedTab, setSelectedTab] = useState('Tất cả');
     const [selectedMember, setSelectedMember] = useState<any | null>(null);
     const [showOptions, setShowOptions] = useState(false);
-    const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
-    const route = useRoute<RouteProp<RootStackParamList, typeof ROUTING.MEMBER_MANAGEMENT_SCREEN>>();
-    const itemGroup = route.params as { itemGroup: any };
     const [listMemberGroup, setListMemberGroup] = useState<any[]>([]);
 
+    const currentUserRole = useMemo(() => {
+        if (!currentChannel || !currentUser || !currentChannel.members) return null;
+        const member = currentChannel.members.find((m: any) => m.userId === currentUser.id);
+        return member?.role || null;
+    }, [currentChannel, currentUser]);
+
+
+
+    const dispatch = useDispatch();
+
     useEffect(() => {
-        console.log('List member:', itemGroup.itemGroup.members);
+        if (!channel && currentUser?.id) {
+            loadChannel(currentUser.id); // 🔁 Gọi lại để chắc chắn lấy dữ liệu mới nhất
+        }
+
+        if (channel && channel.members) {
+            dispatch(setCurrentChannel(channel)); // ✅ Chỉ dispatch khi có members
+        }
+    }, [channel, currentUser?.id]);
+
+
+    useEffect(() => {
         const fetchUserData = async () => {
             try {
-                for (const member of itemGroup.itemGroup.members) {
-                    const user = await handleGetUserById(member.userId);
-                    if (user) {
-                        const memberWithInfo = { ...member, user };
-                        setListMemberGroup(prev => [...prev, memberWithInfo]);
-                    }
-                }
+                const updatedMembers = await Promise.all(
+                    currentChannel.members.map(async (member: any) => {
+                        const user = await handleGetUserById(member.userId);
+                        return user ? { ...member, user } : null;
+                    })
+                );
+                setListMemberGroup(updatedMembers.filter(Boolean));
             } catch (error) {
-                console.error('❌ Error fetching user data:', error);
+                console.error('Error fetching member data:', error);
             }
         };
-        fetchUserData();
-        console.log('Member Store:', members);
-    }, []);
-
-    const handleOpenOptions = (member: any): void => {
-        if (member.role === 'captain') {
-            return;
+        if (currentChannel?.members?.length > 0) {
+            fetchUserData();
         }
+    }, [currentChannel?.members]);
+
+    const handleOpenOptions = (member: any) => {
+        if (member.userId === currentUser?.id || member.role === 'captain') return;
         setSelectedMember(member);
         setShowOptions(true);
+    };
+
+    const handleAssignRole = (newRole: 'sub_captain' | 'captain') => {
+        if (selectedMember) {
+            assignRole({
+                channelId: currentChannel.id,
+                userId: currentUser?.id || '',
+                targetUserId: selectedMember.userId,
+                newRole,
+            });
+            setShowOptions(false);
+        }
+    };
+
+    const handleRemoveMember = () => {
+        if (selectedMember) {
+            Alert.alert('Xác nhận', 'Bạn có chắc muốn xoá người này khỏi nhóm?', [
+                { text: 'Huỷ', style: 'cancel' },
+                {
+                    text: 'Xóa', style: 'destructive', onPress: () => {
+                        removeMember(currentChannel.id, currentUser?.id || '', selectedMember.userId);
+
+                        setShowOptions(false);
+                        navigation.navigate(ROUTING.TAB_WITH_HEADER_NAVIGATION)
+
+                    }
+                }
+            ]);
+        }
     };
 
     const renderMember = ({ item }: any) => (
@@ -75,12 +129,10 @@ const MemberManagementScreen = () => {
     return (
         <SafeAreaView style={styles.container}>
             <View style={styles.header}>
-                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                    <TouchableOpacity onPress={() => navigation.goBack()} style={{}}>
-                        <Ionicons name="arrow-back" size={24} color="#fff" />
-                    </TouchableOpacity>
-                    <Text style={styles.headerTitle}>Quản lý thành viên</Text>
-                </View>
+                <TouchableOpacity onPress={() => navigation.goBack()}>
+                    <Ionicons name="arrow-back" size={24} color="#fff" />
+                </TouchableOpacity>
+                <Text style={styles.headerTitle}>Quản lý thành viên</Text>
                 <View style={styles.headerIcons}>
                     <TouchableOpacity onPress={() => navigation.navigate(ROUTING.ADD_TO_GROUP, itemGroup)}>
                         <Ionicons name="person-add" size={22} color="#fff" style={{ marginRight: 16 }} />
@@ -89,66 +141,39 @@ const MemberManagementScreen = () => {
                 </View>
             </View>
 
-            <View style={styles.tabs}>
-                {TABS.map((tab) => (
-                    <TouchableOpacity
-                        key={tab}
-                        onPress={() => setSelectedTab(tab)}
-                        style={[styles.tabItem, selectedTab === tab && styles.activeTab]}
-                    >
-                        <Text style={[styles.tabText, selectedTab === tab && styles.activeTabText]}>{tab}</Text>
-                    </TouchableOpacity>
-                ))}
-            </View>
-
-            <TouchableOpacity style={styles.approveContainer}>
-                <Ionicons name="person-circle-outline" size={32} color="#888" />
-                <Text style={styles.approveText}>Duyệt thành viên</Text>
-            </TouchableOpacity>
-
-            <Text style={styles.memberCount}>Thành viên ({listMemberGroup.length})</Text>
-
             <FlatList
-                data={members}
+                data={listMemberGroup}
                 keyExtractor={(item) => item.userId}
                 renderItem={renderMember}
                 contentContainerStyle={{ paddingBottom: 20 }}
             />
 
-            <Modal
-                visible={showOptions}
-                transparent
-                animationType="slide"
-                onRequestClose={() => setShowOptions(false)}
-            >
+            <Modal visible={showOptions} transparent animationType="slide" onRequestClose={() => setShowOptions(false)}>
                 <Pressable style={styles.modalOverlay} onPress={() => setShowOptions(false)}>
                     <Pressable style={styles.modalContent} onPress={(e) => e.stopPropagation()}>
                         <Text style={styles.modalTitle}>Thông tin thành viên</Text>
                         <View style={styles.modalProfileRow}>
-                            <View style={{ alignItems: 'center', flexDirection: 'row' }}>
-                                <Image source={{ uri: selectedMember?.user?.avatar }} style={styles.modalAvatar} />
-                                <Text style={styles.modalName}>
-                                    {selectedMember ? `${selectedMember.user?.lastName} ${selectedMember.user?.firstName}` : ''}
-                                </Text>
-                            </View>
-                            <View style={styles.modalActions}>
-                                <Ionicons name="call-outline" size={20} color="#555" style={styles.modalIcon} />
-                                <Ionicons name="chatbubble-ellipses-outline" size={20} color="#555" style={styles.modalIcon} />
-                            </View>
+                            <Image source={{ uri: selectedMember?.user?.avatar }} style={styles.modalAvatar} />
+                            <Text style={styles.modalName}>{`${selectedMember?.user?.lastName || ''} ${selectedMember?.user?.firstName || ''}`}</Text>
                         </View>
-
                         <TouchableOpacity style={styles.modalOption}>
                             <Text style={styles.modalOptionText}>Xem trang cá nhân</Text>
                         </TouchableOpacity>
-                        <TouchableOpacity style={styles.modalOption}>
-                            <Text style={styles.modalOptionText}>Bổ nhiệm làm phó nhóm</Text>
-                        </TouchableOpacity>
-                        <TouchableOpacity style={styles.modalOption}>
-                            <Text style={styles.modalOptionText}>Chặn thành viên</Text>
-                        </TouchableOpacity>
-                        <TouchableOpacity style={styles.modalOption}>
-                            <Text style={[styles.modalOptionText, { color: 'red' }]}>Xoá khỏi nhóm</Text>
-                        </TouchableOpacity>
+                        {currentUserRole === 'captain' && (
+                            <>
+                                <TouchableOpacity style={styles.modalOption} onPress={() => handleAssignRole('captain')}>
+                                    <Text style={styles.modalOptionText}>Bổ nhiệm làm trưởng nhóm</Text>
+                                </TouchableOpacity>
+                                <TouchableOpacity style={styles.modalOption} onPress={() => handleAssignRole('sub_captain')}>
+                                    <Text style={styles.modalOptionText}>Bổ nhiệm làm phó nhóm</Text>
+                                </TouchableOpacity>
+                            </>
+                        )}
+                        {(currentUserRole === 'captain' || currentUserRole === 'sub_captain') && (
+                            <TouchableOpacity style={styles.modalOption} onPress={handleRemoveMember}>
+                                <Text style={[styles.modalOptionText, { color: 'red' }]}>Xóa khỏi nhóm</Text>
+                            </TouchableOpacity>
+                        )}
                     </Pressable>
                 </Pressable>
             </Modal>
@@ -166,44 +191,11 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'space-between',
     },
-    headerTitle: { color: '#fff', fontSize: 16, fontWeight: 'bold', marginLeft: 10 },
+    headerTitle: { color: '#fff', fontSize: 16, fontWeight: 'bold' },
     headerIcons: { flexDirection: 'row', alignItems: 'center' },
-    tabs: {
-        flexDirection: 'row',
-        backgroundColor: '#F0F0F0',
-        borderBottomWidth: 1,
-        borderBottomColor: '#ccc',
-    },
-    tabItem: {
-        flex: 1,
-        paddingVertical: 12,
-        alignItems: 'center',
-    },
-    tabText: { fontSize: 14, color: '#555', textAlign: 'center' },
-    activeTab: { borderBottomWidth: 2, borderBottomColor: '#108BE3' },
-    activeTabText: { color: '#108BE3', fontWeight: 'bold' },
-    approveContainer: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        padding: 16,
-        borderBottomWidth: 1,
-        borderBottomColor: '#eee',
-    },
-    approveText: { marginLeft: 12, fontSize: 16, color: '#333' },
-    memberCount: {
-        paddingHorizontal: 16,
-        paddingTop: 8,
-        fontSize: 14,
-        color: '#108BE3',
-        fontWeight: 'bold',
-    },
     memberItem: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        paddingHorizontal: 16,
-        paddingVertical: 12,
-        borderBottomWidth: 1,
-        borderBottomColor: '#f0f0f0',
+        flexDirection: 'row', alignItems: 'center',
+        padding: 12, borderBottomWidth: 1, borderBottomColor: '#eee'
     },
     avatar: { width: 42, height: 42, borderRadius: 21, marginRight: 12 },
     name: { fontSize: 16, fontWeight: '500' },
@@ -226,33 +218,19 @@ const styles = StyleSheet.create({
         marginBottom: 16,
     },
     modalProfileRow: {
+        flexDirection: 'row',
         alignItems: 'center',
         marginBottom: 12,
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        paddingHorizontal: 16,
     },
     modalAvatar: {
         width: 60,
         height: 60,
         borderRadius: 30,
-        marginBottom: 6,
         marginRight: 16,
     },
     modalName: {
         fontSize: 18,
         fontWeight: '500',
-        marginBottom: 8,
-    },
-    modalActions: {
-        flexDirection: 'row',
-        gap: 16,
-        marginTop: 4,
-    },
-    modalIcon: {
-        padding: 6,
-        backgroundColor: '#eee',
-        borderRadius: 24,
     },
     modalOption: {
         paddingVertical: 10,
