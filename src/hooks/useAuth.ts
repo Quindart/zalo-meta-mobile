@@ -8,7 +8,6 @@ import { ROUTING } from '@/utils/constant';
 import { login, register } from '@/services/auth.service';
 import { getPushToken } from "@/utils/FCMToken"
 import { registerFCMToken } from '@/services/auth.service'
-import { setFcmToken } from '@/redux/userSlice';
 const useAuth = () => {
     const navigation = useNavigation<NavigationProp<ParamListBase>>();
     const dispatch = useDispatch();
@@ -21,10 +20,8 @@ const useAuth = () => {
         try {
             const loginResponse = await login({ phone, password });
             const fcmToken = await getPushToken();
-
             if (fcmToken) {
                 await registerFCMToken(fcmToken, loginResponse.data.user.id);
-                dispatch(setFcmToken(fcmToken));
             }
             const jsonLoginResponse = toJSON(loginResponse);
             if (jsonLoginResponse.success) {

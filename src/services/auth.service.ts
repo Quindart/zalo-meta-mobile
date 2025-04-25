@@ -2,7 +2,7 @@ import { ILogin, IRegister, IUser } from "@/types/IUser"
 import axiosConfig from "./axios.config"
 import { isAction } from "@reduxjs/toolkit"
 
-const api = "api/v1/auth"
+const api = "/api/v1/auth"
 //TODO: LOGIN
 export const login = async ({ phone, password }: ILogin) => {
     return await axiosConfig.post(`${api}/login`, { phone, password })

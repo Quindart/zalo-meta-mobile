@@ -31,10 +31,7 @@ import { useSelector } from 'react-redux';
 import { RootState } from '@/redux/store';
 import { useChat } from '@/hooks/useChat';
 import { debounce } from 'lodash';
-
 import FileMessageBubble from '@/screens/ChatScreen/FileMessageBubble';
-
-
 import * as DocumentPicker from 'expo-document-picker'; // thư viện để chọn file
 import * as FileSystem from 'expo-file-system'; // thư viện để làm việc với file hệ thống
 import * as Sharing from 'expo-sharing'; // thư viện để chia sẻ file
