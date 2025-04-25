@@ -3,6 +3,7 @@ import { Alert } from 'react-native';
 import store from '@/redux/store'; // Import Redux store
 
 const API_URL = process.env.EXPO_PUBLIC_API_URL;
+console.log("💲💲💲 ~ API_URL:", API_URL)
 
 const axiosConfig: AxiosInstance = axios.create({
     baseURL: API_URL,

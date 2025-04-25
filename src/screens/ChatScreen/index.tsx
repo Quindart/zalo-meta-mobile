@@ -83,7 +83,6 @@ interface Message {
 // chuyển sang Option
 
 
-
 // ChatHeader component
 // const ChatHeader = React.memo(
 
@@ -443,7 +442,7 @@ const ChatScreen = ({ route }: { route: ChatScreenRouteProp }) => {
     deleteMessage,
     loadChannel,
     listChannel,
-  } = useChat(sender?.id);
+  } = useChat(`${sender?.id}`);
 
   const [loadingMore, setLoadingMore] = useState(false);
   const [hasMoreMessages, setHasMoreMessages] = useState(true);
