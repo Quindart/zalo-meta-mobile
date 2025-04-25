@@ -17,6 +17,11 @@ const userSlice = createSlice({
             state.user = action.payload;
             console.log('setMe thành công', action.payload);
         },
+        setFcmToken(state, action: PayloadAction<string>) {
+            if (state.user) {
+                state.user.fcmToken = action.payload;
+            }
+        },
         clearUser(state) {
             state.user = null;
             console.log('clearUser thành công', state.user);
@@ -47,7 +52,7 @@ const userSlice = createSlice({
     },
 });
 
-export const { setMe, clearUser, setAccessToken, setRefreshToken, clearTokens, setReceiveFriends, setFriends, setSendFriends } = userSlice.actions;
+export const { setMe, setFcmToken, clearUser, setAccessToken, setRefreshToken, clearTokens, setReceiveFriends, setFriends, setSendFriends } = userSlice.actions;
 
 
 

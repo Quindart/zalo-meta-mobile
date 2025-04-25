@@ -42,7 +42,7 @@ yarn-error.*
 
 # dependencies
 node_modules/
-package-lock.json
+
 # Expo
 .expo/
 dist/
@@ -74,10 +74,9 @@ yarn-error.*
 
 # typescript
 *.tsbuildinfo
-.package-lock.json
+
 # @end expo-cli
 .google-services.json
 .GoogleService-Info.plist
-.serviceAccountKey.json
 ./ios
 ./android

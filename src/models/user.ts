@@ -7,6 +7,7 @@ export interface User {
     dateOfBirth: string;
     firstName: string;
     lastName: string;
+    fcmToken: string;
     isTwoFactorAuthenticationEnabled: boolean;
     isVerifiedMail: boolean;
     updatedAt: string;

@@ -5,7 +5,8 @@ import theme from '@/theme';
 import Toast from 'react-native-toast-message';
 import { store } from '@/redux/store';
 import { Provider } from 'react-redux';
-
+import { enableScreens } from 'react-native-screens';
+enableScreens();
 import NavigationApp from '@/navigation';
 export default function App() {
   return (

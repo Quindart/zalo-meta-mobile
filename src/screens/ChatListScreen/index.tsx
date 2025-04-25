@@ -8,6 +8,7 @@ import {
   View,
   ActivityIndicator,
   Alert,
+  Platform
 } from 'react-native';
 import styles from './css';
 import { NavigationProp, ParamListBase } from '@react-navigation/native';
@@ -81,6 +82,7 @@ const ChatItem = memo(
 
 const ListChannelScreen = ({ navigation }: { navigation: NavigationProp<ParamListBase> }) => {
   const currentUserId = useSelector((state: RootState) => state.user.user?.id || '');
+
   const { loadChannel, listChannel, error } = useChat(currentUserId);
 
   // Xử lý lỗi từ useChat
