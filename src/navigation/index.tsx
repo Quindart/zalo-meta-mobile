@@ -26,7 +26,6 @@ import FriendRequestScreen from "@/screens/ContactsScreen/friendRequest";
 import ProfileUserScreen from "@/screens/ProfileFriendScreen";
 import ForwardMessage from "@/screens/ChatScreen/ForwardMessage";
 
-
 import { LinearGradient } from "expo-linear-gradient";
 import theme from "@/theme";
 import { TouchableOpacity } from "react-native";
@@ -164,9 +163,6 @@ function NavigationApp() {
           component={ForwardMessage}
           options={{ headerShown: false }}
         />
-
-
-
       </Stack.Navigator>
     </NavigationContainer>
   );
