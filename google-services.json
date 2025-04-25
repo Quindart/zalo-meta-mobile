@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "985302931010",
+    "project_id": "zalo-notify-a8c4f",
+    "storage_bucket": "zalo-notify-a8c4f.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:985302931010:android:09b2cdc394be7979eb3fdb",
+        "android_client_info": {
+          "package_name": "com.quindarts.zalometamobile"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAH__l19SQ3nuNc_2HKCye2XE8n43NdavE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
