@@ -1,6 +1,8 @@
 import SocketService from "@/services/Socket.service";
 import { useEffect, useState, useCallback, useRef } from "react";
 import SOCKET_EVENTS from "@/constants";
+import { setCurrentChannel } from '@/redux/userSlice';
+import { useDispatch } from 'react-redux';
 
 interface Sender {
     id: string;
@@ -62,6 +64,13 @@ interface ChannelType {
     avatar?: string;
     isDeleted?: boolean;
 }
+
+export interface AssignRoleParams {
+    channelId: string;
+    userId: string;
+    targetUserId: string;
+    newRole: 'captain' | 'member' | 'sub_captain';
+};
 
 export const useChat = (currentUserId: string) => {
     const [noMessageToLoad, setNoMessageToLoad] = useState(false);
@@ -233,6 +242,7 @@ export const useChat = (currentUserId: string) => {
         //     }
         // };
 
+
         const dissolveGroupResponse = (response: ResponseType) => {
             if (response.success) {
                 setChannel(null);
@@ -380,6 +390,50 @@ export const useChat = (currentUserId: string) => {
             }
         };
 
+        const assignRoleUpdatedResponse = (response: ResponseType) => {
+            if (response.success) {
+                setChannel(response.data);
+                setListChannel(prev => {
+                    return prev.map(ch =>
+                        ch.id === response.data.id ? response.data : ch
+                    );
+                });
+            } else {
+                console.error("Phân quyền thành viên thất bại:", response.message);
+            }
+        }
+        // const removeMemberResponse = (response: ResponseType) => {
+        //     setLoading(false);
+        //     console.log("💲💲💲 ~ removeMemberResponse ~ response.data:", response)
+
+        //     if (response.success) {
+        //         setChannel(response.data);
+
+        //         setListChannel(prev => {
+        //             return prev.map(ch =>
+        //                 ch.id === response.data.id ? response.data : ch
+        //             );
+        //         });
+        //     } else {
+        //         console.error(response.message);
+        //     }
+        // }
+
+        const removeMemberResponse = (response: ResponseType) => {
+            setLoading(false);
+            const dispatch = useDispatch();
+            if (response.success) {
+                // Cập nhật channel mới từ server
+                setChannel(response.data);
+                dispatch(setCurrentChannel(response.data)); // 👈 Cập nhật vào Redux
+
+                // Optional: Đóng modal nếu đang mở
+            } else {
+                console.error("Xóa thành viên thất bại:", response.message);
+            }
+        };
+
+
 
 
         socket.on('connect_error', handleConnectError);
@@ -398,6 +452,8 @@ export const useChat = (currentUserId: string) => {
         socket.on(SOCKET_EVENTS.MESSAGE.DELETE_RESPONSE, deleteMessageResponse);
         socket.on(SOCKET_EVENTS.CHANNEL.ADD_MEMBER_RESPONSE, addMemberResponse);
         socket.on(SOCKET_EVENTS.CHANNEL.DISSOLVE_GROUP_RESPONSE, dissolveGroupResponse);
+        socket.on(SOCKET_EVENTS.CHANNEL.ROLE_UPDATED, assignRoleUpdatedResponse);
+        socket.on(SOCKET_EVENTS.CHANNEL.REMOVE_MEMBER_RESPONSE, removeMemberResponse);
 
 
 
@@ -418,15 +474,17 @@ export const useChat = (currentUserId: string) => {
             socket.off(SOCKET_EVENTS.MESSAGE.DELETE_RESPONSE, deleteMessageResponse);
             socket.off(SOCKET_EVENTS.CHANNEL.ADD_MEMBER_RESPONSE, addMemberResponse);
             socket.off(SOCKET_EVENTS.CHANNEL.DISSOLVE_GROUP_RESPONSE, dissolveGroupResponse);
+            socket.off(SOCKET_EVENTS.CHANNEL.ROLE_UPDATED, assignRoleUpdatedResponse);
+            socket.off(SOCKET_EVENTS.CHANNEL.REMOVE_MEMBER_RESPONSE, removeMemberResponse);
         };
     }, [currentUserId]);
+
 
     const findOrCreateChat = useCallback((receiverId: string) => {
         setLoading(true);
         setChannel(null);
         setMessages([]);
         setError(null);
-
         const socket = socketService.getSocket();
         const params = { senderId: currentUserId, receiverId };
         socket.emit(SOCKET_EVENTS.CHANNEL.FIND_ORCREATE, params);
@@ -445,6 +503,7 @@ export const useChat = (currentUserId: string) => {
         const params = { channelId, currentUserId };
         socket.emit(SOCKET_EVENTS.CHANNEL.JOIN_ROOM, params);
     }, [currentUserId]);
+
 
     const loadMessages = useCallback((channelId: string) => {
         if (channelId !== currentChannelRef.current || isLoadingMessagesRef.current) {
@@ -477,6 +536,7 @@ export const useChat = (currentUserId: string) => {
         setLoading(true);
         socket.emit(SOCKET_EVENTS.MESSAGE.SEND, messageData);
     }, [currentUserId]);
+
 
     const loadChannel = useCallback((userId: string) => {
         setLoading(true);
@@ -517,6 +577,7 @@ export const useChat = (currentUserId: string) => {
 
     const addMember = useCallback((channelId: string, userId: string) => {
         setLoading(true);
+        console.log("Adding member:", userId, "to channel:", channelId);
         const socket = socketService.getSocket();
         socket.emit(SOCKET_EVENTS.CHANNEL.ADD_MEMBER, { channelId, userId });
     }, []);
@@ -597,6 +658,17 @@ export const useChat = (currentUserId: string) => {
         socket.emit(SOCKET_EVENTS.MESSAGE.DELETE, params);
     }, [])
 
+    const removeMember = useCallback((channelId: string, senderId: string, userId: string) => {
+        setLoading(true);
+        const socket = socketService.getSocket();
+        socket.emit(SOCKET_EVENTS.CHANNEL.REMOVE_MEMBER, { channelId, senderId, userId });
+        setLoading(false);
+    }, []);
+
+    const assignRole = useCallback(({ channelId, userId, targetUserId, newRole }: AssignRoleParams) => {
+        const socket = socketService.getSocket();
+        socket.emit(SOCKET_EVENTS.CHANNEL.ASSIGN_ROLE, { channelId, userId, targetUserId, newRole });
+    }, [])
 
 
     return {
@@ -614,6 +686,8 @@ export const useChat = (currentUserId: string) => {
         sendFileMessage,
         dissolveGroup,
         addMember,
+        removeMember,
+        assignRole,
         listChannel,
         channel,
         messages,
