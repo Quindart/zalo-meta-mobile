@@ -36,9 +36,7 @@ const useUser = () => {
         avatar?: { uri: string; name: string; type: string };
     }) => {
         try {
-            // Kiểm tra xem user có tồn tại không
             if (!user || !user.id) {
-                console.error('B1: User không tồn tại hoặc không có _id');
                 Alert.alert('Lỗi', 'Không tìm thấy thông tin người dùng. Vui lòng đăng nhập lại.');
                 navigation.navigate(ROUTING.HOME);
                 return;
@@ -52,7 +50,6 @@ const useUser = () => {
                     const isoDate = formatDateToISO(userData.dateOfBirth);
                     formData.append('dateOfBirth', isoDate);
                 } catch (error) {
-                    console.error('B3.1: Invalid dateOfBirth', userData.dateOfBirth);
                     Alert.alert('Lỗi', 'Ngày sinh không hợp lệ. Vui lòng kiểm tra lại.');
                     return;
                 }
@@ -63,10 +60,8 @@ const useUser = () => {
                     name: userData.avatar.name,
                     type: userData.avatar.type,
                 } as any);
-                console.log('B3: FormData', formData);
 
             }
-            console.log('B4: userData', userData);
 
             const updateResponse = await axiosConfig.put('/api/v1/me', formData, {
                 headers: {
@@ -77,8 +72,6 @@ const useUser = () => {
             const jsonUpdateResponse = toJSON(updateResponse);
 
             if (jsonUpdateResponse.success) {
-                // Cập nhật thông tin user trong Redux
-                // Sử dụng dữ liệu từ server thay vì merge userData
                 const updatedUser: User = {
                     ...user,
                     firstName: jsonUpdateResponse.user.firstName,
@@ -88,18 +81,13 @@ const useUser = () => {
                     updatedAt: jsonUpdateResponse.user.updatedAt,
                 };
                 dispatch(setMe(updatedUser));
-                console.log('Cập nhật thông tin thành công', jsonUpdateResponse.user);
                 Alert.alert('Thành công', 'Cập nhật thông tin thành công');
                 navigation.goBack();
             } else {
-                console.error('B6: Cập nhật thất bại - Response không thành công', jsonUpdateResponse);
                 Alert.alert('Lỗi', 'Cập nhật thông tin thất bại');
             }
         } catch (error: any) {
-            // console.error('B7: Cập nhật thông tin thất bại', error.message);
-            // console.error('B7: Error response', error.response?.data);
-            // Alert.alert('Lỗi', 'Có lỗi xảy ra khi cập nhật thông tin: ' + (error.response?.data?.message || error.message));
-            // Alert.alert('Lỗi', 'Mạng chưa chuẩn bị cập nhật ảnh ' + error.message);
+
             return;
         }
     };
@@ -125,20 +113,16 @@ const useUser = () => {
             if (!keywords) {
                 return null;
             }
-            console.log('Tìm kiếm người dùng với số điện thoại', keywords);
             const type = 'phone';
             const response = await searchUserByPhone(type, keywords);
             const data = toJSON(response);
-            console.log('Response tìm kiếm:', data);
             if (data.success) {
-                console.log('Tìm kiếm thành công:', data.users);
                 return data.users;
             } else {
                 Alert.alert('Lỗi', data.message || 'Không tìm thấy người dùng');
                 return null;
             }
         } catch (error: any) {
-            console.error('Lỗi API:', error);
             Alert.alert('Lỗi', error.response?.data?.message || error.message || 'Lỗi không xác định');
             return null;
         }
@@ -159,7 +143,6 @@ const useUser = () => {
             }
         }
         catch (error: any) {
-            console.error('Lỗi API:', error);
             Alert.alert('Lỗi', error.response?.data?.message || error.message || 'Lỗi không xác định');
             return null;
         }

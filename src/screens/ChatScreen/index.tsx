@@ -296,47 +296,6 @@ const MessageItem = React.memo(
     JSON.stringify(prevProps.emojis) === JSON.stringify(nextProps.emojis)
 );
 
-
-
-
-
-// MessageInputContainer component
-// const MessageInputContainer = React.memo(
-//   ({ channelId, sendMessage, onPickFile }: { channelId: string; sendMessage: (chanId: string, content: string) => void; }) => {
-//     const [inputMessage, setInputMessage] = useState('');
-
-//     const handleSendMessage = useCallback(() => {
-//       if (inputMessage.trim()) {
-//         sendMessage(channelId, inputMessage);
-//         setInputMessage('');
-//       }
-//     }, [inputMessage, channelId, sendMessage]);
-
-//     return (
-//       <View style={styles.inputContainer}>
-//         <TouchableOpacity style={styles.attachmentButton} onPress={onPickFile}>
-//           <Ionicons name="attach" size={22} color="#555" />
-//         </TouchableOpacity>
-//         <TextInput
-//           style={styles.input}
-//           placeholder="Tin nhắn"
-//           value={inputMessage}
-//           onChangeText={(e) => setInputMessage(e)}
-//           multiline
-//           returnKeyType="send"
-//           onSubmitEditing={handleSendMessage}
-//         />
-//         <TouchableOpacity
-//           style={[styles.sendButton, inputMessage.trim() ? styles.sendButtonActive : null]}
-//           onPress={handleSendMessage}
-//           disabled={!inputMessage.trim()}
-//         >
-//           <Ionicons name="send" size={22} color="white" />
-//         </TouchableOpacity>
-//       </View>
-//     );
-//   },
-// );
 const MessageInputContainer = React.memo(
   ({
     channelId,

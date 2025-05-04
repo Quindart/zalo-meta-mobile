@@ -11,7 +11,6 @@ import useUser from '@/hooks/useUser';
 import { RootState } from '@/redux/store';
 import { useSelector, useDispatch } from 'react-redux';
 import { useChat } from '@/hooks/useChat';
-// import { setMembers } from '@/redux/userSlice'; // import action
 
 
 
