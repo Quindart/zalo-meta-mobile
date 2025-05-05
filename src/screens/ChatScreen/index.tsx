@@ -31,6 +31,9 @@ import { useSelector } from 'react-redux';
 import { RootState } from '@/redux/store';
 import { useChat } from '@/hooks/useChat';
 import { debounce } from 'lodash';
+import { useDispatch } from 'react-redux';
+import { setCurrentChannel } from '@/redux/userSlice';
+
 import FileMessageBubble from '@/screens/ChatScreen/FileMessageBubble';
 import * as DocumentPicker from 'expo-document-picker'; // thư viện để chọn file
 import * as FileSystem from 'expo-file-system'; // thư viện để làm việc với file hệ thống
@@ -77,43 +80,9 @@ interface Message {
   };
 }
 
-// chuyển sang Option
-
-
-// ChatHeader component
-// const ChatHeader = React.memo(
-
-//   ({ navigation, item }: { navigation: ChatScreenNavigationProp; item: any }) => (
-
-//     <LinearGradient
-//       colors={[theme.colors.primary, theme.colors.primaryContainer]}
-//       start={{ x: 0, y: 0 }}
-//       end={{ x: 1, y: 0 }}
-//       style={styles.header}
-//     >
-
-//       <TouchableOpacity onPress={() => navigation.goBack()} style={styles.iconButton}>
-//         <AntDesign name="arrowleft" size={20} color="white" />
-//       </TouchableOpacity>
-//       <Text style={styles.headerTitle}>{item.name || 'Chat'}</Text>
-//       <View style={styles.headerIcons}>
-//         <TouchableOpacity style={styles.iconButton}>
-//           <Ionicons name="call-outline" size={24} color="white" />
-//         </TouchableOpacity>
-//         <TouchableOpacity style={styles.iconButton}>
-//           <Ionicons name="videocam-outline" size={24} color="white" />
-//         </TouchableOpacity>
-//         <TouchableOpacity style={styles.iconButton}>
-//           <AntDesign name="bars" size={24} color="white" />
-//         </TouchableOpacity>
-//       </View>
-//     </LinearGradient>
-//   ),
-// );
-
-
-
+// Header chuyển qua option
 const ChatHeader = React.memo(
+
   ({ item }: { item: any }) => {
     const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
     const currentUserId = useSelector((state: RootState) => state.user.user?.id);
@@ -325,47 +294,6 @@ const MessageItem = React.memo(
     JSON.stringify(prevProps.emojis) === JSON.stringify(nextProps.emojis)
 );
 
-
-
-
-
-// MessageInputContainer component
-// const MessageInputContainer = React.memo(
-//   ({ channelId, sendMessage, onPickFile }: { channelId: string; sendMessage: (chanId: string, content: string) => void; }) => {
-//     const [inputMessage, setInputMessage] = useState('');
-
-//     const handleSendMessage = useCallback(() => {
-//       if (inputMessage.trim()) {
-//         sendMessage(channelId, inputMessage);
-//         setInputMessage('');
-//       }
-//     }, [inputMessage, channelId, sendMessage]);
-
-//     return (
-//       <View style={styles.inputContainer}>
-//         <TouchableOpacity style={styles.attachmentButton} onPress={onPickFile}>
-//           <Ionicons name="attach" size={22} color="#555" />
-//         </TouchableOpacity>
-//         <TextInput
-//           style={styles.input}
-//           placeholder="Tin nhắn"
-//           value={inputMessage}
-//           onChangeText={(e) => setInputMessage(e)}
-//           multiline
-//           returnKeyType="send"
-//           onSubmitEditing={handleSendMessage}
-//         />
-//         <TouchableOpacity
-//           style={[styles.sendButton, inputMessage.trim() ? styles.sendButtonActive : null]}
-//           onPress={handleSendMessage}
-//           disabled={!inputMessage.trim()}
-//         >
-//           <Ionicons name="send" size={22} color="white" />
-//         </TouchableOpacity>
-//       </View>
-//     );
-//   },
-// );
 const MessageInputContainer = React.memo(
   ({
     channelId,
@@ -423,6 +351,7 @@ const ChatScreen = ({ route }: { route: ChatScreenRouteProp }) => {
   const sender = useSelector((state: RootState) => state.user.user);
   const channelId = item?.id || '';
 
+
   // Sử dụng useChat hook với đầy đủ các phương thức ts
   const {
     sendMessage,
@@ -430,6 +359,7 @@ const ChatScreen = ({ route }: { route: ChatScreenRouteProp }) => {
     loading,
     error,
     joinRoom,
+    channel,
     loadMessages,
     noMessageToLoad,
     interactEmoji,
@@ -460,6 +390,7 @@ const ChatScreen = ({ route }: { route: ChatScreenRouteProp }) => {
     if (channelId && sender?.id) {
       setHasMoreMessages(true);
       joinRoom(channelId);
+
     } else {
       Alert.alert('Lỗi', 'Không thể tham gia phòng chat do thiếu thông tin');
     }
@@ -504,6 +435,13 @@ const ChatScreen = ({ route }: { route: ChatScreenRouteProp }) => {
     }
   }, [messages.length, loadingMore, isAtBottom]);
 
+  const dispatch = useDispatch();
+  useEffect(() => {
+    if (channel && channel.id) {
+      console.log("Cập nhật currentChannel:", channel);
+      dispatch(setCurrentChannel(channel));
+    }
+  }, [channel, dispatch]);
 
 
   const handlePickFile = async () => {
@@ -703,7 +641,14 @@ const ChatScreen = ({ route }: { route: ChatScreenRouteProp }) => {
         style={styles.container}
         keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
       >
-        <ChatHeader navigation={navigation} item={item} />
+        {channel ? (
+          <ChatHeader item={channel} />
+        ) : (
+          <View style={{ padding: 20, alignItems: 'center', backgroundColor: '#1E88E5' }}>
+            <Text style={{ color: 'white', fontSize: 16 }}>Đang tải phòng chat...</Text>
+          </View>
+        )}
+
 
         {loading && messages.length === 0 && (
           <View style={styles.loadingContainer}>

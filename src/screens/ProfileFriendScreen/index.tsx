@@ -57,22 +57,6 @@ const ProfileUserScreen = () => {
         (f: any) => f.phone === userFriend?.phone
     );
 
-    // const removeFriendHandler = () => {
-    //     console.log('userFriendId.userId', userFriendId.itemFriend._id);
-    //     if (userFriendId.itemFriend._id) {
-    //         Alert.alert(
-    //             'Xác nhận',
-    //             'Bạn có chắc chắn muốn xóa bạn bè này không?',
-    //             [
-    //                 { text: 'Hủy', style: 'cancel' },
-    //                 { text: 'Xóa', onPress: () => revokeInviteFriend(userFriendId.itemFriend._id) },
-    //             ],
-    //             { cancelable: false }
-    //         );
-    //     }
-    // }
-
-
 
     const removeFriendHandler = () => {
         if (userFriendId.itemFriend._id) {

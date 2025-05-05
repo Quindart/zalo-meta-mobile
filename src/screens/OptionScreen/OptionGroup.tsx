@@ -11,7 +11,6 @@ import useUser from '@/hooks/useUser';
 import { RootState } from '@/redux/store';
 import { useSelector, useDispatch } from 'react-redux';
 import { useChat } from '@/hooks/useChat';
-import { setMembers } from '@/redux/userSlice'; // import action
 
 
 
@@ -22,9 +21,9 @@ const OptionGroup = () => {
     const route = useRoute<OptionGroupProp>();
     const itemGroup = route.params as { itemGroup: any };
     const { handleGetUserById } = useUser();
-    // const [members, setMembers] = React.useState<any[]>([]);
     const user = useSelector((state: RootState) => state.user.user);
-    const { leaveRoom, dissolveGroup } = useChat(user?.id || '');
+    const currentChannel = useSelector((state: RootState) => state.user.currentChannel);
+    const { leaveRoom, dissolveGroup, channel, loadChannel } = useChat(user?.id || '');
 
     // Sample data for menu options
     const menuOptions = [
@@ -34,34 +33,11 @@ const OptionGroup = () => {
     ];
 
 
-    // useEffect(() => {
-    //     console.log("Check itemGroup: ", itemGroup);
-    // })
-
     // kiểm tra user có trong danh sách thành viên không
     const isCaptain = () => {
         return itemGroup.itemGroup.members.some((member: any) => member.userId === user?.id && member.role === 'captain');
     }
 
-    // useEffect(() => {
-    //     console.log("Check itemGroup: ", itemGroup);
-    //     const fetchUserData = async () => {
-    //         try {
-    //             for (const member of itemGroup.itemGroup.members) {
-    //                 const user = await handleGetUserById(member.userId);
-    //                 if (user) {
-    //                     const memberWithInfo = { ...member, user }; // thêm info vào từng member
-    //                     setMembers(prev => [...prev, memberWithInfo]);
-    //                 }
-    //             }
-    //         } catch (error) {
-    //             console.error('❌ Error fetching user data:', error);
-    //         }
-    //     };
-
-    //     fetchUserData();
-
-    // }, []);
     const dispatch = useDispatch();
 
 
@@ -76,13 +52,14 @@ const OptionGroup = () => {
                         membersWithInfo.push({ ...member, user });
                     }
                 }
-                dispatch(setMembers(membersWithInfo));
             } catch (error) {
                 console.error('❌ Error fetching user data:', error);
             }
         };
 
         fetchUserData();
+        // console.log("Members hehe: ", itemGroup.itemGroup.members);
+        // console.log("Members: ", currentChannel.members);
     }, []);
 
 
@@ -93,10 +70,10 @@ const OptionGroup = () => {
                 {/* Profile Section */}
                 <View style={styles.profileSection}>
                     <Image
-                        source={{ uri: itemGroup.itemGroup.avatar }}
+                        source={{ uri: currentChannel.avatar }}
                         style={styles.profileImage}
                     />
-                    <Text style={styles.profileName}>{itemGroup.itemGroup.name}</Text>
+                    <Text style={styles.profileName}>{currentChannel.name}</Text>
                     <View style={styles.navIcons}>
                         <TouchableOpacity style={styles.navIcon}>
                             <View style={styles.iconContainer}>

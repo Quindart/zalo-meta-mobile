@@ -1,24 +1,21 @@
 import React from 'react';
 import { View, Text, Image, FlatList, TouchableOpacity, ScrollView, StyleSheet, StatusBar } from 'react-native';
-import { Ionicons, MaterialIcons } from '@expo/vector-icons'; // Using Ionicons for icons
+import { Ionicons, MaterialIcons } from '@expo/vector-icons';
 import Header from '@/components/ui/Header';
 
 const OptionFriend = () => {
-    // Sample data for menu options
     const menuOptions = [
         { id: '1', title: 'Đổi tên gợi nhớ', icon: 'pencil' },
         { id: '3', title: 'Nhật ký chung', icon: 'time' },
         { id: '4', title: 'Ảnh, file, link', icon: 'images' },
     ];
 
-    // Sample data for media preview
     const mediaItems = [
         { id: '1', uri: 'https://via.placeholder.com/100' },
         { id: '2', uri: 'https://via.placeholder.com/100' },
         { id: '3', uri: 'https://via.placeholder.com/100' },
     ];
 
-    // Sample data for shared groups
     const sharedGroups = [
         { id: '1', name: 'Nhóm chung 1' },
         { id: '2', name: 'Nhóm chung 2' },

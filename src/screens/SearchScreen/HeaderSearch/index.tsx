@@ -102,13 +102,6 @@ const SearchScreen = () => {
                   <Text style={styles.userPhone}>Số điện thoại: {item.phone}</Text>
                 </View>
               </TouchableOpacity>
-              {/* <TouchableOpacity style={styles.callButton}>
-                {item.isFriend ? (
-                  <Feather name="message-circle" size={24} color="#00A4E4" />
-                ) : (
-                  <Ionicons name="person-add-outline" size={24} color="#00A4E4" />
-                )}
-              </TouchableOpacity> */}
             </View>
           </View>
         )}

@@ -14,7 +14,7 @@ import theme from '@/theme';
 import useAuth from '@/hooks/useAuth';
 import Header from '@/components/ui/Header';
 import styles from './css';
-// Validation schema using Yup
+
 const LoginSchema = Yup.object().shape({
   phone: Yup.string()
     .matches(/^0\d{9}$/, 'Số điện thoại phải bắt đầu bằng 0 và có 10 chữ số')

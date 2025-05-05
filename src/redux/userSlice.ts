@@ -1,14 +1,14 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
 import { User } from '@/models/user';
 import { RootState } from '@/redux/store';
-const initialState: { user: User | null, accessToken: String | null, refreshToken: String | null, sendFriends: any, receiveFriends: any, friends: any, members: any[] } = {
+const initialState: { user: User | null, accessToken: String | null, refreshToken: String | null, sendFriends: any, receiveFriends: any, friends: any, currentChannel: any } = {
     user: null,
     accessToken: null,
     refreshToken: null,
     sendFriends: [],
     receiveFriends: [],
     friends: [],
-    members: [],
+    currentChannel: null,
 
 };
 const userSlice = createSlice({
@@ -50,14 +50,14 @@ const userSlice = createSlice({
         setReceiveFriends: (state: any, { payload }: PayloadAction<any>) => {
             state.receiveFriends = payload;
         },
-        setMembers: (state: any, { payload }: PayloadAction<any>) => {
-            state.members = payload;
+        setCurrentChannel: (state, action: PayloadAction<any>) => {
+            state.currentChannel = action.payload;
+            console.log('setCurrentChannel thành công', action.payload);
         },
-
     },
 });
 
-export const { setMe, clearUser, setAccessToken, setRefreshToken, clearTokens, setReceiveFriends, setFriends, setSendFriends, setMembers } = userSlice.actions;
+export const { setMe, clearUser, setAccessToken, setRefreshToken, clearTokens, setReceiveFriends, setFriends, setSendFriends, setCurrentChannel } = userSlice.actions;
 
 
 export const selectAccessToken = (state: RootState) => state.user.accessToken;
