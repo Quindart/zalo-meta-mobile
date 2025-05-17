@@ -1,4 +1,10 @@
-import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
+import React, {
+  useState,
+  useRef,
+  useEffect,
+  useCallback,
+  useMemo,
+} from "react";
 import {
   View,
   Text,
@@ -16,37 +22,32 @@ import {
   TouchableWithoutFeedback,
   Clipboard,
   ScrollView,
-} from 'react-native';
-import { Ionicons, AntDesign } from '@expo/vector-icons';
-import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
-import styles from './css';
-import popupStyles from './popupcss';
-import { RouteProp, useNavigation } from '@react-navigation/native';
-import { LinearGradient } from 'expo-linear-gradient';
-import theme from '@/theme';
-import { RootStackParamList } from '@/navigation/type';
-import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { ROUTING } from '@/utils/constant';
-import { useSelector } from 'react-redux';
-import { RootState } from '@/redux/store';
-import { useChat } from '@/hooks/useChat';
-import { debounce } from 'lodash';
-import { useDispatch } from 'react-redux';
-import { setCurrentChannel } from '@/redux/userSlice';
+} from "react-native";
+import { Ionicons, AntDesign } from "@expo/vector-icons";
+import MaterialCommunityIcons from "react-native-vector-icons/MaterialCommunityIcons";
+import { chatScreenStyle, popupStyle } from "./style";
+import { RouteProp, useNavigation } from "@react-navigation/native";
+import { LinearGradient } from "expo-linear-gradient";
+import theme from "@/theme";
+import { RootStackParamList } from "@/navigation/type";
+import { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import { ROUTING } from "@/utils/constant";
+import { useSelector } from "react-redux";
+import { RootState } from "@/redux/store";
+import { useChat } from "@/hooks/useChat";
+import { debounce } from "lodash";
+import { useDispatch } from "react-redux";
+import { setCurrentChannel } from "@/redux/userSlice";
 
-import FileMessageBubble from '@/screens/ChatScreen/FileMessageBubble';
-import * as DocumentPicker from 'expo-document-picker'; // thư viện để chọn file
-import * as FileSystem from 'expo-file-system'; // thư viện để làm việc với file hệ thống
-import * as Sharing from 'expo-sharing'; // thư viện để chia sẻ file
-import * as IntentLauncher from 'expo-intent-launcher'; // thư viện để mở file trên Android
+import FileMessageBubble from "@/screens/ChatScreen/FileMessageBubble";
+import * as DocumentPicker from "expo-document-picker"; // thư viện để chọn file
 
-
-
-// Định nghĩa kiểu cho navigation và route
-type ChatScreenRouteProp = RouteProp<RootStackParamList, typeof ROUTING.CHAT_SCREEN>;
+type ChatScreenRouteProp = RouteProp<
+  RootStackParamList,
+  typeof ROUTING.CHAT_SCREEN
+>;
 type ChatScreenNavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
-// Định nghĩa interface cho message
 interface Emoji {
   emoji: string;
   userId: string;
@@ -64,9 +65,9 @@ interface Message {
   senderId: string;
   content: string;
   timestamp: string;
-  status: 'sent' | 'delivered' | 'read';
+  status: "sent" | "delivered" | "read";
   emojis?: Emoji[];
-  messageType?: 'text' | 'file';
+  messageType?: "text" | "file";
   file?: {
     filename: string;
     path: string;
@@ -80,56 +81,59 @@ interface Message {
   };
 }
 
-// Header chuyển qua option
-const ChatHeader = React.memo(
+const ChatHeader = React.memo(({ item }: { item: any }) => {
+  const navigation =
+    useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const currentUserId = useSelector((state: RootState) => state.user.user?.id);
 
-  ({ item }: { item: any }) => {
-    const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
-    const currentUserId = useSelector((state: RootState) => state.user.user?.id);
-
-    const handleOptionsPress = useCallback(() => {
-      if (item?.type === 'group') {
-        navigation.navigate(ROUTING.OPTION_GROUP, { itemGroup: item });
-      } else if (item?.type === 'direct') {
-        const friend = item.members?.find((mem: any) => mem.userId !== currentUserId);
-        if (friend && friend.user) {
-          navigation.navigate(ROUTING.OPTION_FRIEND, { itemFriend: friend.user });
-        } else {
-          alert('Không tìm thấy thông tin bạn bè');
-        }
+  const handleOptionsPress = useCallback(() => {
+    if (item?.type === "group") {
+      navigation.navigate(ROUTING.OPTION_GROUP, { itemGroup: item });
+    } else if (item?.type === "direct") {
+      const friend = item.members?.find(
+        (mem: any) => mem.userId !== currentUserId
+      );
+      if (friend && friend.user) {
+        navigation.navigate(ROUTING.OPTION_FRIEND, { itemFriend: friend.user });
+      } else {
+        alert("Không tìm thấy thông tin bạn bè");
       }
-    }, [item, currentUserId]);
+    }
+  }, [item, currentUserId]);
 
-    return (
-      <LinearGradient
-        colors={['#1E88E5', '#42A5F5']}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 0 }}
-        style={styles.header}
+  return (
+    <LinearGradient
+      colors={["#1E88E5", "#42A5F5"]}
+      start={{ x: 0, y: 0 }}
+      end={{ x: 1, y: 0 }}
+      style={chatScreenStyle.header}
+    >
+      <TouchableOpacity
+        onPress={() => navigation.goBack()}
+        style={chatScreenStyle.iconButton}
       >
-        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.iconButton}>
-          <AntDesign name="arrowleft" size={20} color="white" />
+        <AntDesign name="arrowleft" size={20} color="white" />
+      </TouchableOpacity>
+      <Text style={chatScreenStyle.headerTitle}>{item.name || "Chat"}</Text>
+      <View style={chatScreenStyle.headerIcons}>
+        <TouchableOpacity style={chatScreenStyle.iconButton}>
+          <Ionicons name="call-outline" size={24} color="white" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>{item.name || 'Chat'}</Text>
-        <View style={styles.headerIcons}>
-          <TouchableOpacity style={styles.iconButton}>
-            <Ionicons name="call-outline" size={24} color="white" />
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.iconButton}>
-            <Ionicons name="videocam-outline" size={24} color="white" />
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.iconButton} onPress={handleOptionsPress}>
-            <AntDesign name="bars" size={24} color="white" />
-          </TouchableOpacity>
-        </View>
-      </LinearGradient>
-    );
-  }
-);
+        <TouchableOpacity style={chatScreenStyle.iconButton}>
+          <Ionicons name="videocam-outline" size={24} color="white" />
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={chatScreenStyle.iconButton}
+          onPress={handleOptionsPress}
+        >
+          <AntDesign name="bars" size={24} color="white" />
+        </TouchableOpacity>
+      </View>
+    </LinearGradient>
+  );
+});
 
 export default ChatHeader;
-
-
 
 // MessageItem component
 const MessageItem = React.memo(
@@ -167,19 +171,25 @@ const MessageItem = React.memo(
     const renderEmojis = useMemo(() => {
       if (!emojis || emojis.length === 0) return null;
       const maxDisplay = 4;
-      const displayEmojis = emojis.length > maxDisplay ? emojis.slice(0, 3) : emojis;
+      const displayEmojis =
+        emojis.length > maxDisplay ? emojis.slice(0, 3) : emojis;
       const remainingCount = emojis.length > maxDisplay ? emojis.length - 3 : 0;
 
       return (
-        <View style={[styles.emojiWrapper, isMyMessage ? styles.emojiWrapperRight : styles.emojiWrapperLeft]}>
+        <View
+          style={[
+            chatScreenStyle.emojiWrapper,
+            isMyMessage ? chatScreenStyle.emojiWrapperRight : chatScreenStyle.emojiWrapperLeft,
+          ]}
+        >
           {displayEmojis.map((emoji, index) => (
-            <View key={index} style={styles.emojiItem}>
-              <Text style={styles.emojiTextIcon}>{emoji.emoji}</Text>
+            <View key={index} style={chatScreenStyle.emojiItem}>
+              <Text style={chatScreenStyle.emojiTextIcon}>{emoji.emoji}</Text>
             </View>
           ))}
           {remainingCount > 0 && (
-            <View style={styles.remainingCount}>
-              <Text style={styles.remainingText}>+{remainingCount}</Text>
+            <View style={chatScreenStyle.remainingCount}>
+              <Text style={chatScreenStyle.remainingText}>+{remainingCount}</Text>
             </View>
           )}
         </View>
@@ -188,7 +198,8 @@ const MessageItem = React.memo(
 
     const emojiSummary = useMemo(() => {
       if (!emojis) return [];
-      const emojiCountMap: { [key: string]: { emoji: string; count: number } } = {};
+      const emojiCountMap: { [key: string]: { emoji: string; count: number } } =
+        {};
       emojis.forEach((emoji) => {
         if (!emojiCountMap[emoji.emoji]) {
           emojiCountMap[emoji.emoji] = { emoji: emoji.emoji, count: 0 };
@@ -198,48 +209,55 @@ const MessageItem = React.memo(
       return Object.values(emojiCountMap);
     }, [emojis]);
 
-    const renderEmojiCount = ({ item }: { item: { emoji: string; count: number } }) => (
-      <View style={popupStyles.emojiRow}>
-        <Text style={popupStyles.emoji}>{item.emoji}</Text>
-        <Text style={popupStyles.emojiCount}>{item.count}</Text>
+    const renderEmojiCount = ({
+      item,
+    }: {
+      item: { emoji: string; count: number };
+    }) => (
+      <View style={popupStyle.emojiRow}>
+        <Text style={popupStyle.emoji}>{item.emoji}</Text>
+        <Text style={popupStyle.emojiCount}>{item.count}</Text>
       </View>
     );
 
     return (
-      <View style={styles.messageWrapper}>
+      <View style={chatScreenStyle.messageWrapper}>
         <TouchableOpacity
           activeOpacity={0.8}
           onLongPress={onLongPress}
-          style={[styles.messageRow, isMyMessage ? styles.myMessageRow : styles.otherMessageRow]}
+          style={[
+            chatScreenStyle.messageRow,
+            isMyMessage ? chatScreenStyle.myMessageRow : chatScreenStyle.otherMessageRow,
+          ]}
         >
           {!isMyMessage && (
             <Image
               source={{ uri: senderAvatar }}
-              style={styles.messageAvatar}
-              defaultSource={require('../../../assets/user_default.jpg')}
+              style={chatScreenStyle.messageAvatar}
+              defaultSource={require("../../../assets/user_default.jpg")}
             />
           )}
 
           <View
             style={[
-              styles.messageBubble,
-              isMyMessage ? styles.myMessageBubble : styles.otherMessageBubble,
+              chatScreenStyle.messageBubble,
+              isMyMessage ? chatScreenStyle.myMessageBubble : chatScreenStyle.otherMessageBubble,
             ]}
           >
             {/* ✅ Render content hoặc file */}
-            {(messageType === 'file' || messageType === 'image') && file ? (
+            {(messageType === "file" || messageType === "image") && file ? (
               <FileMessageBubble file={file} />
             ) : (
-              <Text style={styles.messageText}>{content}</Text>
+              <Text style={chatScreenStyle.messageText}>{content}</Text>
             )}
 
-            <Text style={styles.messageTime}>
-              {timestamp ? new Date(timestamp).toLocaleTimeString() : ''}{' '}
+            <Text style={chatScreenStyle.messageTime}>
+              {timestamp ? new Date(timestamp).toLocaleTimeString() : ""}{" "}
               {isMyMessage && (
                 <>
-                  {status === 'sent' && '✓'}
-                  {status === 'delivered' && '✓✓'}
-                  {status === 'read' && '✓✓ (Đã đọc)'}
+                  {status === "sent" && "✓"}
+                  {status === "delivered" && "✓✓"}
+                  {status === "read" && "✓✓ (Đã đọc)"}
                 </>
               )}
             </Text>
@@ -250,7 +268,9 @@ const MessageItem = React.memo(
         {renderEmojis && (
           <TouchableOpacity
             onPress={() => setEmojiModalVisible(true)}
-            style={isMyMessage ? styles.myEmojiContainer : styles.otherEmojiContainer}
+            style={
+              isMyMessage ? chatScreenStyle.myEmojiContainer : chatScreenStyle.otherEmojiContainer
+            }
           >
             {renderEmojis}
           </TouchableOpacity>
@@ -263,17 +283,19 @@ const MessageItem = React.memo(
           onRequestClose={() => setEmojiModalVisible(false)}
         >
           <TouchableOpacity
-            style={popupStyles.modalOverlay}
+            style={popupStyle.modalOverlay}
             onPress={() => setEmojiModalVisible(false)}
             activeOpacity={1}
           >
-            <View style={popupStyles.modalContent}>
-              <Text style={popupStyles.modalTitle}>Tất cả {emojiSummary.length}</Text>
+            <View style={popupStyle.modalContent}>
+              <Text style={popupStyle.modalTitle}>
+                Tất cả {emojiSummary.length}
+              </Text>
               <FlatList
                 data={emojiSummary}
                 renderItem={renderEmojiCount}
                 keyExtractor={(item) => item.emoji}
-                style={popupStyles.emojiList}
+                style={popupStyle.emojiList}
               />
             </View>
           </TouchableOpacity>
@@ -304,22 +326,22 @@ const MessageInputContainer = React.memo(
     sendMessage: (chanId: string, content: string) => void;
     onPickFile: () => void;
   }) => {
-    const [inputMessage, setInputMessage] = useState('');
+    const [inputMessage, setInputMessage] = useState("");
 
     const handleSendMessage = useCallback(() => {
       if (inputMessage.trim()) {
         sendMessage(channelId, inputMessage);
-        setInputMessage('');
+        setInputMessage("");
       }
     }, [inputMessage, channelId, sendMessage]);
 
     return (
-      <View style={styles.inputContainer}>
-        <TouchableOpacity style={styles.attachmentButton} onPress={onPickFile}>
+      <View style={chatScreenStyle.inputContainer}>
+        <TouchableOpacity style={chatScreenStyle.attachmentButton} onPress={onPickFile}>
           <Ionicons name="attach" size={22} color="#555" />
         </TouchableOpacity>
         <TextInput
-          style={styles.input}
+          style={chatScreenStyle.input}
           placeholder="Tin nhắn"
           value={inputMessage}
           onChangeText={(e) => setInputMessage(e)}
@@ -328,7 +350,10 @@ const MessageInputContainer = React.memo(
           onSubmitEditing={handleSendMessage}
         />
         <TouchableOpacity
-          style={[styles.sendButton, inputMessage.trim() ? styles.sendButtonActive : null]}
+          style={[
+            chatScreenStyle.sendButton,
+            inputMessage.trim() ? chatScreenStyle.sendButtonActive : null,
+          ]}
           onPress={handleSendMessage}
           disabled={!inputMessage.trim()}
         >
@@ -339,7 +364,6 @@ const MessageInputContainer = React.memo(
   }
 );
 
-
 // ChatScreen component
 const ChatScreen = ({ route }: { route: ChatScreenRouteProp }) => {
   const renderCountRef = useRef(0);
@@ -349,10 +373,8 @@ const ChatScreen = ({ route }: { route: ChatScreenRouteProp }) => {
   const { item } = route.params || { item: {} };
   const navigation = useNavigation<ChatScreenNavigationProp>();
   const sender = useSelector((state: RootState) => state.user.user);
-  const channelId = item?.id || '';
+  const channelId = item?.id || "";
 
-
-  // Sử dụng useChat hook với đầy đủ các phương thức ts
   const {
     sendMessage,
     messages,
@@ -367,8 +389,6 @@ const ChatScreen = ({ route }: { route: ChatScreenRouteProp }) => {
     sendFileMessage,
     recallMessage,
     deleteMessage,
-    loadChannel,
-    listChannel,
   } = useChat(`${sender?.id}`);
 
   const [loadingMore, setLoadingMore] = useState(false);
@@ -382,7 +402,7 @@ const ChatScreen = ({ route }: { route: ChatScreenRouteProp }) => {
 
   useEffect(() => {
     if (error) {
-      Alert.alert('Lỗi', error);
+      Alert.alert("Lỗi", error);
     }
   }, [error]);
 
@@ -390,9 +410,8 @@ const ChatScreen = ({ route }: { route: ChatScreenRouteProp }) => {
     if (channelId && sender?.id) {
       setHasMoreMessages(true);
       joinRoom(channelId);
-
     } else {
-      Alert.alert('Lỗi', 'Không thể tham gia phòng chat do thiếu thông tin');
+      Alert.alert("Lỗi", "Không thể tham gia phòng chat do thiếu thông tin");
     }
   }, [channelId, sender?.id, joinRoom]);
 
@@ -412,8 +431,7 @@ const ChatScreen = ({ route }: { route: ChatScreenRouteProp }) => {
       setTimeout(() => {
         try {
           flatListRef.current?.scrollToEnd({ animated: false });
-        } catch (err) {
-        }
+        } catch (err) {}
         initialRenderRef.current = false;
       }, 500);
     }
@@ -429,8 +447,7 @@ const ChatScreen = ({ route }: { route: ChatScreenRouteProp }) => {
       setTimeout(() => {
         try {
           flatListRef.current?.scrollToEnd({ animated: true });
-        } catch (err) {
-        }
+        } catch (err) {}
       }, 300);
     }
   }, [messages.length, loadingMore, isAtBottom]);
@@ -443,9 +460,8 @@ const ChatScreen = ({ route }: { route: ChatScreenRouteProp }) => {
     }
   }, [channel, dispatch]);
 
-
   const handlePickFile = async () => {
-    const result = await DocumentPicker.getDocumentAsync({ type: '*/*' });
+    const result = await DocumentPicker.getDocumentAsync({ type: "*/*" });
 
     if (!result.canceled && result.assets && result.assets.length > 0) {
       const asset = result.assets[0];
@@ -453,8 +469,8 @@ const ChatScreen = ({ route }: { route: ChatScreenRouteProp }) => {
       const uri = asset.uri;
       const size = asset.size || 0;
 
-      const extension = name.split('.').pop() || '';
-      const filename = name.replace(`.${extension}`, '');
+      const extension = name.split(".").pop() || "";
+      const filename = name.replace(`.${extension}`, "");
 
       const fileData = {
         filename,
@@ -463,14 +479,20 @@ const ChatScreen = ({ route }: { route: ChatScreenRouteProp }) => {
         size,
       };
 
-      sendFileMessage(channelId, fileData); // ✅ Gửi file
+      sendFileMessage(channelId, fileData);
     }
   };
 
   const handleLoadMoreMessages = useCallback(
     debounce(() => {
-      if (loading || loadingMore || !hasMoreMessages || !channelId || noMessageToLoad) {
-        console.log('Skipping loadMessages in chat room:', {
+      if (
+        loading ||
+        loadingMore ||
+        !hasMoreMessages ||
+        !channelId ||
+        noMessageToLoad
+      ) {
+        console.log("Skipping loadMessages in chat room:", {
           loading,
           loadingMore,
           hasMoreMessages,
@@ -482,12 +504,20 @@ const ChatScreen = ({ route }: { route: ChatScreenRouteProp }) => {
       setLoadingMore(true);
       loadMessages(channelId);
     }, 300),
-    [channelId, loading, loadingMore, hasMoreMessages, loadMessages, noMessageToLoad],
+    [
+      channelId,
+      loading,
+      loadingMore,
+      hasMoreMessages,
+      loadMessages,
+      noMessageToLoad,
+    ]
   );
 
   const handleScroll = useCallback((event: any) => {
     const { contentOffset, contentSize, layoutMeasurement } = event.nativeEvent;
-    const isBottom = contentOffset.y >= contentSize.height - layoutMeasurement.height - 50;
+    const isBottom =
+      contentOffset.y >= contentSize.height - layoutMeasurement.height - 50;
     setIsAtBottom(isBottom);
   }, []);
 
@@ -496,61 +526,94 @@ const ChatScreen = ({ route }: { route: ChatScreenRouteProp }) => {
     setIsPopupVisible(true);
   }, []);
 
-  const handleQuickReact = useCallback((emoji: string) => {
-    if (!selectedMessage) return;
-    interactEmoji(selectedMessage.id || selectedMessage._id || '', emoji, sender?.id || '', selectedMessage.channelId);
-    setIsPopupVisible(false);
-    setSelectedMessage(null);
-  }, [selectedMessage, interactEmoji, sender?.id]);
+  const handleQuickReact = useCallback(
+    (emoji: string) => {
+      if (!selectedMessage) return;
+      interactEmoji(
+        selectedMessage.id || selectedMessage._id || "",
+        emoji,
+        sender?.id || "",
+        selectedMessage.channelId
+      );
+      setIsPopupVisible(false);
+      setSelectedMessage(null);
+    },
+    [selectedMessage, interactEmoji, sender?.id]
+  );
   const handleRecallMessage = useCallback(() => {
     if (!selectedMessage) return;
     if (selectedMessage.sender.id !== sender?.id) {
-      Alert.alert('Thông báo', 'Bạn không thể thu hồi tin nhắn của người khác!');
+      Alert.alert(
+        "Thông báo",
+        "Bạn không thể thu hồi tin nhắn của người khác!"
+      );
       return;
     }
-    deleteMessage(selectedMessage.id || selectedMessage._id || '', selectedMessage.channelId);
+    deleteMessage(
+      selectedMessage.id || selectedMessage._id || "",
+      selectedMessage.channelId
+    );
   }, [selectedMessage]);
   const handleDeleteMessage = useCallback(() => {
     if (!selectedMessage) return;
-    recallMessage(selectedMessage.id || selectedMessage._id || '');
+    recallMessage(selectedMessage.id || selectedMessage._id || "");
   }, [selectedMessage]);
-  const handlePopupAction = useCallback((action: string) => {
-    if (!selectedMessage) return;
+  const handlePopupAction = useCallback(
+    (action: string) => {
+      if (!selectedMessage) return;
 
-    switch (action) {
-      case 'reply':
-        Alert.alert('Thông báo', 'Chức năng trả lời tin nhắn chưa được triển khai.');
-        break;
-      case 'forward':
-        Alert.alert('Thông báo', 'Chức năng chuyển tiếp tin nhắn chưa được triển khai.');
-        break;
-      case 'backup-restore':
-        if (selectedMessage.sender.id !== sender?.id) {
-          Alert.alert('Thông báo', 'Chức năng thu hồi tin nhắn không giành cho người nhận.');
+      switch (action) {
+        case "reply":
+          Alert.alert(
+            "Thông báo",
+            "Chức năng trả lời tin nhắn chưa được triển khai."
+          );
           break;
-        }
-        deleteMessage(selectedMessage.id || selectedMessage._id || '', selectedMessage.channelId);
-        break;
-      case 'copy':
-        if (selectedMessage) {
-          Clipboard.setString(selectedMessage.content);
-          Alert.alert('Thông báo', 'Đã sao chép tin nhắn!');
-        }
-        break;
-      case 'delete':
-        recallMessage(selectedMessage.id || selectedMessage._id || '');
-        break;
-      case 'remove_reaction':
-        if (selectedMessage) {
-          removeMyEmoji(selectedMessage.id || selectedMessage._id || '', sender?.id || '', selectedMessage.channelId);
-        }
-        break;
-      default:
-        break;
-    }
-    setIsPopupVisible(false);
-    setSelectedMessage(null);
-  }, [selectedMessage, removeMyEmoji, sender?.id]);
+        case "forward":
+          Alert.alert(
+            "Thông báo",
+            "Chức năng chuyển tiếp tin nhắn chưa được triển khai."
+          );
+          break;
+        case "backup-restore":
+          if (selectedMessage.sender.id !== sender?.id) {
+            Alert.alert(
+              "Thông báo",
+              "Chức năng thu hồi tin nhắn không giành cho người nhận."
+            );
+            break;
+          }
+          deleteMessage(
+            selectedMessage.id || selectedMessage._id || "",
+            selectedMessage.channelId
+          );
+          break;
+        case "copy":
+          if (selectedMessage) {
+            Clipboard.setString(selectedMessage.content);
+            Alert.alert("Thông báo", "Đã sao chép tin nhắn!");
+          }
+          break;
+        case "delete":
+          recallMessage(selectedMessage.id || selectedMessage._id || "");
+          break;
+        case "remove_reaction":
+          if (selectedMessage) {
+            removeMyEmoji(
+              selectedMessage.id || selectedMessage._id || "",
+              sender?.id || "",
+              selectedMessage.channelId
+            );
+          }
+          break;
+        default:
+          break;
+      }
+      setIsPopupVisible(false);
+      setSelectedMessage(null);
+    },
+    [selectedMessage, removeMyEmoji, sender?.id]
+  );
 
   const closePopup = useCallback(() => {
     setIsPopupVisible(false);
@@ -560,43 +623,54 @@ const ChatScreen = ({ route }: { route: ChatScreenRouteProp }) => {
   const renderListHeader = useCallback(() => {
     if (loadingMore) {
       return (
-        <View style={{ padding: 10, alignItems: 'center' }}>
+        <View style={{ padding: 10, alignItems: "center" }}>
           <ActivityIndicator size="small" color={theme.colors.primary} />
-          <Text style={{ marginTop: 5, fontSize: 12, color: '#777' }}>Đang tải tin nhắn cũ...</Text>
+          <Text style={{ marginTop: 5, fontSize: 12, color: "#777" }}>
+            Đang tải tin nhắn cũ...
+          </Text>
         </View>
       );
     }
     if (!hasMoreMessages && messages.length > 0) {
       return (
-        <View style={{ padding: 10, alignItems: 'center' }}>
-          <Text style={{ fontSize: 12, color: '#777' }}>Đã hiển thị tất cả tin nhắn</Text>
+        <View style={{ padding: 10, alignItems: "center" }}>
+          <Text style={{ fontSize: 12, color: "#777" }}>
+            Đã hiển thị tất cả tin nhắn
+          </Text>
         </View>
       );
     }
     return messages.length > 0 ? (
-      <View style={{ padding: 10, alignItems: 'center' }}>
-        <Text style={{ fontSize: 12, color: '#777' }}>Kéo xuống để tải thêm tin nhắn cũ</Text>
+      <View style={{ padding: 10, alignItems: "center" }}>
+        <Text style={{ fontSize: 12, color: "#777" }}>
+          Kéo xuống để tải thêm tin nhắn cũ
+        </Text>
       </View>
     ) : null;
   }, [loadingMore, hasMoreMessages, messages.length]);
 
-  const renderEmptyList = useCallback(() => (
-    <View>
-      <Text>Chưa có tin nhắn nào. Bắt đầu trò chuyện ngay!</Text>
-    </View>
-  ), []);
+  const renderEmptyList = useCallback(
+    () => (
+      <View>
+        <Text>Chưa có tin nhắn nào. Bắt đầu trò chuyện ngay!</Text>
+      </View>
+    ),
+    []
+  );
 
   const renderItem = useCallback(
     ({ item }: { item: Message }) => {
       const isMyMessage = sender?.id === item.sender.id;
       return (
         <MessageItem
-          content={item.content || ''}
-          timestamp={item.timestamp || ''}
-          senderId={item.senderId || ''}
-          senderAvatar={item.sender?.avatar || 'https://example.com/default-avatar.png'}
+          content={item.content || ""}
+          timestamp={item.timestamp || ""}
+          senderId={item.senderId || ""}
+          senderAvatar={
+            item.sender?.avatar || "https://example.com/default-avatar.png"
+          }
           isMyMessage={isMyMessage}
-          status={item.status || 'sent'}
+          status={item.status || "sent"}
           emojis={item.emojis}
           messageType={item.messageType} // 🆕
           file={item.file} // 🆕
@@ -604,56 +678,88 @@ const ChatScreen = ({ route }: { route: ChatScreenRouteProp }) => {
         />
       );
     },
-    [sender, handleLongPressMessage],
+    [sender, handleLongPressMessage]
   );
-
 
   const keyExtractor = useCallback(
     (item: Message, index: number) =>
-      item.id ? item.id.toString() : item._id ? item._id.toString() : `msg-${index}-${Date.now()}`,
-    [],
+      item.id
+        ? item.id.toString()
+        : item._id
+        ? item._id.toString()
+        : `msg-${index}-${Date.now()}`,
+    []
   );
 
   const quickReactions = [
-    { emoji: '❤️', action: 'HEART' },
-    { emoji: '👍', action: 'LIKE' },
-    { emoji: '😂', action: 'LAUGH' },
-    { emoji: '😮', action: 'SURPRISED' },
-    { emoji: '😢', action: 'SAD' },
-    { emoji: '😡', action: 'ANGRY' },
+    { emoji: "❤️", action: "HEART" },
+    { emoji: "👍", action: "LIKE" },
+    { emoji: "😂", action: "LAUGH" },
+    { emoji: "😮", action: "SURPRISED" },
+    { emoji: "😢", action: "SAD" },
+    { emoji: "😡", action: "ANGRY" },
   ];
 
   const actions = [
-    { label: 'Trả lời', icon: 'reply', action: 'reply', color: '#4a90e2' },
-    { label: 'Chuyển tiếp', icon: 'share', action: 'forward', color: '#4a90e2' },
-    { label: 'Sao chép', icon: 'content-copy', action: 'copy', color: '#4a90e2' },
-    { label: 'Ghim', icon: 'pin', action: 'pin', color: '#f5a623' },
-    { label: 'Thu hồi', icon: 'backup-restore', action: 'backup-restore', color: '#ff4d4f' },
-    { label: 'Xóa', icon: 'delete', action: 'delete', color: '#ff4d4f' },
-    { label: 'Bỏ cảm xúc', icon: 'heart-off', action: 'remove_reaction', color: 'grey' },
+    { label: "Trả lời", icon: "reply", action: "reply", color: "#4a90e2" },
+    {
+      label: "Chuyển tiếp",
+      icon: "share",
+      action: "forward",
+      color: "#4a90e2",
+    },
+    {
+      label: "Sao chép",
+      icon: "content-copy",
+      action: "copy",
+      color: "#4a90e2",
+    },
+    { label: "Ghim", icon: "pin", action: "pin", color: "#f5a623" },
+    {
+      label: "Thu hồi",
+      icon: "backup-restore",
+      action: "backup-restore",
+      color: "#ff4d4f",
+    },
+    { label: "Xóa", icon: "delete", action: "delete", color: "#ff4d4f" },
+    {
+      label: "Bỏ cảm xúc",
+      icon: "heart-off",
+      action: "remove_reaction",
+      color: "grey",
+    },
   ];
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <SafeAreaView style={chatScreenStyle.safeArea}>
       <StatusBar backgroundColor="#1E88E5" barStyle="light-content" />
       <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-        style={styles.container}
-        keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
+        behavior={Platform.OS === "ios" ? "padding" : undefined}
+        style={chatScreenStyle.container}
+        keyboardVerticalOffset={Platform.OS === "ios" ? 90 : 0}
       >
         {channel ? (
           <ChatHeader item={channel} />
         ) : (
-          <View style={{ padding: 20, alignItems: 'center', backgroundColor: '#1E88E5' }}>
-            <Text style={{ color: 'white', fontSize: 16 }}>Đang tải phòng chat...</Text>
+          <View
+            style={{
+              padding: 20,
+              alignItems: "center",
+              backgroundColor: "#1E88E5",
+            }}
+          >
+            <Text style={{ color: "white", fontSize: 16 }}>
+              Đang tải phòng chat...
+            </Text>
           </View>
         )}
 
-
         {loading && messages.length === 0 && (
-          <View style={styles.loadingContainer}>
+          <View style={chatScreenStyle.loadingContainer}>
             <ActivityIndicator size="large" color={theme.colors.primary} />
-            <Text style={{ marginTop: 10, color: '#777' }}>Đang tải tin nhắn...</Text>
+            <Text style={{ marginTop: 10, color: "#777" }}>
+              Đang tải tin nhắn...
+            </Text>
           </View>
         )}
 
@@ -662,7 +768,7 @@ const ChatScreen = ({ route }: { route: ChatScreenRouteProp }) => {
           data={messages.filter((msg) => msg.isDeletedById !== sender?.id)}
           renderItem={renderItem}
           keyExtractor={keyExtractor}
-          style={styles.messageList}
+          style={chatScreenStyle.messageList}
           ListHeaderComponent={renderListHeader}
           ListEmptyComponent={renderEmptyList}
           initialNumToRender={15}
@@ -689,31 +795,39 @@ const ChatScreen = ({ route }: { route: ChatScreenRouteProp }) => {
           onRequestClose={closePopup}
         >
           <TouchableWithoutFeedback onPress={closePopup}>
-            <View style={styles.modalOverlay}>
-              <View style={styles.popupContainer}>
+            <View style={chatScreenStyle.modalOverlay}>
+              <View style={chatScreenStyle.popupContainer}>
                 {/* Hàng emoji phản hồi nhanh */}
-                <View style={styles.emojiRow}>
+                <View style={chatScreenStyle.emojiRow}>
                   {quickReactions.map((reaction, index) => (
                     <TouchableOpacity
                       key={index}
-                      style={styles.emojiButton}
+                      style={chatScreenStyle.emojiButton}
                       onPress={() => handleQuickReact(reaction.emoji)}
                     >
-                      <Text style={styles.emojiText}>{reaction.emoji}</Text>
+                      <Text style={chatScreenStyle.emojiText}>{reaction.emoji}</Text>
                     </TouchableOpacity>
                   ))}
                 </View>
 
                 {/* Hàng các hành động */}
-                <View style={styles.actionRow}>
+                <View style={chatScreenStyle.actionRow}>
                   {actions.map((action, index) => (
                     <TouchableOpacity
                       key={index}
-                      style={styles.actionButton}
+                      style={chatScreenStyle.actionButton}
                       onPress={() => handlePopupAction(action.action)}
                     >
-                      <MaterialCommunityIcons name={action.icon} size={24} color={action.color} />
-                      <Text style={[styles.actionText, { color: action.color }]}>{action.label}</Text>
+                      <MaterialCommunityIcons
+                        name={action.icon}
+                        size={24}
+                        color={action.color}
+                      />
+                      <Text
+                        style={[chatScreenStyle.actionText, { color: action.color }]}
+                      >
+                        {action.label}
+                      </Text>
                     </TouchableOpacity>
                   ))}
                 </View>
