@@ -25,7 +25,7 @@ import OptionGroup from "@/screens/OptionScreen/OptionGroup";
 import GroupScreen from "@/screens/GroupScreen";
 import FriendRequestScreen from "@/screens/ContactsScreen/friendRequest";
 import ProfileUserScreen from "@/screens/ProfileFriendScreen";
-import ForwardMessage from "@/screens/ChatScreen/ForwardMessage";
+import ForwardMessage from "@/components/chat/ForwardMessage";
 import MemberManagementScreen from "@/screens/GroupScreen/MemberManagement";
 
 

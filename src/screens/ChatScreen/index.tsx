@@ -21,7 +21,7 @@ import { debounce } from 'lodash';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import * as DocumentPicker from 'expo-document-picker';
 
-import styles from './css';
+import { chatScreenStyle as styles } from './style';
 import theme from '@/theme';
 import { RootStackParamList } from '@/navigation/type';
 import { ROUTING } from '@/utils/constant';

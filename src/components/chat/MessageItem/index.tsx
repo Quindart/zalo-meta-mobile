@@ -1,9 +1,9 @@
 import React, { useState, useMemo } from 'react';
 import { View, Text, TouchableOpacity, Image, FlatList, Modal } from 'react-native';
 import { useSelector } from 'react-redux';
-import styles from "@/screens/ChatScreen/css"
+import styles from "./styles"
 import popupStyles from './popupcss';
-import FileMessageBubble from '@/screens/ChatScreen/FileMessageBubble';
+import FileMessageBubble from '../FileMessageBubble';
 import { RootState } from '@/redux/store';
 
 interface Emoji {
