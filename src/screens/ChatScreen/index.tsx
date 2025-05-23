@@ -266,6 +266,10 @@ const ChatScreen = ({ route }: { route: ChatScreenRouteProp }) => {
           break;
         case 'remove_reaction':
           if (selectedMessage) {
+            if (selectedMessage.emojis?.filter((emoji) => emoji.userId === sender?.id).length === 0) {
+              Alert.alert('Thông báo', 'Bạn chưa tương tác cảm xúc với tin nhắn này!');
+              break;
+            }
             removeMyEmoji(
               selectedMessage.id || selectedMessage._id || '',
               sender?.id || '',

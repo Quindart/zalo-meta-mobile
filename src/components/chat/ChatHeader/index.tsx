@@ -24,15 +24,11 @@ const ChatHeader = React.memo(({ item }: { item: any }) => {
   const handleOptionsPress = useCallback(() => {
     if (item?.type === "group") {
       navigation.navigate(ROUTING.OPTION_GROUP, { itemGroup: item });
-    } else if (item?.type === "direct") {
+    } else if (item?.type === "personal") {
       const friend = item.members?.find(
         (mem: any) => mem.userId !== currentUserId
       );
-      if (friend && friend.user) {
-        navigation.navigate(ROUTING.OPTION_FRIEND, { itemFriend: friend.user });
-      } else {
-        alert("Không tìm thấy thông tin bạn bè");
-      }
+      navigation.navigate(ROUTING.OPTION_FRIEND, { itemFriend: friend.user });
     }
   }, [item, currentUserId]);
 
