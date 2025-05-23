@@ -3,74 +3,8 @@ import { useEffect, useState, useCallback, useRef } from "react";
 import SOCKET_EVENTS from "@/constants";
 import { setCurrentChannel } from '@/redux/userSlice';
 import { useDispatch } from 'react-redux';
+import { AssignRoleParams, ChannelType, MessageType, ResponseType } from "@/types/IChat";
 
-interface Sender {
-    id: string;
-    name: string;
-    avatar: string;
-}
-interface Emoji {
-    emoji: string;
-    userId: string;
-    messageId: string,
-    quantity: number;
-    createAt: string;
-    updateAt: string;
-    deleteAt?: string;
-}
-interface MessageType {
-    id?: string;
-    _id?: string;
-    channelId: string;
-    senderId: string;
-    content: string;
-    timestamp: string;
-    status: 'sent' | 'delivered' | 'read';
-    emojis?: Emoji[]
-    sender?: Sender;
-}
-
-interface ResponseType {
-    success: boolean;
-    message: string;
-    data: any;
-}
-
-interface UserType {
-    id: string;
-    name?: string;
-    avatar?: string;
-    firstName?: string;
-    lastName?: string;
-}
-
-interface ChannelMemberType {
-    userId: string;
-    role?: string;
-    user?: UserType;
-}
-
-interface ChannelType {
-    id: string;
-    name?: string;
-    type?: 'direct' | 'group';
-    members: ChannelMemberType[];
-    createdAt?: string;
-    updatedAt?: string;
-    message?: string;
-    time?: string;
-    lastMessage?: MessageType;
-    isRead?: boolean;
-    avatar?: string;
-    isDeleted?: boolean;
-}
-
-export interface AssignRoleParams {
-    channelId: string;
-    userId: string;
-    targetUserId: string;
-    newRole: 'captain' | 'member' | 'sub_captain';
-};
 
 export const useChat = (currentUserId: string) => {
     const [noMessageToLoad, setNoMessageToLoad] = useState(false);
@@ -83,10 +17,9 @@ export const useChat = (currentUserId: string) => {
     const isLoadingMessagesRef = useRef<boolean>(false);
     const socketService = SocketService.getInstance(currentUserId);
 
-    // Log messages sau khi trạng thái cập nhật
     useEffect(() => {
         if (messages.length > 0) {
-            console.log("Messages updated:", messages);
+            // console.log("Messages updated:", messages);
         }
     }, [messages]);
 
@@ -95,18 +28,13 @@ export const useChat = (currentUserId: string) => {
         if (!socket.connected) {
             socket.connect();
         }
-        console.log("Socket connected:", socket.connected);
-
         const handleConnectError = (err: Error) => {
-            console.error('Socket connection error:', err);
             setError('Không thể kết nối đến server chat');
         };
-
         const handleDisconnect = (reason: string) => {
             console.warn('Socket disconnected:', reason);
             setError('Mất kết nối với server');
         };
-
         const findOrCreateResponse = (response: ResponseType) => {
             if (response.success) {
                 setChannel(response.data);
@@ -121,7 +49,7 @@ export const useChat = (currentUserId: string) => {
             if (response.success && response.data) {
                 setChannel(response.data.channel);
                 const messages = response.data.messages || [];
-                if (messages.length < 10) { // Giả sử server trả về tối đa 10 tin nhắn
+                if (messages.length < 10) {
                     setNoMessageToLoad(true);
                 }
                 if (!isLoadingMessagesRef.current) {
@@ -206,26 +134,12 @@ export const useChat = (currentUserId: string) => {
             setLoading(false);
         };
 
-        // const loadChannelResponse = (response: ResponseType) => {
-        //     setLoading(false);
-        //     if (response.success && response.data) {
-        //         const validChannels = (response.data || []).filter(
-        //             (channel: any) => channel && channel.id && typeof channel === 'object'
-        //         );
-        //         setListChannel(validChannels);
-        //     } else {
-        //         setError(response.message || 'Không thể tải danh sách phòng chat');
-        //     }
-        // };
 
-        const loadChannelResponse = (response: ResponseType) => {
-            console.log("check response to fetch channel: ", response);
+        const loadChannelResponse = (response: any) => {
             if (response.success) {
-                // Remove duplicates using a Set with channel IDs
                 const uniqueChannels = (response.data as ChannelType[]).filter((channel, index, self) =>
                     index === self.findIndex((c) => c.id === channel.id)
                 );
-
                 setListChannel(uniqueChannels);
                 setLoading(false);
             } else {
@@ -233,17 +147,6 @@ export const useChat = (currentUserId: string) => {
                 setLoading(false);
             }
         }
-
-        // const createGroupResponse = (response: ResponseType) => {
-        //     setLoading(false);
-        //     if (response.success && response.data) {
-        //         setListChannel(prev => [...prev, response.data]);
-        //     } else {
-        //         setError(response.message || 'Không thể tạo nhóm chat');
-        //     }
-        // };
-
-
         const dissolveGroupResponse = (response: ResponseType) => {
             if (response.success) {
                 setChannel(null);
@@ -257,7 +160,6 @@ export const useChat = (currentUserId: string) => {
                 setLoading(false);
             }
         }
-
         const createGroupResponse = (response: ResponseType) => {
             if (response.success) {
                 console.log("Group created successfully:", response.data);
@@ -377,11 +279,8 @@ export const useChat = (currentUserId: string) => {
         const addMemberResponse = (response: ResponseType) => {
             setLoading(false);
             if (response.success) {
-                // response.data chính là channel đã format (có trường members mới)
-                console.log("Thêm thành viên thành công:", response.data);
-                setChannel(response.data);           // Cập nhật channel hiện tại nếu đang view chi tiết
+                setChannel(response.data);
                 setListChannel(prev => {
-                    // Cập nhật listChannel nếu cần: replace channel cũ bằng channel mới
                     return prev.map(ch =>
                         ch.id === response.data.id ? response.data : ch
                     );
@@ -403,38 +302,16 @@ export const useChat = (currentUserId: string) => {
                 console.error("Phân quyền thành viên thất bại:", response.message);
             }
         }
-        // const removeMemberResponse = (response: ResponseType) => {
-        //     setLoading(false);
-        //     console.log("💲💲💲 ~ removeMemberResponse ~ response.data:", response)
-
-        //     if (response.success) {
-        //         setChannel(response.data);
-
-        //         setListChannel(prev => {
-        //             return prev.map(ch =>
-        //                 ch.id === response.data.id ? response.data : ch
-        //             );
-        //         });
-        //     } else {
-        //         console.error(response.message);
-        //     }
-        // }
-
         const removeMemberResponse = (response: ResponseType) => {
             setLoading(false);
             const dispatch = useDispatch();
             if (response.success) {
-                // Cập nhật channel mới từ server
                 setChannel(response.data);
-                dispatch(setCurrentChannel(response.data)); // 👈 Cập nhật vào Redux
-
-                // Optional: Đóng modal nếu đang mở
+                dispatch(setCurrentChannel(response.data));
             } else {
                 console.error("Xóa thành viên thất bại:", response.message);
             }
         };
-
-
 
 
         socket.on('connect_error', handleConnectError);
@@ -455,8 +332,6 @@ export const useChat = (currentUserId: string) => {
         socket.on(SOCKET_EVENTS.CHANNEL.DISSOLVE_GROUP_RESPONSE, dissolveGroupResponse);
         socket.on(SOCKET_EVENTS.CHANNEL.ROLE_UPDATED, assignRoleUpdatedResponse);
         socket.on(SOCKET_EVENTS.CHANNEL.REMOVE_MEMBER_RESPONSE, removeMemberResponse);
-
-
 
         return () => {
             socket.off('connect_error', handleConnectError);
@@ -545,10 +420,10 @@ export const useChat = (currentUserId: string) => {
         console.log("check userId in useChat: ", userId);
         const socket = socketService.getSocket();
         const params = { currentUserId: userId };
+        console.log("💲💲💲 ~ loadChannel ~ userId:", userId)
+
         socket.emit(SOCKET_EVENTS.CHANNEL.LOAD_CHANNEL, params);
     }, []);
-
-
 
 
     const createGroup = useCallback((name: string, members: string[]) => {
@@ -579,7 +454,6 @@ export const useChat = (currentUserId: string) => {
 
     const addMember = useCallback((channelId: string, userId: string) => {
         setLoading(true);
-        console.log("Adding member:", userId, "to channel:", channelId);
         const socket = socketService.getSocket();
         socket.emit(SOCKET_EVENTS.CHANNEL.ADD_MEMBER, { channelId, userId });
     }, []);
@@ -625,7 +499,7 @@ export const useChat = (currentUserId: string) => {
             // fetch file local path
             const response = await fetch(file.path); // đường dẫn bắt đầu bằng file:// 
             const arrayBuffer = await response.arrayBuffer();
-            console.log("Fetched file data:", arrayBuffer);
+            // console.log("Fetched file data:", arrayBuffer);
             const fileMessage = {
                 channelId,
                 senderId: currentUserId,
@@ -661,11 +535,14 @@ export const useChat = (currentUserId: string) => {
     }, [])
 
     const removeMember = useCallback((channelId: string, senderId: string, userId: string) => {
+        console.log("💲💲💲 ~ removeMember ~ senderId:", senderId)
+        console.log("💲💲💲 ~ removeMember ~ userId:", userId)
         setLoading(true);
         const socket = socketService.getSocket();
         socket.emit(SOCKET_EVENTS.CHANNEL.REMOVE_MEMBER, { channelId, senderId, userId });
         setLoading(false);
     }, []);
+
 
     const assignRole = useCallback(({ channelId, userId, targetUserId, newRole }: AssignRoleParams) => {
         const socket = socketService.getSocket();

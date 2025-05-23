@@ -27,17 +27,13 @@ import FriendRequestScreen from "@/screens/ContactsScreen/friendRequest";
 import ProfileUserScreen from "@/screens/ProfileFriendScreen";
 import ForwardMessage from "@/screens/ChatScreen/ForwardMessage";
 import MemberManagementScreen from "@/screens/GroupScreen/MemberManagement";
-import AddToGroupScreen from "@/screens/GroupScreen/AddToGroup";
 
-import { LinearGradient } from "expo-linear-gradient";
-import theme from "@/theme";
-import { TouchableOpacity } from "react-native";
-import { AntDesign } from "@expo/vector-icons";
-import { useNavigation } from "@react-navigation/native";
+
 import { RootStackParamList } from "./type";
 import ForgotPasswordTemplate from "@/screens/Auth/Forgot/index";
 import ResetPasswordTemplate from "@/screens/Auth/Reset/index";
 import TabWithHeaderNavigator from "@/components/shared/TabWithHeaderNavigator";
+import AddToGroupScreen from "@/screens/GroupScreen/AddToGroup";
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
 function NavigationApp() {
