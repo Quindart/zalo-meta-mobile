@@ -219,6 +219,7 @@ export const useChat = (currentUserId: string) => {
         // };
 
         const loadChannelResponse = (response: ResponseType) => {
+            console.log("check response to fetch channel: ", response);
             if (response.success) {
                 // Remove duplicates using a Set with channel IDs
                 const uniqueChannels = (response.data as ChannelType[]).filter((channel, index, self) =>
@@ -541,6 +542,7 @@ export const useChat = (currentUserId: string) => {
     const loadChannel = useCallback((userId: string) => {
         setLoading(true);
         setError(null);
+        console.log("check userId in useChat: ", userId);
         const socket = socketService.getSocket();
         const params = { currentUserId: userId };
         socket.emit(SOCKET_EVENTS.CHANNEL.LOAD_CHANNEL, params);

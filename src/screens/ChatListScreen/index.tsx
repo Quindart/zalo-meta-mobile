@@ -92,7 +92,7 @@ const ListChannelScreen = ({ navigation }: { navigation: NavigationProp<ParamLis
   const currentUserId = useSelector((state: RootState) => state.user.user?.id || '');
 
   const { loadChannel, listChannel, error } = useChat(currentUserId);
-
+  console.log("check channel: ", listChannel);
   useEffect(() => {
     if (error) {
       Alert.alert('Lỗi', error);

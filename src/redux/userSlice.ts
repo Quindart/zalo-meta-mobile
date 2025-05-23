@@ -17,7 +17,7 @@ const userSlice = createSlice({
     reducers: {
         setMe(state, action: PayloadAction<User>) {
             state.user = action.payload;
-            console.log('setMe thành công', action.payload);
+            // console.log('setMe thành công', action.payload);
         },
         setFcmToken(state, action: PayloadAction<string>) {
             if (state.user) {

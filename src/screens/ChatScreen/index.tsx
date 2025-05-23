@@ -1,10 +1,7 @@
-import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
-  TextInput,
-  TouchableOpacity,
-  Image,
   FlatList,
   KeyboardAvoidingView,
   Platform,
@@ -15,48 +12,25 @@ import {
   Modal,
   TouchableWithoutFeedback,
   Clipboard,
-  ScrollView,
+  TouchableOpacity,
 } from 'react-native';
-import { Ionicons, AntDesign } from '@expo/vector-icons';
-import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
-import styles from './css';
-import popupStyles from './popupcss';
 import { RouteProp, useNavigation } from '@react-navigation/native';
-import { LinearGradient } from 'expo-linear-gradient';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { useSelector, useDispatch } from 'react-redux';
+import { debounce } from 'lodash';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
+import * as DocumentPicker from 'expo-document-picker';
+
+import styles from './css';
 import theme from '@/theme';
 import { RootStackParamList } from '@/navigation/type';
-import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { ROUTING } from '@/utils/constant';
-import { useSelector } from 'react-redux';
 import { RootState } from '@/redux/store';
 import { useChat } from '@/hooks/useChat';
-import { debounce } from 'lodash';
-import { useDispatch } from 'react-redux';
 import { setCurrentChannel } from '@/redux/userSlice';
-
-import FileMessageBubble from '@/screens/ChatScreen/FileMessageBubble';
-import * as DocumentPicker from 'expo-document-picker'; // thư viện để chọn file
-import * as FileSystem from 'expo-file-system'; // thư viện để làm việc với file hệ thống
-import * as Sharing from 'expo-sharing'; // thư viện để chia sẻ file
-import * as IntentLauncher from 'expo-intent-launcher'; // thư viện để mở file trên Android
-
-
-
-// Định nghĩa kiểu cho navigation và route
-type ChatScreenRouteProp = RouteProp<RootStackParamList, typeof ROUTING.CHAT_SCREEN>;
-type ChatScreenNavigationProp = NativeStackNavigationProp<RootStackParamList>;
-
-// Định nghĩa interface cho message
-interface Emoji {
-  emoji: string;
-  userId: string;
-  messageId: string;
-  quantity: number;
-  createAt: string;
-  updateAt: string;
-  deleteAt?: string;
-}
-
+import ChatHeader from '@/components/chat/ChatHeader';
+import MessageItem from '@/components/chat/MessageItem';
+import MessageInputContainer from '@/components/chat/MessageInput';
 interface Message {
   id?: string;
   _id?: string;
@@ -67,6 +41,7 @@ interface Message {
   status: 'sent' | 'delivered' | 'read';
   emojis?: Emoji[];
   messageType?: 'text' | 'file';
+  isDeletedById?: string;
   file?: {
     filename: string;
     path: string;
@@ -80,279 +55,29 @@ interface Message {
   };
 }
 
-// Header chuyển qua option
-const ChatHeader = React.memo(
+interface Emoji {
+  emoji: string;
+  userId: string;
+  messageId: string;
+  quantity: number;
+  createAt: string;
+  updateAt: string;
+  deleteAt?: string;
+}
 
-  ({ item }: { item: any }) => {
-    const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
-    const currentUserId = useSelector((state: RootState) => state.user.user?.id);
+type ChatScreenRouteProp = RouteProp<RootStackParamList, typeof ROUTING.CHAT_SCREEN>;
+type ChatScreenNavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
-    const handleOptionsPress = useCallback(() => {
-      if (item?.type === 'group') {
-        navigation.navigate(ROUTING.OPTION_GROUP, { itemGroup: item });
-      } else if (item?.type === 'direct') {
-        const friend = item.members?.find((mem: any) => mem.userId !== currentUserId);
-        if (friend && friend.user) {
-          navigation.navigate(ROUTING.OPTION_FRIEND, { itemFriend: friend.user });
-        } else {
-          alert('Không tìm thấy thông tin bạn bè');
-        }
-      }
-    }, [item, currentUserId]);
-
-    return (
-      <LinearGradient
-        colors={['#1E88E5', '#42A5F5']}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 0 }}
-        style={styles.header}
-      >
-        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.iconButton}>
-          <AntDesign name="arrowleft" size={20} color="white" />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>{item.name || 'Chat'}</Text>
-        <View style={styles.headerIcons}>
-          <TouchableOpacity style={styles.iconButton}>
-            <Ionicons name="call-outline" size={24} color="white" />
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.iconButton}>
-            <Ionicons name="videocam-outline" size={24} color="white" />
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.iconButton} onPress={handleOptionsPress}>
-            <AntDesign name="bars" size={24} color="white" />
-          </TouchableOpacity>
-        </View>
-      </LinearGradient>
-    );
-  }
-);
-
-export default ChatHeader;
-
-
-
-// MessageItem component
-const MessageItem = React.memo(
-  ({
-    content,
-    timestamp,
-    senderId,
-    senderAvatar,
-    isMyMessage,
-    status,
-    emojis,
-    onLongPress,
-    messageType,
-    file,
-  }: {
-    content: string;
-    timestamp: string;
-    senderId: string;
-    senderAvatar: string;
-    isMyMessage: boolean;
-    status: string;
-    emojis?: Emoji[];
-    onLongPress?: () => void;
-    messageType?: string;
-    file?: {
-      filename: string;
-      path: string;
-      extension: string;
-      size?: string | number;
-    };
-  }) => {
-    const me = useSelector((state: RootState) => state.user.user);
-    const [isEmojiModalVisible, setEmojiModalVisible] = useState(false);
-
-    const renderEmojis = useMemo(() => {
-      if (!emojis || emojis.length === 0) return null;
-      const maxDisplay = 4;
-      const displayEmojis = emojis.length > maxDisplay ? emojis.slice(0, 3) : emojis;
-      const remainingCount = emojis.length > maxDisplay ? emojis.length - 3 : 0;
-
-      return (
-        <View style={[styles.emojiWrapper, isMyMessage ? styles.emojiWrapperRight : styles.emojiWrapperLeft]}>
-          {displayEmojis.map((emoji, index) => (
-            <View key={index} style={styles.emojiItem}>
-              <Text style={styles.emojiTextIcon}>{emoji.emoji}</Text>
-            </View>
-          ))}
-          {remainingCount > 0 && (
-            <View style={styles.remainingCount}>
-              <Text style={styles.remainingText}>+{remainingCount}</Text>
-            </View>
-          )}
-        </View>
-      );
-    }, [emojis, isMyMessage]);
-
-    const emojiSummary = useMemo(() => {
-      if (!emojis) return [];
-      const emojiCountMap: { [key: string]: { emoji: string; count: number } } = {};
-      emojis.forEach((emoji) => {
-        if (!emojiCountMap[emoji.emoji]) {
-          emojiCountMap[emoji.emoji] = { emoji: emoji.emoji, count: 0 };
-        }
-        emojiCountMap[emoji.emoji].count += emoji.quantity;
-      });
-      return Object.values(emojiCountMap);
-    }, [emojis]);
-
-    const renderEmojiCount = ({ item }: { item: { emoji: string; count: number } }) => (
-      <View style={popupStyles.emojiRow}>
-        <Text style={popupStyles.emoji}>{item.emoji}</Text>
-        <Text style={popupStyles.emojiCount}>{item.count}</Text>
-      </View>
-    );
-
-    return (
-      <View style={styles.messageWrapper}>
-        <TouchableOpacity
-          activeOpacity={0.8}
-          onLongPress={onLongPress}
-          style={[styles.messageRow, isMyMessage ? styles.myMessageRow : styles.otherMessageRow]}
-        >
-          {!isMyMessage && (
-            <Image
-              source={{ uri: senderAvatar }}
-              style={styles.messageAvatar}
-              defaultSource={require('../../../assets/user_default.jpg')}
-            />
-          )}
-
-          <View
-            style={[
-              styles.messageBubble,
-              isMyMessage ? styles.myMessageBubble : styles.otherMessageBubble,
-            ]}
-          >
-            {/* ✅ Render content hoặc file */}
-            {(messageType === 'file' || messageType === 'image') && file ? (
-              <FileMessageBubble file={file} />
-            ) : (
-              <Text style={styles.messageText}>{content}</Text>
-            )}
-
-            <Text style={styles.messageTime}>
-              {timestamp ? new Date(timestamp).toLocaleTimeString() : ''}{' '}
-              {isMyMessage && (
-                <>
-                  {status === 'sent' && '✓'}
-                  {status === 'delivered' && '✓✓'}
-                  {status === 'read' && '✓✓ (Đã đọc)'}
-                </>
-              )}
-            </Text>
-          </View>
-        </TouchableOpacity>
-
-        {/* ✅ Render emoji reaction */}
-        {renderEmojis && (
-          <TouchableOpacity
-            onPress={() => setEmojiModalVisible(true)}
-            style={isMyMessage ? styles.myEmojiContainer : styles.otherEmojiContainer}
-          >
-            {renderEmojis}
-          </TouchableOpacity>
-        )}
-
-        <Modal
-          visible={isEmojiModalVisible}
-          transparent={true}
-          animationType="fade"
-          onRequestClose={() => setEmojiModalVisible(false)}
-        >
-          <TouchableOpacity
-            style={popupStyles.modalOverlay}
-            onPress={() => setEmojiModalVisible(false)}
-            activeOpacity={1}
-          >
-            <View style={popupStyles.modalContent}>
-              <Text style={popupStyles.modalTitle}>Tất cả {emojiSummary.length}</Text>
-              <FlatList
-                data={emojiSummary}
-                renderItem={renderEmojiCount}
-                keyExtractor={(item) => item.emoji}
-                style={popupStyles.emojiList}
-              />
-            </View>
-          </TouchableOpacity>
-        </Modal>
-      </View>
-    );
-  },
-  (prevProps, nextProps) =>
-    prevProps.content === nextProps.content &&
-    prevProps.timestamp === nextProps.timestamp &&
-    prevProps.senderId === nextProps.senderId &&
-    prevProps.senderAvatar === nextProps.senderAvatar &&
-    prevProps.isMyMessage === nextProps.isMyMessage &&
-    prevProps.status === nextProps.status &&
-    prevProps.onLongPress === nextProps.onLongPress &&
-    prevProps.messageType === nextProps.messageType &&
-    JSON.stringify(prevProps.file) === JSON.stringify(nextProps.file) &&
-    JSON.stringify(prevProps.emojis) === JSON.stringify(nextProps.emojis)
-);
-
-const MessageInputContainer = React.memo(
-  ({
-    channelId,
-    sendMessage,
-    onPickFile,
-  }: {
-    channelId: string;
-    sendMessage: (chanId: string, content: string) => void;
-    onPickFile: () => void;
-  }) => {
-    const [inputMessage, setInputMessage] = useState('');
-
-    const handleSendMessage = useCallback(() => {
-      if (inputMessage.trim()) {
-        sendMessage(channelId, inputMessage);
-        setInputMessage('');
-      }
-    }, [inputMessage, channelId, sendMessage]);
-
-    return (
-      <View style={styles.inputContainer}>
-        <TouchableOpacity style={styles.attachmentButton} onPress={onPickFile}>
-          <Ionicons name="attach" size={22} color="#555" />
-        </TouchableOpacity>
-        <TextInput
-          style={styles.input}
-          placeholder="Tin nhắn"
-          value={inputMessage}
-          onChangeText={(e) => setInputMessage(e)}
-          multiline
-          returnKeyType="send"
-          onSubmitEditing={handleSendMessage}
-        />
-        <TouchableOpacity
-          style={[styles.sendButton, inputMessage.trim() ? styles.sendButtonActive : null]}
-          onPress={handleSendMessage}
-          disabled={!inputMessage.trim()}
-        >
-          <Ionicons name="send" size={22} color="white" />
-        </TouchableOpacity>
-      </View>
-    );
-  }
-);
-
-
-// ChatScreen component
 const ChatScreen = ({ route }: { route: ChatScreenRouteProp }) => {
   const renderCountRef = useRef(0);
   renderCountRef.current += 1;
   console.log(`ChatScreen render #${renderCountRef.current}`);
 
-  const { item } = route.params || { item: {} };
+  const { item }: any = route.params || { item: {} };
   const navigation = useNavigation<ChatScreenNavigationProp>();
   const sender = useSelector((state: RootState) => state.user.user);
   const channelId = item?.id || '';
 
-
-  // Sử dụng useChat hook với đầy đủ các phương thức ts
   const {
     sendMessage,
     messages,
@@ -380,6 +105,8 @@ const ChatScreen = ({ route }: { route: ChatScreenRouteProp }) => {
   const [isPopupVisible, setIsPopupVisible] = useState(false);
   const [selectedMessage, setSelectedMessage] = useState<Message | null>(null);
 
+  const dispatch = useDispatch();
+
   useEffect(() => {
     if (error) {
       Alert.alert('Lỗi', error);
@@ -390,7 +117,6 @@ const ChatScreen = ({ route }: { route: ChatScreenRouteProp }) => {
     if (channelId && sender?.id) {
       setHasMoreMessages(true);
       joinRoom(channelId);
-
     } else {
       Alert.alert('Lỗi', 'Không thể tham gia phòng chat do thiếu thông tin');
     }
@@ -412,8 +138,7 @@ const ChatScreen = ({ route }: { route: ChatScreenRouteProp }) => {
       setTimeout(() => {
         try {
           flatListRef.current?.scrollToEnd({ animated: false });
-        } catch (err) {
-        }
+        } catch (err) { }
         initialRenderRef.current = false;
       }, 500);
     }
@@ -429,13 +154,11 @@ const ChatScreen = ({ route }: { route: ChatScreenRouteProp }) => {
       setTimeout(() => {
         try {
           flatListRef.current?.scrollToEnd({ animated: true });
-        } catch (err) {
-        }
+        } catch (err) { }
       }, 300);
     }
   }, [messages.length, loadingMore, isAtBottom]);
 
-  const dispatch = useDispatch();
   useEffect(() => {
     if (channel && channel.id) {
       console.log("Cập nhật currentChannel:", channel);
@@ -443,27 +166,17 @@ const ChatScreen = ({ route }: { route: ChatScreenRouteProp }) => {
     }
   }, [channel, dispatch]);
 
-
   const handlePickFile = async () => {
     const result = await DocumentPicker.getDocumentAsync({ type: '*/*' });
-
     if (!result.canceled && result.assets && result.assets.length > 0) {
       const asset = result.assets[0];
       const name = asset.name;
       const uri = asset.uri;
       const size = asset.size || 0;
-
       const extension = name.split('.').pop() || '';
       const filename = name.replace(`.${extension}`, '');
-
-      const fileData = {
-        filename,
-        path: uri,
-        extension,
-        size,
-      };
-
-      sendFileMessage(channelId, fileData); // ✅ Gửi file
+      const fileData = { filename, path: uri, extension, size };
+      sendFileMessage(channelId, fileData);
     }
   };
 
@@ -482,7 +195,7 @@ const ChatScreen = ({ route }: { route: ChatScreenRouteProp }) => {
       setLoadingMore(true);
       loadMessages(channelId);
     }, 300),
-    [channelId, loading, loadingMore, hasMoreMessages, loadMessages, noMessageToLoad],
+    [channelId, loading, loadingMore, hasMoreMessages, loadMessages, noMessageToLoad]
   );
 
   const handleScroll = useCallback((event: any) => {
@@ -496,12 +209,21 @@ const ChatScreen = ({ route }: { route: ChatScreenRouteProp }) => {
     setIsPopupVisible(true);
   }, []);
 
-  const handleQuickReact = useCallback((emoji: string) => {
-    if (!selectedMessage) return;
-    interactEmoji(selectedMessage.id || selectedMessage._id || '', emoji, sender?.id || '', selectedMessage.channelId);
-    setIsPopupVisible(false);
-    setSelectedMessage(null);
-  }, [selectedMessage, interactEmoji, sender?.id]);
+  const handleQuickReact = useCallback(
+    (emoji: string) => {
+      if (!selectedMessage) return;
+      interactEmoji(
+        selectedMessage.id || selectedMessage._id || '',
+        emoji,
+        sender?.id || '',
+        selectedMessage.channelId
+      );
+      setIsPopupVisible(false);
+      setSelectedMessage(null);
+    },
+    [selectedMessage, interactEmoji, sender?.id]
+  );
+
   const handleRecallMessage = useCallback(() => {
     if (!selectedMessage) return;
     if (selectedMessage.sender.id !== sender?.id) {
@@ -509,48 +231,56 @@ const ChatScreen = ({ route }: { route: ChatScreenRouteProp }) => {
       return;
     }
     deleteMessage(selectedMessage.id || selectedMessage._id || '', selectedMessage.channelId);
-  }, [selectedMessage]);
+  }, [selectedMessage, deleteMessage, sender?.id]);
+
   const handleDeleteMessage = useCallback(() => {
     if (!selectedMessage) return;
     recallMessage(selectedMessage.id || selectedMessage._id || '');
-  }, [selectedMessage]);
-  const handlePopupAction = useCallback((action: string) => {
-    if (!selectedMessage) return;
+  }, [selectedMessage, recallMessage]);
 
-    switch (action) {
-      case 'reply':
-        Alert.alert('Thông báo', 'Chức năng trả lời tin nhắn chưa được triển khai.');
-        break;
-      case 'forward':
-        Alert.alert('Thông báo', 'Chức năng chuyển tiếp tin nhắn chưa được triển khai.');
-        break;
-      case 'backup-restore':
-        if (selectedMessage.sender.id !== sender?.id) {
-          Alert.alert('Thông báo', 'Chức năng thu hồi tin nhắn không giành cho người nhận.');
+  const handlePopupAction = useCallback(
+    (action: string) => {
+      if (!selectedMessage) return;
+      switch (action) {
+        case 'reply':
+          Alert.alert('Thông báo', 'Chức năng trả lời tin nhắn chưa được triển khai.');
           break;
-        }
-        deleteMessage(selectedMessage.id || selectedMessage._id || '', selectedMessage.channelId);
-        break;
-      case 'copy':
-        if (selectedMessage) {
-          Clipboard.setString(selectedMessage.content);
-          Alert.alert('Thông báo', 'Đã sao chép tin nhắn!');
-        }
-        break;
-      case 'delete':
-        recallMessage(selectedMessage.id || selectedMessage._id || '');
-        break;
-      case 'remove_reaction':
-        if (selectedMessage) {
-          removeMyEmoji(selectedMessage.id || selectedMessage._id || '', sender?.id || '', selectedMessage.channelId);
-        }
-        break;
-      default:
-        break;
-    }
-    setIsPopupVisible(false);
-    setSelectedMessage(null);
-  }, [selectedMessage, removeMyEmoji, sender?.id]);
+        case 'forward':
+          Alert.alert('Thông báo', 'Chức năng chuyển tiếp tin nhắn chưa được triển khai.');
+          break;
+        case 'backup-restore':
+          if (selectedMessage.sender.id !== sender?.id) {
+            Alert.alert('Thông báo', 'Chức năng thu hồi tin nhắn không giành cho người nhận.');
+            break;
+          }
+          deleteMessage(selectedMessage.id || selectedMessage._id || '', selectedMessage.channelId);
+          break;
+        case 'copy':
+          if (selectedMessage) {
+            Clipboard.setString(selectedMessage.content);
+            Alert.alert('Thông báo', 'Đã sao chép tin nhắn!');
+          }
+          break;
+        case 'delete':
+          recallMessage(selectedMessage.id || selectedMessage._id || '');
+          break;
+        case 'remove_reaction':
+          if (selectedMessage) {
+            removeMyEmoji(
+              selectedMessage.id || selectedMessage._id || '',
+              sender?.id || '',
+              selectedMessage.channelId
+            );
+          }
+          break;
+        default:
+          break;
+      }
+      setIsPopupVisible(false);
+      setSelectedMessage(null);
+    },
+    [selectedMessage, removeMyEmoji, sender?.id, deleteMessage, recallMessage]
+  );
 
   const closePopup = useCallback(() => {
     setIsPopupVisible(false);
@@ -598,20 +328,19 @@ const ChatScreen = ({ route }: { route: ChatScreenRouteProp }) => {
           isMyMessage={isMyMessage}
           status={item.status || 'sent'}
           emojis={item.emojis}
-          messageType={item.messageType} // 🆕
-          file={item.file} // 🆕
+          messageType={item.messageType}
+          file={item.file}
           onLongPress={() => handleLongPressMessage(item)}
         />
       );
     },
-    [sender, handleLongPressMessage],
+    [sender, handleLongPressMessage]
   );
-
 
   const keyExtractor = useCallback(
     (item: Message, index: number) =>
       item.id ? item.id.toString() : item._id ? item._id.toString() : `msg-${index}-${Date.now()}`,
-    [],
+    []
   );
 
   const quickReactions = [
@@ -649,7 +378,6 @@ const ChatScreen = ({ route }: { route: ChatScreenRouteProp }) => {
           </View>
         )}
 
-
         {loading && messages.length === 0 && (
           <View style={styles.loadingContainer}>
             <ActivityIndicator size="large" color={theme.colors.primary} />
@@ -679,7 +407,7 @@ const ChatScreen = ({ route }: { route: ChatScreenRouteProp }) => {
         <MessageInputContainer
           channelId={channelId}
           sendMessage={sendMessage}
-          onPickFile={handlePickFile} // ✅ truyền vào đây
+          onPickFile={handlePickFile}
         />
 
         <Modal
@@ -691,7 +419,6 @@ const ChatScreen = ({ route }: { route: ChatScreenRouteProp }) => {
           <TouchableWithoutFeedback onPress={closePopup}>
             <View style={styles.modalOverlay}>
               <View style={styles.popupContainer}>
-                {/* Hàng emoji phản hồi nhanh */}
                 <View style={styles.emojiRow}>
                   {quickReactions.map((reaction, index) => (
                     <TouchableOpacity
@@ -703,8 +430,6 @@ const ChatScreen = ({ route }: { route: ChatScreenRouteProp }) => {
                     </TouchableOpacity>
                   ))}
                 </View>
-
-                {/* Hàng các hành động */}
                 <View style={styles.actionRow}>
                   {actions.map((action, index) => (
                     <TouchableOpacity
