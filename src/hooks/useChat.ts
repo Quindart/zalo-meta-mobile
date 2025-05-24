@@ -548,7 +548,6 @@ export const useChat = (currentUserId: string) => {
         socket.emit(SOCKET_EVENTS.CHANNEL.ASSIGN_ROLE, { channelId, userId, targetUserId, newRole });
     }, [])
 
-
     return {
         findOrCreateChat,
         joinRoom,

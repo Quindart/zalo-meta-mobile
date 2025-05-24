@@ -50,13 +50,16 @@ const MemberManagementScreen = () => {
   const [showOptions, setShowOptions] = useState(false);
   const [listMemberGroup, setListMemberGroup] = useState<any[]>([]);
 
+
   const currentUserRole = useMemo(() => {
-    if (!itemGroup || !currentUser || !itemGroup.members) return null;
-    const member = itemGroup.members.find(
-      (m: any) => m.userId === currentUser.id
-    );
+    const sourceMembers = channel?.members ?? itemGroup?.members;
+    if (!sourceMembers || !currentUser) return null;
+    const member = sourceMembers.find((m: any) => m.userId === currentUser.id);
     return member?.role || null;
-  }, [itemGroup, currentUser]);
+  }, [channel, itemGroup, currentUser]);
+
+
+
 
   const dispatch = useDispatch();
 
@@ -69,6 +72,7 @@ const MemberManagementScreen = () => {
       dispatch(setCurrentChannel(channel));
     }
   }, [channel, currentUser?.id]);
+
 
   useEffect(() => {
     const fetchUserData = async () => {
@@ -89,12 +93,70 @@ const MemberManagementScreen = () => {
     fetchUserData();
   }, [itemGroup]);
 
+
   const handleOpenOptions = (member: any) => {
-    if (member.userId === currentUser?.id || member.role === "captain") return;
-    setSelectedMember(member);
-    setShowOptions(true);
+    if (!currentUser || member.userId === currentUser.id) return;
+
+    const targetRole = member.role;
+    const userRole = currentUserRole;
+
+    const isTargetCaptain = targetRole === "captain";
+    const isTargetViceCaptain = targetRole === "sub_captain";
+    const isUserCaptain = userRole === "captain";
+    const isUserViceCaptain = userRole === "sub_captain";
+
+    // Trưởng nhóm có quyền với tất cả
+    if (isUserCaptain) {
+      setSelectedMember(member);
+      setShowOptions(true);
+      return;
+    }
+
+    // Phó nhóm chỉ thao tác với thành viên
+    if (isUserViceCaptain && targetRole === "member") {
+      setSelectedMember(member);
+      setShowOptions(true);
+      return;
+    }
+    return;
   };
 
+  //TODO: Fetch user data for each member in the channel
+  useEffect(() => {
+    const fetchUserData = async () => {
+      try {
+        const updatedMembers = await Promise.all(
+          channel.members.map(async (member: any) => {
+            const user = await handleGetUserById(member.userId);
+            return user ? { ...member, user } : null;
+          })
+        );
+        setListMemberGroup(updatedMembers.filter(Boolean));
+      } catch (error) {
+        console.error("Error fetching member data:", error);
+      }
+    };
+
+    if (channel && channel.members) {
+      dispatch(setCurrentChannel(channel));
+      fetchUserData();
+    }
+  }, [channel]);
+
+  const translateRole = (role: string) => {
+    switch (role) {
+      case "captain":
+        return "Trưởng nhóm";
+      case "sub_captain":
+        return "Phó nhóm";
+      case "member":
+        return "Thành viên";
+      default:
+        return "Không rõ";
+    }
+  };
+
+  //TODO: Handle role assignment
   const handleAssignRole = (newRole: "sub_captain" | "captain") => {
     if (selectedMember) {
       assignRole({
@@ -104,8 +166,13 @@ const MemberManagementScreen = () => {
         newRole,
       });
       setShowOptions(false);
+      if (currentUser) {
+        loadChannel(currentUser.id); // gọi lại sau khi phân quyền
+      }
     }
   };
+
+
 
   const handleRemoveMember = () => {
     if (selectedMember) {
@@ -142,7 +209,8 @@ const MemberManagementScreen = () => {
           <Text
             style={styles.name}
           >{`${item?.user.lastName} ${item?.user?.firstName}`}</Text>
-          <Text style={styles.role}>{item.role}</Text>
+          {/* <Text style={styles.role}>{item.role}</Text> */}
+          <Text style={styles.role}>{translateRole(item.role)}</Text>
         </View>
       </Pressable>
     );
@@ -199,9 +267,8 @@ const MemberManagementScreen = () => {
                 source={{ uri: selectedMember?.user?.avatar }}
                 style={styles.modalAvatar}
               />
-              <Text style={styles.modalName}>{`${
-                selectedMember?.user?.lastName || ""
-              } ${selectedMember?.user?.firstName || ""}`}</Text>
+              <Text style={styles.modalName}>{`${selectedMember?.user?.lastName || ""
+                } ${selectedMember?.user?.firstName || ""}`}</Text>
             </View>
             <TouchableOpacity style={styles.modalOption}>
               <Text style={styles.modalOptionText}>Xem trang cá nhân</Text>
@@ -228,15 +295,15 @@ const MemberManagementScreen = () => {
             )}
             {(currentUserRole === "captain" ||
               currentUserRole === "sub_captain") && (
-              <TouchableOpacity
-                style={styles.modalOption}
-                onPress={handleRemoveMember}
-              >
-                <Text style={[styles.modalOptionText, { color: "red" }]}>
-                  Xóa khỏi nhóm
-                </Text>
-              </TouchableOpacity>
-            )}
+                <TouchableOpacity
+                  style={styles.modalOption}
+                  onPress={handleRemoveMember}
+                >
+                  <Text style={[styles.modalOptionText, { color: "red" }]}>
+                    Xóa khỏi nhóm
+                  </Text>
+                </TouchableOpacity>
+              )}
           </Pressable>
         </Pressable>
       </Modal>
