@@ -6,7 +6,6 @@ import {
   TouchableOpacity,
   Image,
   FlatList,
-  StyleSheet,
   SafeAreaView,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
@@ -16,7 +15,7 @@ import { RootStackParamList } from "@/navigation/type";
 import { useFriend } from "@/hooks/useFriend";
 import { useChat } from "@/hooks/useChat";
 import { RootState } from "@/redux/store";
-import { useSelector, useDispatch } from "react-redux";
+import { useSelector } from "react-redux";
 import { styles } from "./style";
 import { ROUTING } from "@/utils/constant";
 
@@ -32,20 +31,18 @@ const AddToGroupScreen = () => {
     useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const route =
     useRoute<RouteProp<RootStackParamList, typeof ROUTING.ADD_TO_GROUP>>();
-  const params = route.params as { itemGroup: any };
-  const { itemGroup } = params;
-
-  useEffect(() => {
-    console.log("💲💲💲 ~ AddToGroupScreen ~ itemGroup:", itemGroup);
-  }, []);
+  const itemGroup = (route.params as { itemGroup: any })?.itemGroup;
 
   const user = useSelector((state: RootState) => state.user.user);
+  const currentChannel = useSelector(
+    (state: RootState) => state.user.currentChannel
+  );
+
   const { getListFriends, listFriends } = useFriend(user?.id || "");
   const { addMember, loadChannel } = useChat(user?.id || "");
 
   const [selected, setSelected] = useState<string[]>([]);
   const [query, setQuery] = useState("");
-  const dispatch = useDispatch();
 
   useEffect(() => {
     getListFriends();
@@ -58,7 +55,7 @@ const AddToGroupScreen = () => {
   };
 
   const filteredFriends = useMemo(() => {
-    const memberIds = itemGroup?.members.map((m: any) => m.userId) || [];
+    const memberIds = currentChannel?.members?.map((m: any) => m.userId) || [];
     return listFriends
       .filter((f) => !memberIds.includes(f.id) && f.id !== user?.id)
       .filter(
@@ -66,15 +63,15 @@ const AddToGroupScreen = () => {
           f.name.toLowerCase().includes(query.toLowerCase()) ||
           f.phone?.includes(query)
       );
-  }, [listFriends, itemGroup?.members, query, user?.id]);
+  }, [listFriends, currentChannel?.members, query, user?.id]);
 
   const handleAddMembers = useCallback(async () => {
     for (const userId of selected) {
-      addMember(itemGroup.id, userId);
+      addMember(currentChannel.id, userId);
     }
-
+    loadChannel(currentChannel.id); // cập nhật lại channel
     navigation.goBack();
-  }, [selected, itemGroup?.id]);
+  }, [selected, currentChannel?.id]);
 
   const renderItem = ({ item }: { item: Friend }) => (
     <TouchableOpacity style={styles.item} onPress={() => toggleSelect(item.id)}>
