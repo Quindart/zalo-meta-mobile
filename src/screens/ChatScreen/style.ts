@@ -40,9 +40,9 @@ export const chatScreenStyle = StyleSheet.create({
     loadingContainer: {
         flex: 1,
     },
-   
+
     // Style cho Modal
-   
+
     popupContainer: {
         backgroundColor: '#fff',
         borderRadius: 12,
@@ -57,13 +57,13 @@ export const chatScreenStyle = StyleSheet.create({
         shadowRadius: 4,
     },
     // Style cho hàng emoji
-   
+
     emojiButton: {
         padding: 8,
         borderRadius: 20,
         backgroundColor: '#f0f0f0',
     },
-    
+
     emojiText: {
         fontSize: 24,
     },
@@ -85,7 +85,7 @@ export const chatScreenStyle = StyleSheet.create({
         marginTop: 5,
         textAlign: 'center',
     },
-    
+
     quantityBadge: {
         backgroundColor: '#D1D5DB',
         borderRadius: 8,
@@ -113,7 +113,17 @@ export const chatScreenStyle = StyleSheet.create({
         borderBottomColor: '#e0e0e0',
         marginBottom: 5,
     },
-
+    forwardModalContainer: {
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        backgroundColor: 'rgba(0, 0, 0, 0.5)',
+        justifyContent: 'center',
+        alignItems: 'center',
+        zIndex: 1000,
+    },
 });
 
 export const popupStyle = StyleSheet.create({
@@ -131,5 +141,4 @@ export const popupStyle = StyleSheet.create({
         borderBottomWidth: 1,
         borderBottomColor: '#E5E5EA',
     },
-   
 });

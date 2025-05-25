@@ -19,8 +19,23 @@ export interface MessageType {
     senderId: string;
     content: string;
     timestamp: string;
+    isDeletedById: string,
     status: 'sent' | 'delivered' | 'read';
     emojis?: Emoji[]
+    messageType?: 'text' | 'file' | 'imageGroup';
+    file?: {
+        filename: string;
+        path: string;
+        extension: string;
+        size?: string | number;
+    };
+    imagesGroup?: Array<{
+        id: string;
+        filename: string;
+        path: string;
+        extension: string;
+        size?: string | number;
+    }>;
     sender?: Sender;
 }
 

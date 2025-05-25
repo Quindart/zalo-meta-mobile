@@ -4,6 +4,7 @@ export const styles = StyleSheet.create({
     container: {
         flex: 1,
         backgroundColor: "#f0f0f0",
+        width: '100%'
     },
     header: {
         flexDirection: "row",
@@ -161,5 +162,59 @@ export const styles = StyleSheet.create({
         borderRadius: 6,
         backgroundColor: "#0084ff",
     },
+    bottomContainer: {
+        flexDirection: 'column',
+        paddingHorizontal: 16,
+        paddingVertical: 12,
+        backgroundColor: '#ffffff',
+        borderTopWidth: 1,
+        borderTopColor: '#e0e0e0',
+        justifyContent: 'space-between',
+    },
+    cancelButton: {
+        paddingVertical: 10,
+        paddingHorizontal: 20,
+        borderRadius: 4,
+        backgroundColor: '#f0f0f0',
+        alignItems: 'center',
+    },
+    cancelButtonText: {
+        fontSize: 16,
+        fontWeight: '500',
+        color: '#333',
+    },
+    forwardButton: {
+        paddingVertical: 10,
+        paddingHorizontal: 20,
+        borderRadius: 4,
+        backgroundColor: '#1E88E5',
+        alignItems: 'center',
+    },
+    forwardButtonDisabled: {
+        backgroundColor: '#b0d2f4',
+    },
+    forwardButtonText: {
+        fontSize: 16,
+        fontWeight: '500',
+        color: '#ffffff',
+    },
+    forwardButtonTextDisabled: {
+        color: '#ffffff',
+    },
+    messagePreviewContainer: {
+        backgroundColor: '#f0f0f5',
+        borderRadius: 8,
+        padding: 12,
+        marginRight: 10,
+        maxWidth: '100%',
+        borderLeftWidth: 3,
+        borderLeftColor: '#1E88E5',
+    },
+    contentMessage: {
+        fontSize: 14,
+        color: '#444',
+        lineHeight: 20,
+        maxHeight: 60,
+        overflow: 'hidden',
+    },
 });
-  

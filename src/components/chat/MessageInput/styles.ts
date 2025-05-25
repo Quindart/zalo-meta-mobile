@@ -21,6 +21,16 @@ export default StyleSheet.create({
         height: 40,
         width: 40,
     },
+    imageButton: {
+        padding: 8,
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginRight: 8,
+        borderRadius: 20,
+        backgroundColor: '#e8f4f8',
+        height: 40,
+        width: 40,
+    },
     input: {
         flex: 1,
         borderWidth: 1,

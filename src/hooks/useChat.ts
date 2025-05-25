@@ -312,10 +312,67 @@ export const useChat = (currentUserId: string) => {
                 console.error("Xóa thành viên thất bại:", response.message);
             }
         };
+        const forwardMessageHandler = (message: MessageType) => {
+            console.log("check response from forwardMessageHandler: ", message);
 
+            setLoading(false)
+            // Check if the channel exists in listChannel
+            const existingChannel = listChannel.find((channel) => channel.id === message.channelId);
+            if (!existingChannel) {
+                // Channel does not exist, so we need to add it to the listChannel
+                // You can create a new channel object here based on the message's data
+                const newChannel: ChannelType = {
+                    id: message.channelId,
+                    name: message.channelId,  // You can use message.channelId or some other logic to set the name
+                    type: "direct",  // Assuming it's a direct channel for now, adjust as needed
+                    members: [],  // Populate members if available in the message
+                    lastMessage: message,
+                    message: message.content,
+                    time: message.timestamp,
+                    isRead: false,
+                    avatar: "",  // You can use avatar info if available
+                    isDeleted: false,
+                };
 
+                // Add the new channel to the list
+                setListChannel((prev) => [...prev, newChannel]);
+
+                // Load the messages for this new channel (if needed)
+                loadChannel(currentUserId);
+            }
+
+            // Update the current channel with the new forwarded message
+            updateChannelWithMessage(message);
+        }; const uploadImageGroupResponse = (response: ResponseType) => {
+            console.log("uploadImageGroupResponse received:", response);
+            if (response.success) {
+
+                const newMessage = response.data.message;
+                console.log("New image group message:", newMessage);
+                console.log("Message type:", newMessage.messageType);
+                console.log("Images group:", newMessage.imagesGroup);
+                setMessages((prev) => {
+                    const messageId = newMessage.id;
+                    const isDuplicate = messageId ?
+                        prev.some(msg => (msg.id === messageId)) :
+                        false;
+
+                    if (isDuplicate) {
+
+                        return prev;
+                    }
+
+                    return [...prev, newMessage];
+                });
+
+                updateChannelWithMessage(response.data.message);
+            } else {
+                console.error("Failed to upload file:", response.message);
+            }
+            setLoading(false);
+        };
         socket.on('connect_error', handleConnectError);
-        socket.on('disconnect', handleDisconnect);
+        // socket.on('disconnect', handleDisconnect);
         socket.on(SOCKET_EVENTS.CHANNEL.JOIN_ROOM_RESPONSE, joinRoomResponse);
         socket.on(SOCKET_EVENTS.CHANNEL.FIND_ORCREATE_RESPONSE, findOrCreateResponse);
         socket.on(SOCKET_EVENTS.MESSAGE.RECEIVED, receivedMessage);
@@ -332,7 +389,8 @@ export const useChat = (currentUserId: string) => {
         socket.on(SOCKET_EVENTS.CHANNEL.DISSOLVE_GROUP_RESPONSE, dissolveGroupResponse);
         socket.on(SOCKET_EVENTS.CHANNEL.ROLE_UPDATED, assignRoleUpdatedResponse);
         socket.on(SOCKET_EVENTS.CHANNEL.REMOVE_MEMBER_RESPONSE, removeMemberResponse);
-
+        socket.on(SOCKET_EVENTS.MESSAGE.FORWARD, forwardMessageHandler);
+        socket.on(SOCKET_EVENTS.FILE.UPLOAD_GROUP_RESPONSE, uploadImageGroupResponse);
         return () => {
             socket.off('connect_error', handleConnectError);
             socket.off('disconnect', handleDisconnect);
@@ -352,10 +410,26 @@ export const useChat = (currentUserId: string) => {
             socket.off(SOCKET_EVENTS.CHANNEL.DISSOLVE_GROUP_RESPONSE, dissolveGroupResponse);
             socket.off(SOCKET_EVENTS.CHANNEL.ROLE_UPDATED, assignRoleUpdatedResponse);
             socket.off(SOCKET_EVENTS.CHANNEL.REMOVE_MEMBER_RESPONSE, removeMemberResponse);
+            socket.off(SOCKET_EVENTS.MESSAGE.FORWARD, forwardMessageHandler)
+            socket.off(SOCKET_EVENTS.FILE.UPLOAD_GROUP_RESPONSE, uploadImageGroupResponse);
         };
     }, [currentUserId]);
 
+    const forwardMessage = useCallback((messageId: string, channelId: string) => {
+        console.log("Check content send: ", messageId);
+        console.log("Check content send: ", channelId);
 
+        const socket = socketService.getSocket();
+        // Gửi sự kiện forwardMessage đến server
+        const params = {
+            senderId: currentUserId,
+            messageId, // ID của tin nhắn cần chuyển tiếp
+            channelId, // ID của phòng đích
+        };
+        setLoading(true);
+        socket.emit(SOCKET_EVENTS.MESSAGE.FORWARD, params);
+
+    }, [currentUserId]);
     const findOrCreateChat = useCallback((receiverId: string) => {
         setLoading(true);
         setChannel(null);
@@ -398,12 +472,11 @@ export const useChat = (currentUserId: string) => {
         socket.emit(SOCKET_EVENTS.MESSAGE.LOAD, params);
     }, [messages, currentUserId]);
 
-    const sendMessage = useCallback((channelId: string, content: string, fcmToken: string) => {
+    const sendMessage = useCallback((channelId: string, content: string) => {
         const socket = socketService.getSocket();
         const messageData = {
             channelId,
             senderId: currentUserId,
-            fcmToken: fcmToken,
             content: content.trim(),
             timestamp: new Date().toISOString(),
             status: "sent"
@@ -548,7 +621,38 @@ export const useChat = (currentUserId: string) => {
         const socket = socketService.getSocket();
         socket.emit(SOCKET_EVENTS.CHANNEL.ASSIGN_ROLE, { channelId, userId, targetUserId, newRole });
     }, [])
+    const uploadImageGroup = useCallback((channelId: string, files: File[]) => {
+        setLoading(true);
+        const socket = socketService.getSocket();
+        console.log("check files selected in useChat: ", files);
 
+        // Create promises for all file reads
+        const fileReadPromises = files.map(file => {
+            return new Promise<{ fileName: string, fileData: ArrayBuffer }>((resolve) => {
+                const reader = new FileReader();
+                reader.onload = () => {
+                    resolve({
+                        fileName: file.name,
+                        fileData: reader.result as ArrayBuffer
+                    });
+                };
+                reader.readAsArrayBuffer(file);
+            });
+        });
+
+        // Once all files are read, send the group message
+        Promise.all(fileReadPromises).then(filesData => {
+            const groupMessage = {
+                channelId,
+                senderId: currentUserId,
+                files: filesData,
+                timestamp: new Date().toISOString(),
+                status: "sent"
+            };
+
+            socket.emit(SOCKET_EVENTS.FILE.UPLOAD_GROUP, groupMessage);
+        });
+    }, []);
     return {
         findOrCreateChat,
         joinRoom,
@@ -566,6 +670,8 @@ export const useChat = (currentUserId: string) => {
         addMember,
         removeMember,
         assignRole,
+        forwardMessage,
+        uploadImageGroup,
         listChannel,
         channel,
         messages,

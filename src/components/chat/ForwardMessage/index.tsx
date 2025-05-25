@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   SafeAreaView,
   View,
@@ -13,16 +13,44 @@ import {
 import { Ionicons, FontAwesome } from "@expo/vector-icons";
 import { styles } from "./style";
 import { conversationGroups, recentContacts } from "./constant";
-
-const ForwardMessage = () => {
+import { useChat } from "@/hooks/useChat";
+import { useSelector } from "react-redux";
+import { Message } from "@/screens/ChatScreen";
+const ForwardMessage = ({ onClose, selectedMessage }: { onClose: () => void; selectedMessage: Message | null; }) => {
   const [selected, setSelected] = useState<string[]>([]);
+  const user = useSelector((state: any) => state.user.user);
+  const { forwardMessage, listChannel, loadChannel } = useChat(user.id);
+  useEffect(() => {
+    if (user?.id) {
+      loadChannel(user.id);
+    }
+  }, [user?.id, loadChannel]);
 
   const toggleSelect = (id: string) => {
     setSelected((prev) =>
       prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]
     );
-  };
+  }; const handleForward = () => {
+    if (selected.length > 0 && selectedMessage) {
+      console.log("=== FORWARD MESSAGE DEBUG ===");
+      console.log("Selected contacts:", selected);
+      console.log("Selected message:", selectedMessage);
+      console.log("Message ID:", selectedMessage.id || selectedMessage._id);
+      console.log("Message content:", selectedMessage.content);
 
+      // Forward tin nhắn đã chọn đến các contact đã chọn
+      selected.forEach(contactId => {
+        console.log("Forwarding to contact:", contactId);
+        forwardMessage(selectedMessage.id || selectedMessage._id || '', contactId);
+      });
+      onClose();
+    } else {
+      console.log("Cannot forward - missing data:", {
+        selectedLength: selected.length,
+        hasSelectedMessage: !!selectedMessage
+      });
+    }
+  };
   const renderContact = ({ item }: { item: any }) => (
     <TouchableOpacity
       style={styles.contactItem}
@@ -32,7 +60,7 @@ const ForwardMessage = () => {
         <View style={styles.avatarContainer}>
           <Image
             source={{
-              uri: "https://cdnv2.tgdd.vn/mwg-static/common/News/1569295/tho-7-mau-1-2-0.jpg",
+              uri: item.avatar,
             }}
             style={styles.avatar}
           />
@@ -61,7 +89,7 @@ const ForwardMessage = () => {
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity>
-          <Ionicons name="arrow-back" size={24} color="#333" />
+          <Ionicons onPress={onClose} name="arrow-back" size={24} color="#333" />
         </TouchableOpacity>
         <View style={styles.titleContainer}>
           <Text style={styles.title}>Chia sẻ</Text>
@@ -108,16 +136,23 @@ const ForwardMessage = () => {
         </TouchableOpacity>
       </View>
 
-      <ScrollView>
-        {/* Recent contacts */}
+      <ScrollView>        {/* Recent contacts */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Gần đây</Text>
-          <FlatList
-            data={recentContacts}
-            renderItem={renderContact}
-            keyExtractor={(item) => item.id}
-            scrollEnabled={false}
-          />
+          {listChannel && listChannel.length > 0 ? (
+            <FlatList
+              data={listChannel}
+              renderItem={renderContact}
+              keyExtractor={(item) => item.id}
+              scrollEnabled={false}
+            />
+          ) : (
+            <View style={{ padding: 16, alignItems: 'center' }}>
+              <Text style={{ color: '#666', fontSize: 14 }}>
+                {user?.id ? 'Đang tải danh sách cuộc trò chuyện...' : 'Chưa có cuộc trò chuyện nào'}
+              </Text>
+            </View>
+          )}
         </View>
 
         {/* Conversation groups */}
@@ -131,6 +166,27 @@ const ForwardMessage = () => {
           />
         </View>
       </ScrollView>
+      <View style={styles.bottomContainer}>
+        <View style={styles.messagePreviewContainer}>
+          <Text style={styles.contentMessage}>
+            {selectedMessage ? selectedMessage.content : "Không có tin nhắn nào được chọn."}
+          </Text>
+        </View>
+        <View style={{ flexDirection: "row", justifyContent: "space-between", padding: 16 }}>
+          <TouchableOpacity onPress={onClose} style={styles.cancelButton}>
+            <Text style={styles.cancelButtonText}>Hủy</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            onPress={handleForward}
+            style={[styles.forwardButton, selected.length === 0 && styles.forwardButtonDisabled]}
+            disabled={selected.length === 0}
+          >
+            <Text style={[styles.forwardButtonText, selected.length === 0 && styles.forwardButtonTextDisabled]}>
+              Chia sẻ
+            </Text>
+          </TouchableOpacity>
+        </View>
+      </View>
     </SafeAreaView>
   );
 };

@@ -20,8 +20,8 @@ const useAuth = () => {
         try {
             console.log("call api login: ");
             const loginResponse = await login({ phone, password });
-            console.log("call api login: ",loginResponse);
-            
+            console.log("call api login: ", loginResponse);
+
             const fcmToken = await getPushToken();
             if (fcmToken) {
                 await registerFCMToken(fcmToken, loginResponse.data.user.id);

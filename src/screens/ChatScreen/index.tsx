@@ -20,6 +20,7 @@ import { useSelector, useDispatch } from 'react-redux';
 import { debounce } from 'lodash';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import * as DocumentPicker from 'expo-document-picker';
+import * as ImagePicker from 'expo-image-picker';
 
 import { chatScreenStyle as styles } from './style';
 import theme from '@/theme';
@@ -31,7 +32,9 @@ import { setCurrentChannel } from '@/redux/userSlice';
 import ChatHeader from '@/components/chat/ChatHeader';
 import MessageItem from '@/components/chat/MessageItem';
 import MessageInputContainer from '@/components/chat/MessageInput';
-interface Message {
+import ForwardMessage from '@/components/chat/ForwardMessage';
+import { MessageType, Emoji } from '@/types/IChat';
+export interface Message {
   id?: string;
   _id?: string;
   channelId: string;
@@ -40,31 +43,27 @@ interface Message {
   timestamp: string;
   status: 'sent' | 'delivered' | 'read';
   emojis?: Emoji[];
-  messageType?: 'text' | 'file';
-  isDeletedById?: string;
+  messageType?: 'text' | 'file' | 'imageGroup';
+  isDeletedById: string;
   file?: {
     filename: string;
     path: string;
     extension: string;
     size?: string | number;
   };
+  imagesGroup?: Array<{
+    id: string;
+    filename: string;
+    path: string;
+    extension: string;
+    size?: string | number;
+  }>;
   sender: {
     id: string;
     name: string;
     avatar: string;
   };
 }
-
-interface Emoji {
-  emoji: string;
-  userId: string;
-  messageId: string;
-  quantity: number;
-  createAt: string;
-  updateAt: string;
-  deleteAt?: string;
-}
-
 type ChatScreenRouteProp = RouteProp<RootStackParamList, typeof ROUTING.CHAT_SCREEN>;
 type ChatScreenNavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
@@ -77,7 +76,6 @@ const ChatScreen = ({ route }: { route: ChatScreenRouteProp }) => {
   const navigation = useNavigation<ChatScreenNavigationProp>();
   const sender = useSelector((state: RootState) => state.user.user);
   const channelId = item?.id || '';
-
   const {
     sendMessage,
     messages,
@@ -92,8 +90,8 @@ const ChatScreen = ({ route }: { route: ChatScreenRouteProp }) => {
     sendFileMessage,
     recallMessage,
     deleteMessage,
-    loadChannel,
-    listChannel,
+    forwardMessage,
+    uploadImageGroup
   } = useChat(`${sender?.id}`);
 
   const [loadingMore, setLoadingMore] = useState(false);
@@ -104,7 +102,7 @@ const ChatScreen = ({ route }: { route: ChatScreenRouteProp }) => {
   const initialRenderRef = useRef(true);
   const [isPopupVisible, setIsPopupVisible] = useState(false);
   const [selectedMessage, setSelectedMessage] = useState<Message | null>(null);
-
+  const [openForward, setOpenForward] = useState(false);
   const dispatch = useDispatch();
 
   useEffect(() => {
@@ -179,6 +177,42 @@ const ChatScreen = ({ route }: { route: ChatScreenRouteProp }) => {
       sendFileMessage(channelId, fileData);
     }
   };
+  const handlePickMultipleImages = async () => {
+    try {
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsMultipleSelection: true,
+        selectionLimit: 4, // Limit to 4 images like the web version
+        quality: 0.8,
+        aspect: [4, 3],
+        allowsEditing: false,
+      });
+
+      if (!result.canceled && result.assets && result.assets.length > 0) {
+        // Convert ImagePicker assets to File-like objects for uploadImageGroup
+        const filePromises = result.assets.map(async (asset, index) => {
+          const name = asset.fileName || `image_${index}.jpg`;
+
+          // Fetch the image data as blob then convert to File-like object
+          const response = await fetch(asset.uri);
+          const blob = await response.blob();
+
+          // Create a File-like object that works with FileReader
+          const file = new File([blob], name, {
+            type: asset.type || 'image/jpeg'
+          });
+
+          return file;
+        });
+
+        const fileObjects = await Promise.all(filePromises);
+        uploadImageGroup(channelId, fileObjects);
+      }
+    } catch (error) {
+      console.error('Error picking multiple images:', error);
+      Alert.alert('Error', 'Failed to select images. Please try again.');
+    }
+  };
 
   const handleLoadMoreMessages = useCallback(
     debounce(() => {
@@ -222,32 +256,16 @@ const ChatScreen = ({ route }: { route: ChatScreenRouteProp }) => {
       setSelectedMessage(null);
     },
     [selectedMessage, interactEmoji, sender?.id]
-  );
-
-  const handleRecallMessage = useCallback(() => {
-    if (!selectedMessage) return;
-    if (selectedMessage.sender.id !== sender?.id) {
-      Alert.alert('Thông báo', 'Bạn không thể thu hồi tin nhắn của người khác!');
-      return;
-    }
-    deleteMessage(selectedMessage.id || selectedMessage._id || '', selectedMessage.channelId);
-  }, [selectedMessage, deleteMessage, sender?.id]);
-
-  const handleDeleteMessage = useCallback(() => {
-    if (!selectedMessage) return;
-    recallMessage(selectedMessage.id || selectedMessage._id || '');
-  }, [selectedMessage, recallMessage]);
-
-  const handlePopupAction = useCallback(
+  ); const handlePopupAction = useCallback(
     (action: string) => {
       if (!selectedMessage) return;
       switch (action) {
         case 'reply':
           Alert.alert('Thông báo', 'Chức năng trả lời tin nhắn chưa được triển khai.');
-          break;
-        case 'forward':
-          Alert.alert('Thông báo', 'Chức năng chuyển tiếp tin nhắn chưa được triển khai.');
-          break;
+          break; case 'forward':
+          setOpenForward(true);
+          setIsPopupVisible(false);
+          return;
         case 'backup-restore':
           if (selectedMessage.sender.id !== sender?.id) {
             Alert.alert('Thông báo', 'Chức năng thu hồi tin nhắn không giành cho người nhận.');
@@ -318,22 +336,28 @@ const ChatScreen = ({ route }: { route: ChatScreenRouteProp }) => {
     <View>
       <Text>Chưa có tin nhắn nào. Bắt đầu trò chuyện ngay!</Text>
     </View>
-  ), []);
-
-  const renderItem = useCallback(
+  ), []); const renderItem = useCallback(
     ({ item }: { item: Message }) => {
       const isMyMessage = sender?.id === item.sender.id;
+
+      // Safety checks
+      if (!item || !item.sender) {
+        console.warn('Invalid message item:', item);
+        return null;
+      }
+
       return (
         <MessageItem
-          content={item.content || ''}
-          timestamp={item.timestamp || ''}
-          senderId={item.senderId || ''}
+          content={String(item.content || '')}
+          timestamp={String(item.timestamp || '')}
+          senderId={String(item.senderId || '')}
           senderAvatar={item.sender?.avatar || 'https://example.com/default-avatar.png'}
           isMyMessage={isMyMessage}
-          status={item.status || 'sent'}
+          status={String(item.status || 'sent')}
           emojis={item.emojis}
-          messageType={item.messageType}
+          messageType={String(item.messageType || 'text')}
           file={item.file}
+          imagesGroup={item.imagesGroup}
           onLongPress={() => handleLongPressMessage(item)}
         />
       );
@@ -402,8 +426,7 @@ const ChatScreen = ({ route }: { route: ChatScreenRouteProp }) => {
           windowSize={10}
           removeClippedSubviews={false}
           onRefresh={handleLoadMoreMessages}
-          refreshing={loadingMore}
-          onScroll={handleScroll}
+          refreshing={loadingMore} onScroll={handleScroll}
           scrollEventThrottle={16}
           maintainVisibleContentPosition={{ minIndexForVisible: 0 }}
         />
@@ -412,6 +435,8 @@ const ChatScreen = ({ route }: { route: ChatScreenRouteProp }) => {
           channelId={channelId}
           sendMessage={sendMessage}
           onPickFile={handlePickFile}
+          onPickMultipleImages={handlePickMultipleImages}
+          isUploading={loading}
         />
 
         <Modal
@@ -441,7 +466,7 @@ const ChatScreen = ({ route }: { route: ChatScreenRouteProp }) => {
                       style={styles.actionButton}
                       onPress={() => handlePopupAction(action.action)}
                     >
-                      <MaterialCommunityIcons name={action.icon} size={24} color={action.color} />
+                      <MaterialCommunityIcons name={action.icon as any} size={24} color={action.color} />
                       <Text style={[styles.actionText, { color: action.color }]}>{action.label}</Text>
                     </TouchableOpacity>
                   ))}
@@ -450,6 +475,17 @@ const ChatScreen = ({ route }: { route: ChatScreenRouteProp }) => {
             </View>
           </TouchableWithoutFeedback>
         </Modal>
+        {openForward && (
+          <View style={styles.forwardModalContainer}>
+            <ForwardMessage
+              selectedMessage={selectedMessage}
+              onClose={() => {
+                setOpenForward(false);
+                setSelectedMessage(null);
+              }}
+            />
+          </View>
+        )}
       </KeyboardAvoidingView>
     </SafeAreaView>
   );
