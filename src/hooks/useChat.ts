@@ -313,11 +313,11 @@ export const useChat = (currentUserId: string) => {
             }
         };
         const forwardMessageHandler = (message: MessageType) => {
-            console.log("check response from forwardMessageHandler: ", message);
+            console.log("check forward message before: ", message);
 
-            setLoading(false)
             // Check if the channel exists in listChannel
             const existingChannel = listChannel.find((channel) => channel.id === message.channelId);
+
             if (!existingChannel) {
                 // Channel does not exist, so we need to add it to the listChannel
                 // You can create a new channel object here based on the message's data
@@ -343,7 +343,8 @@ export const useChat = (currentUserId: string) => {
 
             // Update the current channel with the new forwarded message
             updateChannelWithMessage(message);
-        }; const uploadImageGroupResponse = (response: ResponseType) => {
+        };
+        const uploadImageGroupResponse = (response: ResponseType) => {
             console.log("uploadImageGroupResponse received:", response);
             if (response.success) {
 
@@ -371,6 +372,16 @@ export const useChat = (currentUserId: string) => {
             }
             setLoading(false);
         };
+        const forwardMessageServiceResponse = (response: ResponseType) => {
+            setLoading(false);
+            if (response.success) {
+                console.log("Forward message service completed:", response.data);
+                // Có thể thêm thông báo thành công cho user
+            } else {
+                console.error("Forward message service failed:", response.message);
+                setError(response.message || "Không thể chuyển tiếp tin nhắn");
+            }
+        };
         socket.on('connect_error', handleConnectError);
         // socket.on('disconnect', handleDisconnect);
         socket.on(SOCKET_EVENTS.CHANNEL.JOIN_ROOM_RESPONSE, joinRoomResponse);
@@ -385,12 +396,13 @@ export const useChat = (currentUserId: string) => {
         socket.on(SOCKET_EVENTS.FILE.UPLOAD_RESPONSE, uploadFileResponse);
         socket.on(SOCKET_EVENTS.MESSAGE.RECALL_RESPONSE, recallMessageResponse);
         socket.on(SOCKET_EVENTS.MESSAGE.DELETE_RESPONSE, deleteMessageResponse);
+        socket.on(SOCKET_EVENTS.MESSAGE.FORWARD, forwardMessageHandler);
         socket.on(SOCKET_EVENTS.CHANNEL.ADD_MEMBER_RESPONSE, addMemberResponse);
         socket.on(SOCKET_EVENTS.CHANNEL.DISSOLVE_GROUP_RESPONSE, dissolveGroupResponse);
         socket.on(SOCKET_EVENTS.CHANNEL.ROLE_UPDATED, assignRoleUpdatedResponse);
         socket.on(SOCKET_EVENTS.CHANNEL.REMOVE_MEMBER_RESPONSE, removeMemberResponse);
-        socket.on(SOCKET_EVENTS.MESSAGE.FORWARD, forwardMessageHandler);
         socket.on(SOCKET_EVENTS.FILE.UPLOAD_GROUP_RESPONSE, uploadImageGroupResponse);
+        socket.on(SOCKET_EVENTS.MESSAGE.FORWARD_SERVICE_RESPONSE, forwardMessageServiceResponse);
         return () => {
             socket.off('connect_error', handleConnectError);
             socket.off('disconnect', handleDisconnect);
@@ -412,13 +424,11 @@ export const useChat = (currentUserId: string) => {
             socket.off(SOCKET_EVENTS.CHANNEL.REMOVE_MEMBER_RESPONSE, removeMemberResponse);
             socket.off(SOCKET_EVENTS.MESSAGE.FORWARD, forwardMessageHandler)
             socket.off(SOCKET_EVENTS.FILE.UPLOAD_GROUP_RESPONSE, uploadImageGroupResponse);
+            socket.off(SOCKET_EVENTS.MESSAGE.FORWARD_SERVICE_RESPONSE, forwardMessageServiceResponse);
         };
     }, [currentUserId]);
 
     const forwardMessage = useCallback((messageId: string, channelId: string) => {
-        console.log("Check content send: ", messageId);
-        console.log("Check content send: ", channelId);
-
         const socket = socketService.getSocket();
         // Gửi sự kiện forwardMessage đến server
         const params = {
@@ -426,10 +436,20 @@ export const useChat = (currentUserId: string) => {
             messageId, // ID của tin nhắn cần chuyển tiếp
             channelId, // ID của phòng đích
         };
+
         setLoading(true);
         socket.emit(SOCKET_EVENTS.MESSAGE.FORWARD, params);
-
     }, [currentUserId]);
+    const forwardMessageService = useCallback((messageId: string, channelIds: any, senderId: string) => {
+        const socket = socketService.getSocket();
+        setLoading(true);
+        const params = {
+            messageId,
+            channelIds,
+            senderId
+        };
+        socket.emit(SOCKET_EVENTS.MESSAGE.FORWARD_SERVICE, params);
+    }, []);
     const findOrCreateChat = useCallback((receiverId: string) => {
         setLoading(true);
         setChannel(null);
@@ -672,6 +692,7 @@ export const useChat = (currentUserId: string) => {
         assignRole,
         forwardMessage,
         uploadImageGroup,
+        forwardMessageService,
         listChannel,
         channel,
         messages,

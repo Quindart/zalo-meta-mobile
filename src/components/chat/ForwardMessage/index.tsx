@@ -9,6 +9,7 @@ import {
   FlatList,
   StatusBar,
   ScrollView,
+  Alert,
 } from "react-native";
 import { Ionicons, FontAwesome } from "@expo/vector-icons";
 import { styles } from "./style";
@@ -17,9 +18,9 @@ import { useChat } from "@/hooks/useChat";
 import { useSelector } from "react-redux";
 import { Message } from "@/screens/ChatScreen";
 const ForwardMessage = ({ onClose, selectedMessage }: { onClose: () => void; selectedMessage: Message | null; }) => {
-  const [selected, setSelected] = useState<string[]>([]);
+  const [selectedChannelIds, setSelectedChannelIds] = useState<string[]>([]);
   const user = useSelector((state: any) => state.user.user);
-  const { forwardMessage, listChannel, loadChannel } = useChat(user.id);
+  const { listChannel, loadChannel, forwardMessageService, } = useChat(user.id);
   useEffect(() => {
     if (user?.id) {
       loadChannel(user.id);
@@ -27,28 +28,19 @@ const ForwardMessage = ({ onClose, selectedMessage }: { onClose: () => void; sel
   }, [user?.id, loadChannel]);
 
   const toggleSelect = (id: string) => {
-    setSelected((prev) =>
+    setSelectedChannelIds((prev) =>
       prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]
     );
   }; const handleForward = () => {
-    if (selected.length > 0 && selectedMessage) {
-      console.log("=== FORWARD MESSAGE DEBUG ===");
-      console.log("Selected contacts:", selected);
-      console.log("Selected message:", selectedMessage);
-      console.log("Message ID:", selectedMessage.id || selectedMessage._id);
-      console.log("Message content:", selectedMessage.content);
-
-      // Forward tin nhắn đã chọn đến các contact đã chọn
-      selected.forEach(contactId => {
-        console.log("Forwarding to contact:", contactId);
-        forwardMessage(selectedMessage.id || selectedMessage._id || '', contactId);
-      });
+    if (selectedChannelIds.length > 0 && selectedMessage) {
+      forwardMessageService(selectedMessage?.id || '', selectedChannelIds, user.id);
       onClose();
     } else {
-      console.log("Cannot forward - missing data:", {
-        selectedLength: selected.length,
-        hasSelectedMessage: !!selectedMessage
-      });
+      Alert.alert(
+        "Không thể chia sẻ tin nhắn",
+        "Vui lòng chọn ít nhất một cuộc trò chuyện và đảm bảo có tin nhắn được chọn để chia sẻ.",
+        [{ text: "OK" }]
+      );
     }
   };
   const renderContact = ({ item }: { item: any }) => (
@@ -78,7 +70,7 @@ const ForwardMessage = ({ onClose, selectedMessage }: { onClose: () => void; sel
         <Text style={styles.contactName}>{item.name}</Text>
       </View>
       <View style={styles.checkCircle}>
-        {selected.includes(item.id) && <View style={styles.innerCheck} />}
+        {selectedChannelIds.includes(item.id) && <View style={styles.innerCheck} />}
       </View>
     </TouchableOpacity>
   );
@@ -93,7 +85,7 @@ const ForwardMessage = ({ onClose, selectedMessage }: { onClose: () => void; sel
         </TouchableOpacity>
         <View style={styles.titleContainer}>
           <Text style={styles.title}>Chia sẻ</Text>
-          <Text style={styles.subtitle}>Đã chọn: {selected.length}</Text>
+          <Text style={styles.subtitle}>Đã chọn: {selectedChannelIds.length}</Text>
         </View>
       </View>
 
@@ -178,10 +170,10 @@ const ForwardMessage = ({ onClose, selectedMessage }: { onClose: () => void; sel
           </TouchableOpacity>
           <TouchableOpacity
             onPress={handleForward}
-            style={[styles.forwardButton, selected.length === 0 && styles.forwardButtonDisabled]}
-            disabled={selected.length === 0}
+            style={[styles.forwardButton, selectedChannelIds.length === 0 && styles.forwardButtonDisabled]}
+            disabled={selectedChannelIds.length === 0}
           >
-            <Text style={[styles.forwardButtonText, selected.length === 0 && styles.forwardButtonTextDisabled]}>
+            <Text style={[styles.forwardButtonText, selectedChannelIds.length === 0 && styles.forwardButtonTextDisabled]}>
               Chia sẻ
             </Text>
           </TouchableOpacity>
