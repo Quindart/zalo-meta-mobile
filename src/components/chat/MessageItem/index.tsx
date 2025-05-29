@@ -57,7 +57,7 @@ const MessageItem = React.memo(
         imagesGroup,
     }: MessageItemProps) => {
         const me = useSelector((state: RootState) => state.user.user);
-        const [isEmojiModalVisible, setEmojiModalVisible] = useState(false);        // Debug logging
+        const [isEmojiModalVisible, setEmojiModalVisible] = useState(false);
 
         // Safety check for props
         if (!content && !file && !imagesGroup) {
@@ -68,7 +68,9 @@ const MessageItem = React.memo(
             if (!emojis || emojis.length === 0) return null;
             const maxDisplay = 4;
             const displayEmojis = emojis.length > maxDisplay ? emojis.slice(0, 3) : emojis;
-            const remainingCount = emojis.length > maxDisplay ? emojis.length - 3 : 0; return (
+            const remainingCount = emojis.length > maxDisplay ? emojis.length - 3 : 0;
+
+            return (
                 <View style={[styles.emojiWrapper, isMyMessage ? styles.emojiWrapperRight : styles.emojiWrapperLeft]}>
                     {displayEmojis.map((emoji, index) => (
                         <View key={index} style={styles.emojiItem}>
@@ -104,60 +106,48 @@ const MessageItem = React.memo(
         );
 
         return (
-            <View style={styles.messageWrapper}>                <TouchableOpacity
-                activeOpacity={0.8}
-                onLongPress={onLongPress}
-                style={[styles.messageRow, isMyMessage ? styles.myMessageRow : styles.otherMessageRow]}
-            >
-                {!isMyMessage && senderAvatar && (
-                    <Image
-                        source={{ uri: senderAvatar }}
-                        style={styles.messageAvatar}
-                        defaultSource={require('../../../../assets/user_default.jpg')}
-                    />
-                )}
-                <View
-                    style={[
-                        styles.messageBubble,
-                        isMyMessage ? styles.myMessageBubble : styles.otherMessageBubble,
-                    ]}
+            <View style={styles.messageWrapper}>
+                <TouchableOpacity
+                    activeOpacity={0.8}
+                    onLongPress={onLongPress}
+                    style={[styles.messageRow, isMyMessage ? styles.myMessageRow : styles.otherMessageRow]}
                 >
-                    {(() => {
-                        if ((messageType === 'file' || messageType === 'image') && file) {
-                            return <FileMessageBubble file={file} />;
-                        } else if (messageType === 'imageGroup' && imagesGroup && imagesGroup.length > 0) {
-                            return <ImageGroupBubble imagesGroup={imagesGroup} />;
-                        } else {
-                            const displayContent = content ? String(content).trim() : '';
-                            return displayContent ? (
-                                <Text style={styles.messageText}>{displayContent}</Text>
-                            ) : (
-                                <Text style={styles.messageText}> </Text>
-                            );
-                        }
-                    })()}
-                    <Text style={styles.messageTime}>
-                        {(() => {
-                            const timeStr = timestamp ? new Date(timestamp).toLocaleTimeString() : '';
-                            const statusStr = isMyMessage ? (() => {
-                                if (status === 'sent') return ' ✓';
-                                if (status === 'delivered') return ' ✓✓';
-                                if (status === 'read') return ' ✓✓ (Đã đọc)';
-                                return '';
-                            })() : '';
-                            return timeStr + statusStr;
-                        })()}
-                    </Text>
-                </View>
-            </TouchableOpacity>
-                {renderEmojis ? (
-                    <TouchableOpacity
-                        onPress={() => setEmojiModalVisible(true)}
-                        style={isMyMessage ? styles.myEmojiContainer : styles.otherEmojiContainer}
+                    {!isMyMessage && senderAvatar && (
+                        <Image
+                            source={{ uri: senderAvatar }}
+                            style={styles.messageAvatar}
+                            defaultSource={require('../../../../assets/user_default.jpg')}
+                        />
+                    )}
+                    <View
+                        style={[
+                            styles.messageBubble,
+                            isMyMessage ? styles.myMessageBubble : styles.otherMessageBubble,
+                        ]}
                     >
-                        {renderEmojis}
-                    </TouchableOpacity>
-                ) : null}
+                        {(() => {
+                            if ((messageType === 'file' || messageType === 'image') && file) {
+                                return <FileMessageBubble file={file} />;
+                            } else if (messageType === 'imageGroup' && imagesGroup && imagesGroup.length > 0) {
+                                return <ImageGroupBubble imagesGroup={imagesGroup} />;
+                            } else {
+                                const displayContent = content ? String(content).trim() : ''; return displayContent ? (
+                                    <Text style={styles.messageText}>{displayContent}</Text>
+                                ) : (
+                                    <Text style={styles.messageText}> </Text>
+                                );
+                            }
+                        })()}
+                    </View>
+                </TouchableOpacity>
+
+                {renderEmojis && (<TouchableOpacity
+                    onPress={() => setEmojiModalVisible(true)}
+                    style={isMyMessage ? styles.myEmojiContainer : styles.otherEmojiContainer}
+                >
+                    {renderEmojis}
+                </TouchableOpacity>
+                )}
                 <Modal
                     visible={isEmojiModalVisible}
                     transparent={true}

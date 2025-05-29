@@ -25,4 +25,5 @@ export type RootStackParamList = {
     [ROUTING.OPTION_FRIEND]: { itemFriend: any };
     [ROUTING.MEMBER_MANAGEMENT_SCREEN]: { itemGroup: any };
     [ROUTING.ADD_TO_GROUP]: { itemGroup: any };
+    [ROUTING.FORWARD_MESSAGE]: { item: any; onClose: () => void; selectedMessage: any };
 };

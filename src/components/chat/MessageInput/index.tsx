@@ -6,11 +6,10 @@ import styles from "./styles"
 
 interface MessageInputContainerProps {
     channelId: string;
-    sendMessage: (chanId: string, content: string, fcmToken: string) => void;
+    sendMessage: (chanId: string, content: string) => void;
     onPickFile: () => void;
     onPickMultipleImages: () => void;
     isUploading?: boolean;
-    fcmToken: string;
 }
 
 const MessageInputContainer = React.memo(

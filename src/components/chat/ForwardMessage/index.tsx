@@ -52,7 +52,7 @@ const ForwardMessage = ({ onClose, selectedMessage }: { onClose: () => void; sel
         <View style={styles.avatarContainer}>
           <Image
             source={{
-              uri: item.avatar,
+              uri: item.avatar || item.avatarGroup,
             }}
             style={styles.avatar}
           />
@@ -127,8 +127,7 @@ const ForwardMessage = ({ onClose, selectedMessage }: { onClose: () => void; sel
           <Text style={styles.actionText}>App khác</Text>
         </TouchableOpacity>
       </View>
-
-      <ScrollView>        {/* Recent contacts */}
+      <ScrollView>
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Gần đây</Text>
           {listChannel && listChannel.length > 0 ? (
@@ -145,17 +144,6 @@ const ForwardMessage = ({ onClose, selectedMessage }: { onClose: () => void; sel
               </Text>
             </View>
           )}
-        </View>
-
-        {/* Conversation groups */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Nhóm trò chuyện</Text>
-          <FlatList
-            data={conversationGroups}
-            renderItem={renderContact}
-            keyExtractor={(item) => item.id}
-            scrollEnabled={false}
-          />
         </View>
       </ScrollView>
       <View style={styles.bottomContainer}>

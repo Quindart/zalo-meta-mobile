@@ -90,10 +90,8 @@ const ChatScreen = ({ route }: { route: ChatScreenRouteProp }) => {
     sendFileMessage,
     recallMessage,
     deleteMessage,
-    forwardMessage,
     uploadImageGroup
   } = useChat(`${sender?.id}`);
-
   const [loadingMore, setLoadingMore] = useState(false);
   const [hasMoreMessages, setHasMoreMessages] = useState(true);
   const [isAtBottom, setIsAtBottom] = useState(true);
@@ -336,34 +334,35 @@ const ChatScreen = ({ route }: { route: ChatScreenRouteProp }) => {
     <View>
       <Text>Chưa có tin nhắn nào. Bắt đầu trò chuyện ngay!</Text>
     </View>
-  ), []); const renderItem = useCallback(
-    ({ item }: { item: Message }) => {
-      const isMyMessage = sender?.id === item.sender.id;
+  ), [])
+    ; const renderItem = useCallback(
+      ({ item }: { item: Message }) => {
+        const isMyMessage = sender?.id === item.sender.id;
 
-      // Safety checks
-      if (!item || !item.sender) {
-        console.warn('Invalid message item:', item);
-        return null;
-      }
+        // Safety checks
+        if (!item || !item.sender) {
+          console.warn('Invalid message item:', item);
+          return null;
+        }
 
-      return (
-        <MessageItem
-          content={String(item.content || '')}
-          timestamp={String(item.timestamp || '')}
-          senderId={String(item.senderId || '')}
-          senderAvatar={item.sender?.avatar || 'https://example.com/default-avatar.png'}
-          isMyMessage={isMyMessage}
-          status={String(item.status || 'sent')}
-          emojis={item.emojis}
-          messageType={String(item.messageType || 'text')}
-          file={item.file}
-          imagesGroup={item.imagesGroup}
-          onLongPress={() => handleLongPressMessage(item)}
-        />
-      );
-    },
-    [sender, handleLongPressMessage]
-  );
+        return (
+          <MessageItem
+            content={String(item.content || '')}
+            timestamp={String(item.timestamp || '')}
+            senderId={String(item.senderId || '')}
+            senderAvatar={item.sender?.avatar || 'https://example.com/default-avatar.png'}
+            isMyMessage={isMyMessage}
+            status={String(item.status || 'sent')}
+            emojis={item.emojis}
+            messageType={String(item.messageType || 'text')}
+            file={item.file}
+            imagesGroup={item.imagesGroup}
+            onLongPress={() => handleLongPressMessage(item)}
+          />
+        );
+      },
+      [sender, handleLongPressMessage]
+    );
 
   const keyExtractor = useCallback(
     (item: Message, index: number) =>
