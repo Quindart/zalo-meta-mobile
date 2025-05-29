@@ -2,15 +2,18 @@
 import { Alert } from 'react-native';
 import { useDispatch } from 'react-redux';
 import axiosConfig from '@/services/axios.config';
-import { setMe, clearUser, setAccessToken, setRefreshToken, clearTokens } from '@/redux/userSlice';
+import { setMe, clearUser, setAccessToken, setRefreshToken, clearTokens, setFCMToken } from '@/redux/userSlice';
 import { NavigationProp, ParamListBase, useNavigation } from '@react-navigation/native';
 import { ROUTING } from '@/utils/constant';
 import { login, register } from '@/services/auth.service';
 import { getPushToken } from "@/utils/FCMToken"
-import { registerFCMToken } from '@/services/auth.service'
+import { registerFCMToken, unRegisterFCMToken } from '@/services/auth.service'
+import { useSelector } from 'react-redux';
 const useAuth = () => {
     const navigation = useNavigation<NavigationProp<ParamListBase>>();
     const dispatch = useDispatch();
+    const fcmToken = useSelector((state: any) => state.user.fcmToken);
+    const userId = useSelector((state: any) => state.user.user?.id);
 
     const toJSON = (response: any) => {
         return JSON.parse(JSON.stringify(response));
@@ -23,6 +26,7 @@ const useAuth = () => {
             console.log("call api login: ", loginResponse);
 
             const fcmToken = await getPushToken();
+            dispatch(setFCMToken(fcmToken || ''));
             if (fcmToken) {
                 await registerFCMToken(fcmToken, loginResponse.data.user.id);
             }
@@ -54,6 +58,7 @@ const useAuth = () => {
         dispatch(clearTokens());
         // clearTokens();
         dispatch(clearUser());
+        unRegisterFCMToken(fcmToken, userId);
         navigation.navigate(ROUTING.HOME);
         Alert.alert('Đăng xuất', 'Bạn đã đăng xuất thành công');
     };

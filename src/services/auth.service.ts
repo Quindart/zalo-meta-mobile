@@ -85,3 +85,16 @@ export const registerFCMToken = async (fcmToken: string, userId: string) => {
         return error?.response.data;
     }
 }
+export const unRegisterFCMToken = async (fcmToken: string, userId: string) => {
+    try {
+        const url = `${api}/unregister-token`;
+        const response = await axiosConfig.post(url, {
+            fcmToken: fcmToken,
+            userId: userId
+        })
+        return response;
+    } catch (error: any) {
+        console.error("Error fetching user data:", error);
+        return error?.response.data;
+    }
+}
