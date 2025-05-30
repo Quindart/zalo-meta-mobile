@@ -46,34 +46,34 @@ const ImageGroupBubble: React.FC<ImageGroupBubbleProps> = ({ imagesGroup }) => {
         const remainingCount = imagesGroup.length - 4;
 
         return (
-            <View style={styles.gridContainer}>
-                {displayImages.map((image, index) => (
-                    <TouchableOpacity
-                        key={image.id}
-                        style={[
-                            styles.imageContainer,
-                            {
-                                width: imageWidth,
-                                height: imageHeight,
-                                marginRight: (index + 1) % columns === 0 ? 0 : 2,
-                                marginBottom: index < displayImages.length - columns ? 2 : 0
-                            }
-                        ]}
-                        onPress={() => setSelectedImageIndex(index)}
-                    >
-                        <Image
-                            source={{ uri: image.path }}
-                            style={styles.gridImage}
-                            resizeMode="cover"
-                        />
-                        {/* Show count overlay on last image if there are more than 4 images */}
-                        {index === 3 && remainingCount > 0 && (
-                            <View style={styles.moreImagesOverlay}>
-                                <Text style={styles.moreImagesText}>+{remainingCount}</Text>
-                            </View>
-                        )}
-                    </TouchableOpacity>
-                ))}
+            <View style={styles.gridContainer}>                
+            {displayImages.map((image, index) => (
+                <TouchableOpacity
+                    key={`grid-${image.id || index}`}
+                    style={[
+                        styles.imageContainer,
+                        {
+                            width: imageWidth,
+                            height: imageHeight,
+                            marginRight: (index + 1) % columns === 0 ? 0 : 2,
+                            marginBottom: index < displayImages.length - columns ? 2 : 0
+                        }
+                    ]}
+                    onPress={() => setSelectedImageIndex(index)}
+                >
+                    <Image
+                        source={{ uri: image.path }}
+                        style={styles.gridImage}
+                        resizeMode="cover"
+                    />
+                    {/* Show count overlay on last image if there are more than 4 images */}
+                    {index === 3 && remainingCount > 0 && (
+                        <View style={styles.moreImagesOverlay}>
+                            <Text style={styles.moreImagesText}>+{remainingCount}</Text>
+                        </View>
+                    )}
+                </TouchableOpacity>
+            ))}
             </View>
         );
     };
@@ -108,16 +108,15 @@ const ImageGroupBubble: React.FC<ImageGroupBubbleProps> = ({ imagesGroup }) => {
                         showsHorizontalScrollIndicator={false}
                         contentOffset={{ x: selectedImageIndex * screenWidth, y: 0 }}
                         style={styles.imageScrollView}
-                    >
-                        {imagesGroup.map((image, index) => (
-                            <View key={image.id} style={{ width: screenWidth }}>
-                                <Image
-                                    source={{ uri: image.path }}
-                                    style={styles.fullScreenImage}
-                                    resizeMode="contain"
-                                />
-                            </View>
-                        ))}
+                    >                        {imagesGroup.map((image, index) => (
+                        <View key={`modal-${image.id || index}`} style={{ width: screenWidth }}>
+                            <Image
+                                source={{ uri: image.path }}
+                                style={styles.fullScreenImage}
+                                resizeMode="contain"
+                            />
+                        </View>
+                    ))}
                     </ScrollView>
                 </SafeAreaView>
             </Modal>
